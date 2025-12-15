@@ -28,9 +28,8 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
-            // Markdown parsing library (CommonMark)
+
             implementation("org.commonmark:commonmark:0.21.0")
-            // CommonMark GFM tables extension
             implementation("org.commonmark:commonmark-ext-gfm-tables:0.21.0")
         }
     }

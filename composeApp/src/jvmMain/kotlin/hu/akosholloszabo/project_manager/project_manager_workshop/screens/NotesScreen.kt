@@ -4,11 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,18 +22,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,6 +39,8 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -53,11 +53,14 @@ import org.commonmark.ext.gfm.tables.TableRow
 import org.commonmark.ext.gfm.tables.TablesExtension
 import org.commonmark.node.Block
 import org.commonmark.node.BulletList
+import org.commonmark.node.FencedCodeBlock
 import org.commonmark.node.Heading
+import org.commonmark.node.IndentedCodeBlock
 import org.commonmark.node.ListItem
 import org.commonmark.node.Node
 import org.commonmark.node.OrderedList
 import org.commonmark.node.Paragraph
+import org.commonmark.node.BlockQuote
 import org.commonmark.parser.Parser
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.awt.Desktop
@@ -160,7 +163,8 @@ fun NotesScreenContent() {
         mutableStateListOf(
             Note(
                 1, "Meeting notes",
-                """# Project X — Sprint Planning Meeting
+"""
+# Project X — Sprint Planning Meeting
 **Date:** 2025-12-15  
 **Time:** 10:00 — 11:30 AM  
 **Location:** Conference Room B / Zoom
@@ -316,13 +320,17 @@ For any feedback or questions, please reach out to Alice Johnson at alice.johnso
                                 .fillMaxWidth()
                                 .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else Color.Transparent)
                                 .clickable {
-                                    if (isEditing && selectedNoteId != null && editableContent != notesState.find { it.id == selectedNoteId }?.content) {
-                                        saveNote(selectedNoteId)
-                                        isEditing = false
-                                    }
-                                    selectedNoteId = note.id
-                                    editableContent = note.content
-                                }
+                            // If we are editing, save changes for the current note (if any) before switching
+                            if (isEditing && selectedNoteId != null) {
+                                saveNote(selectedNoteId)
+                            }
+                            // Always leave edit mode when switching notes
+                            isEditing = false
+
+                            // Update selection and load the new note's content
+                            selectedNoteId = note.id
+                            editableContent = note.content
+                        }
                                 .padding(8.dp)
                         ) {
                             Text(
@@ -385,8 +393,16 @@ For any feedback or questions, please reach out to Alice Johnson at alice.johnso
 
 @Composable
 private fun RenderMarkdown(markdown: String) {
-    val extensions = listOf(TablesExtension.create())
-    val parser = Parser.builder().extensions(extensions).build()
+    val extensionsMutable = mutableListOf<org.commonmark.Extension>(TablesExtension.create())
+    try {
+        val cls = Class.forName("org.commonmark.ext.gfm.tasklist.TaskListExtension")
+        val createMethod = cls.getMethod("create")
+        val ext = createMethod.invoke(null) as org.commonmark.Extension
+        extensionsMutable.add(ext)
+    } catch (_: Throwable) {
+        // tasklist extension not available; continue without it
+    }
+    val parser = Parser.builder().extensions(extensionsMutable).build()
     val document = parser.parse(markdown)
 
     SelectionContainer {
@@ -406,6 +422,34 @@ private fun RenderMarkdown(markdown: String) {
                         )
                     }
 
+                    is FencedCodeBlock -> {
+                        val code = node.literal ?: ""
+                        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).border(1.dp, MaterialTheme.colorScheme.outline).background(MaterialTheme.colorScheme.surfaceVariant)) {
+                            Text(
+                                text = code.trimEnd('\n'),
+                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onBackground),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState())
+                                    .padding(8.dp)
+                            )
+                        }
+                    }
+
+                    is IndentedCodeBlock -> {
+                        val code = node.literal ?: ""
+                        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).border(1.dp, MaterialTheme.colorScheme.outline).background(MaterialTheme.colorScheme.surfaceVariant)) {
+                            Text(
+                                text = code.trimEnd('\n'),
+                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onBackground),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState())
+                                    .padding(8.dp)
+                            )
+                        }
+                    }
+
                     is Paragraph -> {
                         val annotated = buildAnnotatedFrom(node, MaterialTheme.colorScheme.primary)
                         ClickableAnnotatedText(
@@ -418,18 +462,48 @@ private fun RenderMarkdown(markdown: String) {
                     is BulletList -> {
                         var li: Node? = node.firstChild
                         while (li != null) {
-                            if (li is ListItem) {
+                            // detect task list item via reflection (isChecked method)
+                            val isTaskByExt = try { li::class.java.getMethod("isChecked"); true } catch (_: Throwable) { false }
+                            if (isTaskByExt) {
+                                val checked = try { li::class.java.getMethod("isChecked").invoke(li) as Boolean } catch (_: Throwable) { false }
                                 val annotated = buildAnnotatedFrom(li, MaterialTheme.colorScheme.primary)
-                                Row(modifier = Modifier.fillMaxWidth()) {
-                                    Text(
-                                        "• ",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onBackground
-                                    )
+                                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Checkbox(checked = checked, onCheckedChange = null, enabled = false)
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     ClickableAnnotatedText(
                                         annotated = annotated,
                                         style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onBackground)
                                     )
+                                }
+                            } else if (li is ListItem) {
+                                // fallback: manual GFM task marker detection in the rendered inline text
+                                val raw = renderInlineText(li).trimStart()
+                                val manualMatch = Regex("""^\[([ xX])]\s+(.*)""" ).find(raw)
+                                if (manualMatch != null) {
+                                    val checked = manualMatch.groupValues[1].trim().equals("x", ignoreCase = true)
+                                    val label = manualMatch.groupValues[2]
+                                    val ann = buildAnnotatedString { append(label) }
+                                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                        Checkbox(checked = checked, onCheckedChange = null, enabled = false)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        ClickableAnnotatedText(
+                                            annotated = ann,
+                                            style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onBackground)
+                                        )
+                                    }
+                                } else {
+                                    val annotated = buildAnnotatedFrom(li, MaterialTheme.colorScheme.primary)
+                                    Row(modifier = Modifier.fillMaxWidth()) {
+                                        Text(
+                                            "• ",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onBackground
+                                        )
+                                        ClickableAnnotatedText(
+                                            annotated = annotated,
+                                            style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onBackground)
+                                        )
+                                    }
                                 }
                             }
                             li = li.next
@@ -440,21 +514,45 @@ private fun RenderMarkdown(markdown: String) {
                         var idx = node.startNumber
                         var li: Node? = node.firstChild
                         while (li != null) {
-                            if (li is ListItem) {
-                                val text = renderInlineText(li)
-                                Row(modifier = Modifier.fillMaxWidth()) {
-                                    Text(
-                                        "${idx}. ",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onBackground
-                                    )
-                                    Text(
-                                        text,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onBackground
+                            val isTaskByExt = try { li::class.java.getMethod("isChecked"); true } catch (_: Throwable) { false }
+                            if (isTaskByExt) {
+                                val checked = try { li::class.java.getMethod("isChecked").invoke(li) as Boolean } catch (_: Throwable) { false }
+                                val annotated = buildAnnotatedFrom(li, MaterialTheme.colorScheme.primary)
+                                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Text("${idx}. ", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+                                    Checkbox(checked = checked, onCheckedChange = null, enabled = false)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    ClickableAnnotatedText(
+                                        annotated = annotated,
+                                        style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onBackground)
                                     )
                                 }
                                 idx++
+                            } else if (li is ListItem) {
+                                val raw = renderInlineText(li).trimStart()
+                                val manualMatch = Regex("""^\[([ xX])]\s+(.*)""" ).find(raw)
+                                if (manualMatch != null) {
+                                    val checked = manualMatch.groupValues[1].trim().equals("x", ignoreCase = true)
+                                    val label = manualMatch.groupValues[2]
+                                    val ann = buildAnnotatedString { append(label) }
+                                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                        Text("${idx}. ", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+                                        Checkbox(checked = checked, onCheckedChange = null, enabled = false)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        ClickableAnnotatedText(
+                                            annotated = ann,
+                                            style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onBackground)
+                                        )
+                                    }
+                                    idx++
+                                } else {
+                                    val text = renderInlineText(li)
+                                    Row(modifier = Modifier.fillMaxWidth()) {
+                                        Text("${idx}. ", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+                                        Text(text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+                                    }
+                                    idx++
+                                }
                             }
                             li = li.next
                         }
@@ -554,6 +652,41 @@ private fun RenderMarkdown(markdown: String) {
                                             }
                                         }
                                     }
+                                }
+                            }
+                        }
+                    }
+
+                    is BlockQuote -> {
+                        // Render blockquote with a leading vertical bar and italic text
+                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                            Box(modifier = Modifier
+                                .width(4.dp)
+                                .fillMaxHeight()
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                var child: Node? = node.firstChild
+                                while (child != null) {
+                                    if (child is Paragraph) {
+                                        val annotated = buildAnnotatedFrom(child, MaterialTheme.colorScheme.primary)
+                                        ClickableAnnotatedText(
+                                            annotated = annotated,
+                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                                fontStyle = FontStyle.Italic,
+                                                color = MaterialTheme.colorScheme.onBackground
+                                            ),
+                                            modifier = Modifier.padding(vertical = 2.dp)
+                                        )
+                                    } else {
+                                        // fallback: render plain inline text for other child types
+                                        val text = renderInlineText(child)
+                                        if (text.isNotBlank()) Text(
+                                            text,
+                                            style = MaterialTheme.typography.bodyLarge.copy(fontStyle = FontStyle.Italic, color = MaterialTheme.colorScheme.onBackground)
+                                        )
+                                    }
+                                    child = child.next
                                 }
                             }
                         }
