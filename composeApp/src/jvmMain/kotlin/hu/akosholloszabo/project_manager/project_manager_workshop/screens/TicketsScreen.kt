@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -54,7 +55,7 @@ fun TicketsScreenContent() {
                         }
                         Text(tickets[ticket_index].status)
                     }
-                    hu.akosholloszabo.project_manager.project_manager_workshop.SimpleDivider(
+                    SimpleDivider(
                         modifier = Modifier.padding(
                             top = 8.dp
                         )

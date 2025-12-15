@@ -1,4 +1,4 @@
-package hu.akosholloszabo.project_manager.project_manager_workshop
+package hu.akosholloszabo.project_manager.project_manager_workshop.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

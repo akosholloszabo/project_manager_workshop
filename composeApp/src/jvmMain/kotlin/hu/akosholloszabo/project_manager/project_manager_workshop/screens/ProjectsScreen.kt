@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -44,7 +45,7 @@ fun ProjectsScreenContent() {
                     Text(projects[project_index].name, style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(4.dp))
                     Text(projects[project_index].description)
-                    hu.akosholloszabo.project_manager.project_manager_workshop.SimpleDivider(
+                    SimpleDivider(
                         modifier = Modifier.padding(
                             top = 8.dp
                         )
