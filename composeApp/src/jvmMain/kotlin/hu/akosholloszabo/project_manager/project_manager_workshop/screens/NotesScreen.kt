@@ -3,6 +3,7 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,11 +29,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import hu.akosholloszabo.project_manager.project_manager_workshop.component.RenderMarkdown
+import com.mikepenz.markdown.m3.Markdown
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.io.File
+
+// Added imports for scrolling and layout weight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 @Composable
 fun NotesScreenContent() {
@@ -127,21 +132,26 @@ fun NotesScreenContent() {
 
                 Spacer(Modifier.height(8.dp))
 
-                if (selectedNote == null) {
-                    Text(
-                        "Select a note to view or edit it.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                } else {
-                    if (isEditing) {
-                        TextField(
-                            value = editableContent,
-                            onValueChange = { editableContent = it },
-                            modifier = Modifier.fillMaxSize()
+                // Use weight to let the editor/viewer take remaining space and make Markdown scrollable
+                Box(modifier = Modifier.fillMaxSize()) {
+                    if (selectedNote == null) {
+                        Text(
+                            "Select a note to view or edit it.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     } else {
-                        RenderMarkdown(selectedNote.content)
+                        if (isEditing) {
+                            TextField(
+                                value = editableContent,
+                                onValueChange = { editableContent = it },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Column(modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxSize()) {
+                                Markdown(selectedNote.content)
+                            }
+                        }
                     }
                 }
             }
