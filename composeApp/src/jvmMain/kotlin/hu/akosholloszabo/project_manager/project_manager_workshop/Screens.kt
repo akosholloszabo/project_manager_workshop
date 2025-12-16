@@ -11,16 +11,16 @@ fun ensureScreensMoved() {
 
 // Compatibility wrappers - keep old top-level names working
 @Composable
-fun NotesScreenContent() {
-    NewNotesScreenContent()
+fun NotesScreenContent(workingFolder: String? = null) {
+    NewNotesScreenContent(workingFolder)
 }
 
 @Composable
-fun ProjectsScreenContent() {
-    NewProjectsScreenContent()
+fun ProjectsScreenContent(workingFolder: String? = null) {
+    NewProjectsScreenContent(workingFolder)
 }
 
 @Composable
-fun TicketsScreenContent() {
-    NewTicketsScreenContent()
+fun TicketsScreenContent(workingFolder: String? = null) {
+    NewTicketsScreenContent(workingFolder)
 }

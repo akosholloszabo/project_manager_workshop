@@ -24,7 +24,7 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
-fun TicketsScreenContent() {
+fun TicketsScreenContent(workingFolder: String? = null) {
     val tickets = remember {
         listOf(
             Ticket(1, "Landing page bug", 1, "Open"),
@@ -35,6 +35,10 @@ fun TicketsScreenContent() {
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Tickets", style = MaterialTheme.typography.titleLarge)
+        Text(
+            workingFolder?.let { "Working folder: $it" } ?: "Working folder not set",
+            style = MaterialTheme.typography.bodyMedium
+        )
         Spacer(Modifier.height(8.dp))
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -20,6 +20,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -34,70 +35,98 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.component.Simp
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.io.File
+import androidx.compose.foundation.text.selection.SelectionContainer
 
 // Added imports for scrolling and layout weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
 @Composable
-fun NotesScreenContent() {
-    val sampleContent = File("../samples/sample_note.md").readText()
-
-    val notesState = remember {
-        mutableStateListOf(
-            Note(1, "Meeting notes", sampleContent),
-            Note(2, "Ideas", "# Ideas\n- New feature X..."),
-            Note(3, "Draft", "# Draft\nThis is a draft note.")
-        )
-    }
-
-    var selectedNoteId by rememberSaveable { mutableStateOf(if (notesState.isNotEmpty()) notesState[0].id else null) }
+fun NotesScreenContent(workingFolder: String? = null) {
+    val notesState = remember { mutableStateListOf<NotesStorage.PersistedNote>() }
+    var selectedNotePath by rememberSaveable { mutableStateOf<String?>(null) }
     var isEditing by rememberSaveable { mutableStateOf(false) }
     var editableContent by rememberSaveable { mutableStateOf("") }
 
-    val selectedNote = notesState.find { it.id == selectedNoteId }
-    if (!isEditing && selectedNote != null && editableContent != selectedNote.content) {
-        editableContent = selectedNote.content
+    fun refreshNotes(preservePath: String? = null) {
+        val loaded = NotesStorage.loadNotes(workingFolder)
+        notesState.apply {
+            clear()
+            addAll(loaded)
+        }
+        selectedNotePath = when {
+            preservePath != null && loaded.any { it.file.canonicalPath == preservePath } -> preservePath
+            loaded.isNotEmpty() -> loaded[0].file.canonicalPath
+            else -> null
+        }
     }
 
-    fun saveNote(noteId: Int?) {
-        if (noteId == null) return
-        val idx = notesState.indexOfFirst { it.id == noteId }
-        if (idx >= 0) {
-            val old = notesState[idx]
-            if (old.content != editableContent) notesState[idx] = old.copy(content = editableContent)
+    LaunchedEffect(workingFolder) {
+        isEditing = false
+        refreshNotes()
+    }
+
+    val selectedNote = selectedNotePath?.let { path ->
+        notesState.find { it.file.canonicalPath == path }
+    }
+
+    LaunchedEffect(selectedNote?.file?.canonicalPath, isEditing) {
+        if (!isEditing) {
+            editableContent = selectedNote?.note?.content ?: ""
+        }
+    }
+
+    fun createNewNote() {
+        val created = NotesStorage.createNote(workingFolder) ?: return
+        isEditing = true
+        refreshNotes(preservePath = created.file.canonicalPath)
+        editableContent = created.note.content
+    }
+
+    fun saveCurrentNote() {
+        val current = selectedNote ?: return
+        if (NotesStorage.saveNoteContent(current.file, editableContent)) {
+            isEditing = false
+            refreshNotes(preservePath = current.file.canonicalPath)
+        }
+    }
+
+    fun deleteCurrentNote() {
+        val current = selectedNote ?: return
+        if (NotesStorage.deleteNote(current.file)) {
+            isEditing = false
+            refreshNotes()
         }
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Notes", style = MaterialTheme.typography.titleLarge)
+        Text(
+            workingFolder?.let { "Working folder: $it" } ?: "Working folder not set",
+            style = MaterialTheme.typography.bodyMedium
+        )
         Spacer(Modifier.height(8.dp))
         Row(modifier = Modifier.fillMaxSize()) {
             // Left: titles only
             Column(modifier = Modifier.width(320.dp).fillMaxSize()) {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     itemsIndexed(notesState) { _, note ->
-                        val isSelected = note.id == selectedNoteId
+                        val isSelected = note.file.canonicalPath == selectedNotePath
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else Color.Transparent)
                                 .clickable {
-                                    // If we are editing, save changes for the current note (if any) before switching
-                                    if (isEditing && selectedNoteId != null) {
-                                        saveNote(selectedNoteId)
+                                    if (isEditing && selectedNote != null) {
+                                        saveCurrentNote()
                                     }
-                                    // Always leave edit mode when switching notes
                                     isEditing = false
-
-                                    // Update selection and load the new note's content
-                                    selectedNoteId = note.id
-                                    editableContent = note.content
+                                    selectedNotePath = note.file.canonicalPath
                                 }
                                 .padding(8.dp)
                         ) {
                             Text(
-                                note.title,
+                                note.note.title,
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onBackground
                             )
@@ -117,22 +146,30 @@ fun NotesScreenContent() {
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
-                        selectedNote?.title ?: "No note selected",
+                        selectedNote?.note?.title ?: "No note selected",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onBackground
                     )
-                    if (selectedNote != null) {
-                        if (isEditing) {
-                            Button(onClick = { saveNote(selectedNoteId); isEditing = false }) { Text("Save") }
-                        } else {
-                            Button(onClick = { isEditing = true }) { Text("Edit") }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { createNewNote() },
+                            enabled = workingFolder != null
+                        ) {
+                            Text("New note")
+                        }
+                        selectedNote?.let {
+                            if (isEditing) {
+                                Button(onClick = { saveCurrentNote() }) { Text("Save") }
+                            } else {
+                                Button(onClick = { isEditing = true }) { Text("Edit") }
+                            }
+                            Button(onClick = { deleteCurrentNote() }) { Text("Delete") }
                         }
                     }
                 }
 
                 Spacer(Modifier.height(8.dp))
 
-                // Use weight to let the editor/viewer take remaining space and make Markdown scrollable
                 Box(modifier = Modifier.fillMaxSize()) {
                     if (selectedNote == null) {
                         Text(
@@ -148,8 +185,8 @@ fun NotesScreenContent() {
                                 modifier = Modifier.fillMaxSize()
                             )
                         } else {
-                            Column(modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxSize()) {
-                                Markdown(selectedNote.content)
+                            SelectionContainer(modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxSize()) {
+                                Markdown(selectedNote.note.content)
                             }
                         }
                     }

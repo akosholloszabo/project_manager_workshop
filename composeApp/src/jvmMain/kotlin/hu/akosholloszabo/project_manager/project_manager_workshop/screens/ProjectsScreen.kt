@@ -22,7 +22,7 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
-fun ProjectsScreenContent() {
+fun ProjectsScreenContent(workingFolder: String? = null) {
     val projects = remember {
         listOf(
             Project(1, "Website Redesign", "Redesign corporate website."),
@@ -33,6 +33,10 @@ fun ProjectsScreenContent() {
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Projects", style = MaterialTheme.typography.titleLarge)
+        Text(
+            workingFolder?.let { "Working folder: $it" } ?: "Working folder not set",
+            style = MaterialTheme.typography.bodyMedium
+        )
         Spacer(Modifier.height(8.dp))
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
