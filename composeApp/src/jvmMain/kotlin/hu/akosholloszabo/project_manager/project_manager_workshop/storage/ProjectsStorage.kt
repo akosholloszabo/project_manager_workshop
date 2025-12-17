@@ -30,7 +30,7 @@ object ProjectsStorage {
         val folder = ensureProjectsDirectory(root) ?: return null
         val file = FileStorageHelper.createTimestampedFile(folder, name, storageSpec)
         val defaultName = name?.takeIf { it.isNotBlank() } ?: "New project"
-        val project = Project(0, defaultName, description)
+        val project = Project(EntityIdGenerator.newId(), defaultName, description)
         return runCatching {
             saveProject(project, file, "")
             projectFromFile(file)
@@ -57,7 +57,6 @@ object ProjectsStorage {
             val content = file.readText()
             val parsed = json.decodeFromString<Project>(content)
             val normalized = parsed.copy(
-                id = file.canonicalPath.hashCode(),
                 details = FileStorageHelper.readDetails(file, storageSpec)
             )
             PersistedProject(file, normalized)

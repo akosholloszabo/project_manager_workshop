@@ -51,8 +51,9 @@ object NotesStorage {
         return runCatching {
             val content = file.readText()
             val title = deriveTitle(file, content)
-            val id = file.canonicalPath.hashCode()
-            PersistedNote(file, Note(id, title, content))
+            val embeddedId = extractId(content)
+            val normalizedId = embeddedId ?: file.canonicalPath.hashCode()
+            PersistedNote(file, Note(normalizedId, title, content))
         }.getOrNull()
     }
 
@@ -72,5 +73,12 @@ object NotesStorage {
 
         return fallback?.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.US) else it.toString() }
             ?: "Untitled"
+    }
+
+    private fun extractId(content: String): Int? {
+        val idLine = content.lineSequence()
+            .firstOrNull { it.startsWith("<!-- id:") && it.endsWith("-->") }
+            ?: return null
+        return idLine.removePrefix("<!-- id:").removeSuffix("-->").trim().toIntOrNull()
     }
 }

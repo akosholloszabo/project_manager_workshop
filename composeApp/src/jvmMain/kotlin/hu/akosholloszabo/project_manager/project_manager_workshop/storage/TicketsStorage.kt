@@ -47,7 +47,7 @@ object TicketsStorage {
         val file = FileStorageHelper.createTimestampedFile(folder, title, storageSpec)
         val defaultTitle = title?.takeIf { it.isNotBlank() } ?: "New ticket"
         val ticket = Ticket(
-            id = 0,
+            id = EntityIdGenerator.newId(),
             title = defaultTitle,
             projectId = projectId ?: 0,
             status = status,
@@ -80,7 +80,7 @@ object TicketsStorage {
             val content = file.readText()
             val parsed = json.decodeFromString<TicketMetadata>(content)
             val normalized = Ticket(
-                id = file.canonicalPath.hashCode(),
+                id = parsed.id,
                 title = parsed.title,
                 projectId = parsed.projectId,
                 status = TicketStatus.fromDisplay(parsed.status),
