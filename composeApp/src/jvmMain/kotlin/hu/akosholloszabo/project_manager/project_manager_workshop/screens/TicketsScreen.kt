@@ -2,18 +2,19 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -27,6 +28,8 @@ import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -38,6 +41,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,9 +50,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.m3.Markdown
-import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.ProjectsStorage
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.TicketsStorage
@@ -90,13 +94,14 @@ fun TicketsScreenContent(workingFolder: String? = null) {
 
     fun refreshTickets(preservePath: String? = null) {
         val loaded = TicketsStorage.loadTickets(workingFolder)
+        val previousSelection = selectedTicketPath
         ticketsState.apply {
             clear()
             addAll(loaded)
         }
         selectedTicketPath = when {
             preservePath != null && loaded.any { it.file.canonicalPath == preservePath } -> preservePath
-            loaded.isNotEmpty() -> loaded[0].file.canonicalPath
+            previousSelection != null && loaded.any { it.file.canonicalPath == previousSelection } -> previousSelection
             else -> null
         }
     }
@@ -154,89 +159,132 @@ fun TicketsScreenContent(workingFolder: String? = null) {
     }
 
     val selectedProjectEntry = projectsState.find { it.project.id == editableProjectId }
-    val selectedProjectName = selectedProjectEntry?.project?.name
-        ?: "No project"
+    val selectedProjectName = selectedProjectEntry?.project?.name ?: "No project"
+    val projectNamesById = projectsState.associate { it.project.id to it.project.name }
 
-    LaunchedEffect(selectedTicket?.file?.canonicalPath, selectedProjectEntry?.project?.id) {
-        println("projec id to find: " + editableProjectId)
-        projectsState.forEach {
-            println("projec id: " + it.project.id)
-        }
-        val ticket = selectedTicket?.ticket ?: return@LaunchedEffect
-        val projectStatus = if (selectedProjectEntry != null) "found" else "not found"
-        println("Project $projectStatus for \"${ticket.title}\" (projectId ${ticket.projectId})")
-    }
-
-
-    val ticketsByStatus = TicketStatus.entries.mapNotNull { status ->
-        val entries = ticketsState.filter { it.ticket.status == status }
-        entries.takeIf { it.isNotEmpty() }?.let { status to it }
+    val ticketsByStatus = TicketStatus.entries.associateWith { status ->
+        ticketsState.filter { it.ticket.status == status }
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Tickets", style = MaterialTheme.typography.titleLarge)
-        Text(
-            workingFolder?.let { "Working folder: $it" } ?: "Working folder not set",
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text("Tickets", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    workingFolder?.let { "Working folder: $it" } ?: "Working folder not set",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            Button(onClick = { createNewTicket() }, enabled = workingFolder != null) {
+                Text("New ticket")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         Row(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.width(320.dp).fillMaxSize()) {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (ticketsByStatus.isEmpty()) {
-                        item {
-                            Text(
-                                "No tickets available",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                                modifier = Modifier.padding(vertical = 16.dp)
-                            )
-                        }
-                    } else {
-                        ticketsByStatus.forEach { (status, entries) ->
-                            item {
-                                Text(
-                                    status.displayText,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                                )
+            val boardScrollState = rememberScrollState()
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .horizontalScroll(boardScrollState),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                TicketStatus.entries.forEach { status ->
+                    key(status) {
+                        Column(
+                            modifier = Modifier
+                                .width(260.dp)
+                                .fillMaxHeight()
+                                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                                .padding(12.dp)
+                        ) {
+                            Text(status.displayText, style = MaterialTheme.typography.titleMedium)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            val entries = ticketsByStatus[status].orEmpty()
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                if (entries.isEmpty()) {
+                                    Text(
+                                        "No tickets yet",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                } else {
+                                    entries.forEach { entry ->
+                                        val projectName = projectNamesById[entry.ticket.projectId] ?: "No project"
+                                        val isSelected = entry.file.canonicalPath == selectedTicketPath
+                                        Card(
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = if (isSelected)
+                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                                else MaterialTheme.colorScheme.surface
+                                            ),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    if (isEditing) {
+                                                        saveCurrentTicket()
+                                                    }
+                                                    isEditing = false
+                                                    selectedTicketPath = entry.file.canonicalPath
+                                                }
+                                        ) {
+                                            Column(modifier = Modifier.padding(12.dp)) {
+                                                Text(
+                                                    entry.ticket.title,
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    maxLines = 2,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    projectName,
+                                                    style = MaterialTheme.typography.bodySmall
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                            items(entries) { entry ->
-                                 val isSelected = entry.file.canonicalPath == selectedTicketPath
-                                 Column(
-                                     modifier = Modifier
-                                         .fillMaxWidth()
-                                         .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else Color.Transparent)
-                                         .clickable {
-                                             if (isEditing) {
-                                                 saveCurrentTicket()
-                                             }
-                                             isEditing = false
-                                             selectedTicketPath = entry.file.canonicalPath
-                                         }
-                                         .padding(8.dp)
-                                 ) {
-                                     Text(entry.ticket.title, style = MaterialTheme.typography.titleMedium)
-                                     SimpleDivider(modifier = Modifier.padding(top = 8.dp))
-                                 }
-                             }
                         }
                     }
-                 }
-             }
+                }
+            }
 
-            Spacer(Modifier.width(16.dp))
-
-            Column(modifier = Modifier.fillMaxSize()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+            if (selectedTicket != null) {
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(
+                    modifier = Modifier
+                        .width(1024.dp)
+                        .fillMaxHeight()
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Button(onClick = { createNewTicket() }, enabled = workingFolder != null) {
-                        Text("New ticket")
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Ticket details", style = MaterialTheme.typography.titleMedium)
+                        Button(onClick = {
+                            selectedTicketPath = null
+                            isEditing = false
+                        }) {
+                            Text("Back")
+                        }
                     }
-                    if (selectedTicket != null) {
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (isEditing) {
                             Button(onClick = { saveCurrentTicket() }) { Text("Save") }
                         } else {
@@ -244,26 +292,15 @@ fun TicketsScreenContent(workingFolder: String? = null) {
                         }
                         Button(onClick = { deleteCurrentTicket() }) { Text("Delete") }
                     }
-                }
 
-                Spacer(Modifier.height(12.dp))
-
-                if (selectedTicket == null) {
-                    Text(
-                        "Select a ticket to view or edit it.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                } else {
                     if (isEditing) {
-                        Column(modifier = Modifier.fillMaxSize()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             TextField(
                                 value = editableTitle,
                                 onValueChange = { editableTitle = it },
                                 label = { Text("Ticket title") },
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            Spacer(Modifier.height(8.dp))
                             ExposedDropdownMenuBox(
                                 expanded = projectDropdownExpanded,
                                 onExpandedChange = { projectDropdownExpanded = !projectDropdownExpanded }
@@ -293,7 +330,6 @@ fun TicketsScreenContent(workingFolder: String? = null) {
                                     }
                                 }
                             }
-                            Spacer(Modifier.height(8.dp))
                             ExposedDropdownMenuBox(
                                 expanded = statusDropdownExpanded,
                                 onExpandedChange = { statusDropdownExpanded = !statusDropdownExpanded }
@@ -323,7 +359,6 @@ fun TicketsScreenContent(workingFolder: String? = null) {
                                     }
                                 }
                             }
-                            Spacer(Modifier.height(8.dp))
                             TextField(
                                 value = editableDetails,
                                 onValueChange = { editableDetails = it },
@@ -335,9 +370,8 @@ fun TicketsScreenContent(workingFolder: String? = null) {
                             )
                         }
                     } else {
-                        Column(modifier = Modifier.fillMaxSize()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(selectedTicket.ticket.title, style = MaterialTheme.typography.titleLarge)
-                            Spacer(Modifier.height(4.dp))
                             Text(
                                 "Status: ${selectedTicket.ticket.status.displayText}",
                                 style = MaterialTheme.typography.bodyMedium
@@ -346,10 +380,10 @@ fun TicketsScreenContent(workingFolder: String? = null) {
                                 "Project: $selectedProjectName",
                                 style = MaterialTheme.typography.bodyMedium
                             )
-                            Spacer(Modifier.height(12.dp))
                             SelectionContainer(
                                 modifier = Modifier
-                                    .fillMaxSize()
+                                    .weight(1f)
+                                    .fillMaxWidth()
                                     .verticalScroll(rememberScrollState())
                             ) {
                                 Markdown(
