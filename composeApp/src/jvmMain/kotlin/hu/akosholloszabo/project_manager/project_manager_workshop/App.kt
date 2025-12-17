@@ -23,6 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
+import hu.akosholloszabo.project_manager.project_manager_workshop.screens.NotesScreenContent
+import hu.akosholloszabo.project_manager.project_manager_workshop.screens.ProjectsScreenContent
+import hu.akosholloszabo.project_manager.project_manager_workshop.screens.TicketsScreenContent
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.WorkingFolderScreen
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.ui.tooling.preview.Preview
