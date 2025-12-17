@@ -1,9 +1,12 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -43,10 +47,14 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import com.mikepenz.markdown.m3.Markdown
+import hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.ProjectsStorage
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.TicketsStorage
@@ -144,6 +152,7 @@ fun TicketsScreenContent(workingFolder: String? = null) {
     val selectedProjectEntry = projectsState.find { it.project.id == editableProjectId }
     val selectedProjectName = selectedProjectEntry?.project?.name ?: "No project"
     val projectNamesById = projectsState.associate { it.project.id to it.project.name }
+    val selectedTicketProjectName = selectedTicket?.ticket?.projectId?.let { projectNamesById[it] } ?: "No project"
 
     val ticketsByStatus = TicketStatus.entries.associateWith { status ->
         ticketsState.filter { it.ticket.status == status }
@@ -184,36 +193,49 @@ fun TicketsScreenContent(workingFolder: String? = null) {
 
             if (selectedTicket != null) {
                 Spacer(modifier = Modifier.width(16.dp))
-                TicketDetailsPanel(
-                    selectedTicket = selectedTicket,
-                    selectedProjectName = selectedProjectName,
-                    projects = projectsState,
-                    isEditing = isEditing,
-                    editableTitle = editableTitle,
-                    onTitleChange = { editableTitle = it },
-                    editableStatus = editableStatus,
-                    onStatusChange = { editableStatus = it },
-                    editableDetails = editableDetails,
-                    onDetailsChange = { editableDetails = it },
+                val editorState = TicketEditorState(
+                    title = editableTitle,
+                    projectName = selectedProjectName,
                     projectDropdownExpanded = projectDropdownExpanded,
-                    onProjectDropdownToggle = { projectDropdownExpanded = it },
+                    status = editableStatus,
                     statusDropdownExpanded = statusDropdownExpanded,
-                    onStatusDropdownToggle = { statusDropdownExpanded = it },
+                    details = editableDetails
+                )
+                val editorCallbacks = TicketEditorCallbacks(
+                    onTitleChange = { editableTitle = it },
+                    onProjectDropdownToggle = { projectDropdownExpanded = it },
                     onProjectSelected = { projectId ->
                         editableProjectId = projectId
                         projectDropdownExpanded = false
                     },
+                    onStatusDropdownToggle = { statusDropdownExpanded = it },
                     onStatusSelected = { status ->
                         editableStatus = status.displayText
                         statusDropdownExpanded = false
                     },
+                    onDetailsChange = { editableDetails = it }
+                )
+                val detailsState = TicketDetailsState(
+                    selectedTicket = selectedTicket,
+                    projects = projectsState,
+                    selectedProjectName = selectedProjectName,
+                    displayProjectName = selectedTicketProjectName,
+                    isEditing = isEditing,
+                    editorState = editorState
+                )
+                val detailsCallbacks = TicketDetailsCallbacks(
+                    editorCallbacks = editorCallbacks,
                     onSave = { saveCurrentTicket() },
                     onEditToggle = { isEditing = it },
                     onDelete = { deleteCurrentTicket() },
                     onBack = {
                         selectedTicketPath = null
                         isEditing = false
-                    },
+                    }
+                )
+                TicketDetailsPanel(
+                    state = detailsState,
+                    callbacks = detailsCallbacks,
                     modifier = Modifier
                         .width(1024.dp)
                         .fillMaxHeight()
@@ -345,26 +367,8 @@ private fun TicketCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TicketDetailsPanel(
-    selectedTicket: TicketsStorage.PersistedTicket,
-    selectedProjectName: String,
-    projects: List<ProjectsStorage.PersistedProject>,
-    isEditing: Boolean,
-    editableTitle: String,
-    onTitleChange: (String) -> Unit,
-    editableStatus: String,
-    onStatusChange: (String) -> Unit,
-    editableDetails: String,
-    onDetailsChange: (String) -> Unit,
-    projectDropdownExpanded: Boolean,
-    onProjectDropdownToggle: (Boolean) -> Unit,
-    statusDropdownExpanded: Boolean,
-    onStatusDropdownToggle: (Boolean) -> Unit,
-    onProjectSelected: (Int) -> Unit,
-    onStatusSelected: (TicketStatus) -> Unit,
-    onSave: () -> Unit,
-    onEditToggle: (Boolean) -> Unit,
-    onDelete: () -> Unit,
-    onBack: () -> Unit,
+    state: TicketDetailsState,
+    callbacks: TicketDetailsCallbacks,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -378,130 +382,120 @@ private fun TicketDetailsPanel(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("Ticket details", style = MaterialTheme.typography.titleMedium)
-            Button(onClick = onBack) {
+            Button(onClick = callbacks.onBack) {
                 Text("Back")
             }
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (isEditing) {
-                Button(onClick = onSave) { Text("Save") }
+            if (state.isEditing) {
+                Button(onClick = callbacks.onSave) { Text("Save") }
             } else {
-                Button(onClick = { onEditToggle(true) }) { Text("Edit") }
+                Button(onClick = { callbacks.onEditToggle(true) }) { Text("Edit") }
             }
-            Button(onClick = onDelete) { Text("Delete") }
+            Button(onClick = callbacks.onDelete) { Text("Delete") }
         }
 
-        if (isEditing) {
+        if (state.isEditing) {
             TicketEditorFields(
-                editableTitle = editableTitle,
-                onTitleChange = onTitleChange,
-                selectedProjectName = selectedProjectName,
-                projects = projects,
-                projectDropdownExpanded = projectDropdownExpanded,
-                onProjectDropdownToggle = onProjectDropdownToggle,
-                onProjectSelected = onProjectSelected,
-                editableStatus = editableStatus,
-                onStatusChange = onStatusChange,
-                statusDropdownExpanded = statusDropdownExpanded,
-                onStatusDropdownToggle = onStatusDropdownToggle,
-                onStatusSelected = onStatusSelected,
-                editableDetails = editableDetails,
-                onDetailsChange = onDetailsChange
+                state = state.editorState,
+                projects = state.projects,
+                callbacks = callbacks.editorCallbacks
             )
         } else {
             TicketDetailsView(
-                selectedTicket = selectedTicket,
-                selectedProjectName = selectedProjectName
+                selectedTicket = state.selectedTicket,
+                projectName = state.displayProjectName
             )
         }
     }
 }
 
+private data class TicketEditorState(
+    val title: String,
+    val projectName: String,
+    val projectDropdownExpanded: Boolean,
+    val status: String,
+    val statusDropdownExpanded: Boolean,
+    val details: String
+)
+
+private data class TicketEditorCallbacks(
+    val onTitleChange: (String) -> Unit,
+    val onProjectDropdownToggle: (Boolean) -> Unit,
+    val onProjectSelected: (Int) -> Unit,
+    val onStatusDropdownToggle: (Boolean) -> Unit,
+    val onStatusSelected: (TicketStatus) -> Unit,
+    val onDetailsChange: (String) -> Unit
+)
+
+private data class TicketDetailsState(
+    val selectedTicket: TicketsStorage.PersistedTicket,
+    val projects: List<ProjectsStorage.PersistedProject>,
+    val selectedProjectName: String,
+    val displayProjectName: String,
+    val isEditing: Boolean,
+    val editorState: TicketEditorState
+)
+
+private data class TicketDetailsCallbacks(
+    val editorCallbacks: TicketEditorCallbacks,
+    val onSave: () -> Unit,
+    val onEditToggle: (Boolean) -> Unit,
+    val onDelete: () -> Unit,
+    val onBack: () -> Unit
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TicketEditorFields(
-    editableTitle: String,
-    onTitleChange: (String) -> Unit,
-    selectedProjectName: String,
+    state: TicketEditorState,
     projects: List<ProjectsStorage.PersistedProject>,
-    projectDropdownExpanded: Boolean,
-    onProjectDropdownToggle: (Boolean) -> Unit,
-    onProjectSelected: (Int) -> Unit,
-    editableStatus: String,
-    onStatusChange: (String) -> Unit,
-    statusDropdownExpanded: Boolean,
-    onStatusDropdownToggle: (Boolean) -> Unit,
-    onStatusSelected: (TicketStatus) -> Unit,
-    editableDetails: String,
-    onDetailsChange: (String) -> Unit
+    callbacks: TicketEditorCallbacks
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth().fillMaxHeight()
+    ) {
         TextField(
-            value = editableTitle,
-            onValueChange = onTitleChange,
+            value = state.title,
+            onValueChange = callbacks.onTitleChange,
             label = { Text("Ticket title") },
             modifier = Modifier.fillMaxWidth()
         )
-        ExposedDropdownMenuBox(
-            expanded = projectDropdownExpanded,
-            onExpandedChange = { onProjectDropdownToggle(!projectDropdownExpanded) }
+        ReadOnlyDropdownField(
+            value = state.projectName,
+            label = "Project",
+            expanded = state.projectDropdownExpanded,
+            onExpandedChange = callbacks.onProjectDropdownToggle
         ) {
-            TextField(
-                value = selectedProjectName,
-                onValueChange = {},
-                label = { Text("Project") },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth(),
-                readOnly = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = projectDropdownExpanded) }
-            )
-            ExposedDropdownMenu(
-                expanded = projectDropdownExpanded,
-                onDismissRequest = { onProjectDropdownToggle(false) }
-            ) {
-                projects.forEach { projectEntry ->
-                    DropdownMenuItem(
-                        text = { Text(projectEntry.project.name) },
-                        onClick = { onProjectSelected(projectEntry.project.id) }
-                    )
-                }
+            projects.forEach { projectEntry ->
+                DropdownMenuItem(
+                    text = { Text(projectEntry.project.name) },
+                    onClick = { callbacks.onProjectSelected(projectEntry.project.id) }
+                )
             }
         }
-        ExposedDropdownMenuBox(
-            expanded = statusDropdownExpanded,
-            onExpandedChange = { onStatusDropdownToggle(!statusDropdownExpanded) }
+        ReadOnlyDropdownField(
+            value = state.status,
+            label = "Status",
+            expanded = state.statusDropdownExpanded,
+            onExpandedChange = callbacks.onStatusDropdownToggle
         ) {
-            TextField(
-                value = editableStatus,
-                onValueChange = onStatusChange,
-                label = { Text("Status") },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth(),
-                readOnly = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = statusDropdownExpanded) }
-            )
-            ExposedDropdownMenu(
-                expanded = statusDropdownExpanded,
-                onDismissRequest = { onStatusDropdownToggle(false) }
-            ) {
-                TicketStatus.entries.forEach { status ->
-                    DropdownMenuItem(
-                        text = { Text(status.displayText) },
-                        onClick = { onStatusSelected(status) }
-                    )
-                }
+            TicketStatus.entries.forEach { status ->
+                DropdownMenuItem(
+                    text = { Text(status.displayText) },
+                    onClick = { callbacks.onStatusSelected(status) }
+                )
             }
         }
         TextField(
-            value = editableDetails,
-            onValueChange = onDetailsChange,
+            value = state.details,
+            onValueChange = callbacks.onDetailsChange,
             label = { Text("Details (Markdown)") },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp),
+                .fillMaxHeight(),
             maxLines = Int.MAX_VALUE
         )
     }
@@ -510,7 +504,7 @@ private fun TicketEditorFields(
 @Composable
 private fun TicketDetailsView(
     selectedTicket: TicketsStorage.PersistedTicket,
-    selectedProjectName: String
+    projectName: String
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(selectedTicket.ticket.title, style = MaterialTheme.typography.titleLarge)
@@ -519,7 +513,7 @@ private fun TicketDetailsView(
             style = MaterialTheme.typography.bodyMedium
         )
         Text(
-            "Project: $selectedProjectName",
+            "Project: $projectName",
             style = MaterialTheme.typography.bodyMedium
         )
         SelectionContainer(
@@ -536,7 +530,7 @@ private fun TicketDetailsView(
 @Preview(showBackground = true, widthDp = 360, heightDp = 640)
 @Composable
 fun TicketsPreviewLight() {
-    hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme(darkTheme = false) {
+    AppTheme(darkTheme = false) {
         Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
             TicketsScreenContent()
         }
@@ -546,9 +540,53 @@ fun TicketsPreviewLight() {
 @Preview(showBackground = true, widthDp = 360, heightDp = 640)
 @Composable
 fun TicketsPreviewDark() {
-    hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme(darkTheme = true) {
+    AppTheme(darkTheme = true) {
         Surface(color = Color(0xFF121212), modifier = Modifier.fillMaxSize()) {
             TicketsScreenContent()
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReadOnlyDropdownField(
+    value: String,
+    label: String,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    dropdownContent: @Composable ColumnScope.() -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val density = LocalDensity.current
+    var anchorSize by remember { mutableStateOf(IntSize.Zero) }
+    val dropdownWidth: Dp? = anchorSize.width.takeIf { it > 0 }?.let { with(density) { it.toDp() } }
+
+    Box {
+        TextField(
+            value = value,
+            onValueChange = {},
+            label = { Text(label) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { coords -> anchorSize = coords.size },
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null
+                ) { onExpandedChange(!expanded) }
+        )
+    }
+
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = { onExpandedChange(false) },
+        modifier = dropdownWidth?.let { Modifier.width(it) } ?: Modifier
+    ) {
+        dropdownContent()
     }
 }
