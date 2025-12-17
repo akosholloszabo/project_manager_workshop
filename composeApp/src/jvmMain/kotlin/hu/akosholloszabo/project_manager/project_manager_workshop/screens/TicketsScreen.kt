@@ -153,8 +153,21 @@ fun TicketsScreenContent(workingFolder: String? = null) {
         }
     }
 
-    val selectedProjectName = projectsState.find { it.project.id == editableProjectId }?.project?.name
+    val selectedProjectEntry = projectsState.find { it.project.id == editableProjectId }
+    val selectedProjectName = selectedProjectEntry?.project?.name
         ?: "No project"
+
+    LaunchedEffect(selectedTicket?.file?.canonicalPath, selectedProjectEntry?.project?.id) {
+        println("projec id to find: " + editableProjectId)
+        projectsState.forEach {
+            println("projec id: " + it.project.id)
+        }
+        val ticket = selectedTicket?.ticket ?: return@LaunchedEffect
+        val projectStatus = if (selectedProjectEntry != null) "found" else "not found"
+        println("Project $projectStatus for \"${ticket.title}\" (projectId ${ticket.projectId})")
+    }
+
+
     val ticketsByStatus = TicketStatus.entries.mapNotNull { status ->
         val entries = ticketsState.filter { it.ticket.status == status }
         entries.takeIf { it.isNotEmpty() }?.let { status to it }
