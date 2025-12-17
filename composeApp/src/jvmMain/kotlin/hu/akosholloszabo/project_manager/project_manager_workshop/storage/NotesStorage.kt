@@ -2,37 +2,30 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import java.io.File
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.*
 
 object NotesStorage {
-    private const val NOTES_FOLDER_NAME = "notes"
-    private const val NOTE_EXTENSION = ".md"
-    private val timestampFormatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss", Locale.US)
+    private val storageSpec = FileStorageHelper.StorageSpec(
+        folderName = "notes",
+        primaryExtension = ".md",
+        fallbackName = "note"
+    )
 
     data class PersistedNote(val file: File, val note: Note)
 
     fun ensureNotesDirectory(root: String?): File? {
-        val folder = root?.let { File(it, NOTES_FOLDER_NAME) } ?: return null
-        if (!folder.exists()) {
-            if (!folder.mkdirs()) return null
-        }
-        return folder
+        return FileStorageHelper.ensureStorageDirectory(root, storageSpec)
     }
 
     fun loadNotes(root: String?): List<PersistedNote> {
         val folder = ensureNotesDirectory(root) ?: return emptyList()
-        return folder.listFiles { file ->
-            file.isFile && file.extension.equals("md", ignoreCase = true)
-        }?.mapNotNull(::noteFromFile)?.sortedByDescending { it.file.lastModified() } ?: emptyList()
+        return FileStorageHelper.listStorageFiles(folder, storageSpec)
+            .mapNotNull(::noteFromFile)
     }
 
     fun createNote(root: String?, title: String? = null, content: String = ""): PersistedNote? {
         val folder = ensureNotesDirectory(root) ?: return null
-        val baseName = sanitizeFileName(title ?: "note")
-        val timestamp = LocalDateTime.now().format(timestampFormatter)
-        val file = File(folder, "$baseName-$timestamp$NOTE_EXTENSION")
+        val file = FileStorageHelper.createTimestampedFile(folder, title, storageSpec)
         val defaultTitle = title?.takeIf { it.isNotBlank() } ?: "New note"
         val defaultContent = content.ifBlank { "# $defaultTitle\n\n" }
         return runCatching {
@@ -80,12 +73,4 @@ object NotesStorage {
         return fallback?.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.US) else it.toString() }
             ?: "Untitled"
     }
-
-    private fun sanitizeFileName(raw: String): String {
-        val sanitized = raw.trim().ifEmpty { "note" }
-            .replace(Regex("[^A-Za-z0-9 _-]"), "")
-            .replace(Regex("\\s+"), "-")
-        return sanitized.trim('-').ifEmpty { "note" }
-    }
 }
-
