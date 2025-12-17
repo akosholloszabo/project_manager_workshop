@@ -58,18 +58,6 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.storage.Projec
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.TicketsStorage
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
-private fun TicketStatus.icon(): ImageVector = when (this) {
-    TicketStatus.Backlog -> Icons.Default.Schedule
-    TicketStatus.ReadyForRefinement -> Icons.Default.Lightbulb
-    TicketStatus.InRefinement -> Icons.Default.Autorenew
-    TicketStatus.ReadyForProcessing -> Icons.Default.PlayCircle
-    TicketStatus.InProcessing -> Icons.Default.Build
-    TicketStatus.ReadyForTesting -> Icons.Default.BugReport
-    TicketStatus.InTesting -> Icons.Default.Help
-    TicketStatus.Completed -> Icons.Default.CheckCircle
-    TicketStatus.Rejected -> Icons.Default.Cancel
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TicketsScreenContent(workingFolder: String? = null) {
