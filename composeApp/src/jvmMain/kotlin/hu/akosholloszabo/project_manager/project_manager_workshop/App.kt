@@ -33,14 +33,22 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 fun App() {
     var currentScreen by rememberSaveable { mutableStateOf<Screen>(Screen.Notes) }
     var startupComplete by rememberSaveable { mutableStateOf(false) }
-    var workingFolder by rememberSaveable { mutableStateOf<String?>("D:\\git\\akosholloszabo\\project_manadger_workshop_2025_01\\samples") }
+    var workingFolder by rememberSaveable { mutableStateOf<String?>(null) }
 
     AppTheme {
         Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
-                    title = { Text("Project Manager") },
-                    colors = TopAppBarDefaults.topAppBarColors()
+                    title = {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Project Manager", modifier = Modifier.padding(0.dp))
+                            workingFolder?.let {
+                                Text("Working folder: $it", modifier = Modifier.padding(0.dp))
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(),
+                    modifier = Modifier.padding(0.dp)
                 )
             },
             content = { innerPadding: PaddingValues ->

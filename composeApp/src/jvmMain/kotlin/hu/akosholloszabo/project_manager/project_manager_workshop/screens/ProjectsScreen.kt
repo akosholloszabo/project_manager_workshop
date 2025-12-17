@@ -110,10 +110,6 @@ fun ProjectsScreenContent(workingFolder: String? = null) {
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Projects", style = MaterialTheme.typography.titleLarge)
-        Text(
-            workingFolder?.let { "Working folder: $it" } ?: "Working folder not set",
-            style = MaterialTheme.typography.bodyMedium
-        )
         Spacer(Modifier.height(8.dp))
 
         Row(modifier = Modifier.fillMaxSize()) {

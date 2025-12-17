@@ -98,10 +98,6 @@ fun NotesScreenContent(workingFolder: String? = null) {
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Notes", style = MaterialTheme.typography.titleLarge)
-        Text(
-            workingFolder?.let { "Working folder: $it" } ?: "Working folder not set",
-            style = MaterialTheme.typography.bodyMedium
-        )
         Spacer(Modifier.height(8.dp))
         Row(modifier = Modifier.fillMaxSize()) {
             // Left: titles only

@@ -1,7 +1,9 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.screens
 
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,16 +19,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Autorenew
-import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Help
-import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.PlayCircle
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,13 +35,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.m3.Markdown
@@ -71,6 +69,18 @@ fun TicketsScreenContent(workingFolder: String? = null) {
     var editableDetails by rememberSaveable { mutableStateOf("") }
     var statusDropdownExpanded by rememberSaveable { mutableStateOf(false) }
     var projectDropdownExpanded by rememberSaveable { mutableStateOf(false) }
+    var draggingTicketPath by remember { mutableStateOf<String?>(null) }
+    var draggingPosition by remember { mutableStateOf<Offset?>(null) }
+    var boardLayoutCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    var draggingPreviewEntry by remember { mutableStateOf<TicketsStorage.PersistedTicket?>(null) }
+    var draggingPointerOffset by remember { mutableStateOf(Offset.Zero) }
+
+    val columnBounds = remember { mutableStateMapOf<TicketStatus, Rect>() }
+    val entryVisibilityStates = remember { mutableStateMapOf<Int, MutableTransitionState<Boolean>>() }
+
+    LaunchedEffect(ticketsState.map { it.ticket.id }) {
+        entryVisibilityStates.keys.retainAll(ticketsState.map { it.ticket.id })
+    }
 
     fun refreshProjects() {
         val loaded = ProjectsStorage.loadProjects(workingFolder)
@@ -146,6 +156,21 @@ fun TicketsScreenContent(workingFolder: String? = null) {
         }
     }
 
+    fun handleDragDrop(entry: TicketsStorage.PersistedTicket) {
+        val targetStatus = draggingPosition?.let { position ->
+            columnBounds.entries.firstOrNull { it.value.contains(position) }?.key
+        }
+        if (targetStatus != null && targetStatus != entry.ticket.status) {
+            val updated = entry.ticket.copy(status = targetStatus)
+            if (TicketsStorage.saveTicket(updated, entry.file, entry.ticket.details)) {
+                isEditing = false
+                refreshTickets(preservePath = entry.file.canonicalPath)
+            }
+        }
+        draggingTicketPath = null
+        draggingPosition = null
+    }
+
     val selectedProjectEntry = projectsState.find { it.project.id == editableProjectId }
     val selectedProjectName = selectedProjectEntry?.project?.name ?: "No project"
     val projectNamesById = projectsState.associate { it.project.id to it.project.name }
@@ -161,10 +186,6 @@ fun TicketsScreenContent(workingFolder: String? = null) {
         ) {
             Column {
                 Text("Tickets", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    workingFolder?.let { "Working folder: $it" } ?: "Working folder not set",
-                    style = MaterialTheme.typography.bodyMedium
-                )
             }
             Button(onClick = { createNewTicket() }, enabled = workingFolder != null) {
                 Text("New ticket")
@@ -179,16 +200,30 @@ fun TicketsScreenContent(workingFolder: String? = null) {
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .horizontalScroll(boardScrollState),
+                    .horizontalScroll(boardScrollState)
+                    .onGloballyPositioned { boardLayoutCoordinates = it },
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                val hoveredDropStatus = draggingPosition?.let { position ->
+                    columnBounds.entries.firstOrNull { it.value.contains(position) }?.key
+                }
                 TicketStatus.entries.forEach { status ->
                     key(status) {
                         Column(
                             modifier = Modifier
                                 .width(260.dp)
                                 .fillMaxHeight()
-                                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                                .onGloballyPositioned { columnLayout ->
+                                    boardLayoutCoordinates?.let { board ->
+                                        columnBounds[status] = board.localBoundingBoxOf(columnLayout)
+                                    }
+                                }
+                                .background(
+                                    if (hoveredDropStatus == status && draggingTicketPath != null)
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                                    else MaterialTheme.colorScheme.surfaceVariant,
+                                    RoundedCornerShape(12.dp)
+                                )
                                 .padding(12.dp)
                         ) {
                             Text(status.displayText, style = MaterialTheme.typography.titleMedium)
@@ -209,6 +244,9 @@ fun TicketsScreenContent(workingFolder: String? = null) {
                                     )
                                 } else {
                                     entries.forEach { entry ->
+                                        val cardCoordinates =
+                                            remember(entry.file.canonicalPath) { mutableStateOf<LayoutCoordinates?>(null) }
+                                        val isBeingDragged = draggingTicketPath == entry.file.canonicalPath
                                         val projectName = projectNamesById[entry.ticket.projectId] ?: "No project"
                                         val isSelected = entry.file.canonicalPath == selectedTicketPath
                                         Card(
@@ -219,6 +257,38 @@ fun TicketsScreenContent(workingFolder: String? = null) {
                                             ),
                                             modifier = Modifier
                                                 .fillMaxWidth()
+                                                .graphicsLayer { alpha = if (isBeingDragged) 0.6f else 1f }
+                                                .onGloballyPositioned { cardCoordinates.value = it }
+                                                .pointerInput(entry.file.canonicalPath) {
+                                                    detectDragGestures(
+                                                        onDragStart = { offset ->
+                                                            draggingTicketPath = entry.file.canonicalPath
+                                                            val point = boardLayoutCoordinates?.let { board ->
+                                                                cardCoordinates.value?.let { card ->
+                                                                    board.localPositionOf(card, offset)
+                                                                }
+                                                            }
+                                                            draggingPosition = point
+                                                        },
+                                                        onDrag = { change, _ ->
+                                                            val boardPoint = boardLayoutCoordinates?.let { board ->
+                                                                cardCoordinates.value?.let { card ->
+                                                                    board.localPositionOf(card, change.position)
+                                                                }
+                                                            }
+                                                            if (boardPoint != null) {
+                                                                draggingPosition = boardPoint
+                                                            }
+                                                        },
+                                                        onDragEnd = {
+                                                            handleDragDrop(entry)
+                                                        },
+                                                        onDragCancel = {
+                                                            draggingTicketPath = null
+                                                            draggingPosition = null
+                                                        }
+                                                    )
+                                                }
                                                 .clickable {
                                                     if (isEditing) {
                                                         saveCurrentTicket()
