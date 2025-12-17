@@ -165,220 +165,370 @@ fun TicketsScreenContent(workingFolder: String? = null) {
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(modifier = Modifier.fillMaxSize()) {
-            val boardScrollState = rememberScrollState()
-            Row(
+            TicketBoard(
+                ticketsByStatus = ticketsByStatus,
+                projectNamesById = projectNamesById,
+                selectedTicketPath = selectedTicketPath,
+                onTicketSelected = { entry ->
+                    if (isEditing) {
+                        saveCurrentTicket()
+                    }
+                    isEditing = false
+                    selectedTicketPath = entry.file.canonicalPath
+                },
+                onColumnPositioned = { status, rect -> columnBounds[status] = rect },
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .horizontalScroll(boardScrollState),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                TicketStatus.entries.forEach { status ->
-                    key(status) {
-                        Column(
-                            modifier = Modifier
-                                .width(260.dp)
-                                .fillMaxHeight()
-                                .onGloballyPositioned { coords ->
-                                    columnBounds[status] = Rect(coords.positionInRoot(), coords.size.toSize())
-                                }
-                                .background(MaterialTheme.colorScheme.surfaceVariant,
-                                    RoundedCornerShape(12.dp)
-                                )
-                                .padding(12.dp)
-                        ) {
-                            Text(status.displayText, style = MaterialTheme.typography.titleMedium)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            val entries = ticketsByStatus[status].orEmpty()
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxWidth()
-                                    .verticalScroll(rememberScrollState()),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                if (entries.isEmpty()) {
-                                    Text(
-                                        "No tickets yet",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                } else {
-                                    entries.forEach { entry ->
-                                        val projectName = projectNamesById[entry.ticket.projectId] ?: "No project"
-                                        val isSelected = entry.file.canonicalPath == selectedTicketPath
-                                        Card(
-                                            colors = CardDefaults.cardColors(
-                                                containerColor = when {
-                                                    isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                                    else -> MaterialTheme.colorScheme.surface
-                                                }
-                                            ),
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable {
-                                                    if (isEditing) {
-                                                        saveCurrentTicket()
-                                                    }
-                                                    isEditing = false
-                                                    selectedTicketPath = entry.file.canonicalPath
-                                                }
-                                        ) {
-                                            Column(modifier = Modifier.padding(12.dp)) {
-                                                Text(
-                                                    entry.ticket.title,
-                                                    style = MaterialTheme.typography.titleMedium,
-                                                    maxLines = 2,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                                Spacer(modifier = Modifier.height(4.dp))
-                                                Text(
-                                                    projectName,
-                                                    style = MaterialTheme.typography.bodySmall
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            )
 
             if (selectedTicket != null) {
                 Spacer(modifier = Modifier.width(16.dp))
-                Column(
+                TicketDetailsPanel(
+                    selectedTicket = selectedTicket,
+                    selectedProjectName = selectedProjectName,
+                    projects = projectsState,
+                    isEditing = isEditing,
+                    editableTitle = editableTitle,
+                    onTitleChange = { editableTitle = it },
+                    editableStatus = editableStatus,
+                    onStatusChange = { editableStatus = it },
+                    editableDetails = editableDetails,
+                    onDetailsChange = { editableDetails = it },
+                    projectDropdownExpanded = projectDropdownExpanded,
+                    onProjectDropdownToggle = { projectDropdownExpanded = it },
+                    statusDropdownExpanded = statusDropdownExpanded,
+                    onStatusDropdownToggle = { statusDropdownExpanded = it },
+                    onProjectSelected = { projectId ->
+                        editableProjectId = projectId
+                        projectDropdownExpanded = false
+                    },
+                    onStatusSelected = { status ->
+                        editableStatus = status.displayText
+                        statusDropdownExpanded = false
+                    },
+                    onSave = { saveCurrentTicket() },
+                    onEditToggle = { isEditing = it },
+                    onDelete = { deleteCurrentTicket() },
+                    onBack = {
+                        selectedTicketPath = null
+                        isEditing = false
+                    },
                     modifier = Modifier
                         .width(1024.dp)
                         .fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Ticket details", style = MaterialTheme.typography.titleMedium)
-                        Button(onClick = {
-                            selectedTicketPath = null
-                            isEditing = false
-                        }) {
-                            Text("Back")
-                        }
-                    }
+                )
+            }
+        }
+    }
+}
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (isEditing) {
-                            Button(onClick = { saveCurrentTicket() }) { Text("Save") }
-                        } else {
-                            Button(onClick = { isEditing = true }) { Text("Edit") }
-                        }
-                        Button(onClick = { deleteCurrentTicket() }) { Text("Delete") }
-                    }
+@Composable
+private fun TicketBoard(
+    ticketsByStatus: Map<TicketStatus, List<TicketsStorage.PersistedTicket>>,
+    projectNamesById: Map<Int, String>,
+    selectedTicketPath: String?,
+    onTicketSelected: (TicketsStorage.PersistedTicket) -> Unit,
+    onColumnPositioned: (TicketStatus, Rect) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val boardScrollState = rememberScrollState()
+    Row(
+        modifier = modifier.horizontalScroll(boardScrollState),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        TicketStatus.entries.forEach { status ->
+            key(status) {
+                TicketColumn(
+                    status = status,
+                    tickets = ticketsByStatus[status].orEmpty(),
+                    projectNamesById = projectNamesById,
+                    selectedTicketPath = selectedTicketPath,
+                    onTicketSelected = onTicketSelected,
+                    onColumnPositioned = { rect -> onColumnPositioned(status, rect) }
+                )
+            }
+        }
+    }
+}
 
-                    if (isEditing) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            TextField(
-                                value = editableTitle,
-                                onValueChange = { editableTitle = it },
-                                label = { Text("Ticket title") },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            ExposedDropdownMenuBox(
-                                expanded = projectDropdownExpanded,
-                                onExpandedChange = { projectDropdownExpanded = !projectDropdownExpanded }
-                            ) {
-                                TextField(
-                                    value = selectedProjectName,
-                                    onValueChange = {},
-                                    label = { Text("Project") },
-                                    modifier = Modifier
-                                        .menuAnchor()
-                                        .fillMaxWidth(),
-                                    readOnly = true,
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = projectDropdownExpanded) }
-                                )
-                                ExposedDropdownMenu(
-                                    expanded = projectDropdownExpanded,
-                                    onDismissRequest = { projectDropdownExpanded = false }
-                                ) {
-                                    projectsState.forEach { projectEntry ->
-                                        DropdownMenuItem(
-                                            text = { Text(projectEntry.project.name) },
-                                            onClick = {
-                                                editableProjectId = projectEntry.project.id
-                                                projectDropdownExpanded = false
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                            ExposedDropdownMenuBox(
-                                expanded = statusDropdownExpanded,
-                                onExpandedChange = { statusDropdownExpanded = !statusDropdownExpanded }
-                            ) {
-                                TextField(
-                                    value = editableStatus,
-                                    onValueChange = { editableStatus = it },
-                                    label = { Text("Status") },
-                                    modifier = Modifier
-                                        .menuAnchor()
-                                        .fillMaxWidth(),
-                                    readOnly = true,
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = statusDropdownExpanded) }
-                                )
-                                ExposedDropdownMenu(
-                                    expanded = statusDropdownExpanded,
-                                    onDismissRequest = { statusDropdownExpanded = false }
-                                ) {
-                                    TicketStatus.entries.forEach { status ->
-                                        DropdownMenuItem(
-                                            text = { Text(status.displayText) },
-                                            onClick = {
-                                                editableStatus = status.displayText
-                                                statusDropdownExpanded = false
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                            TextField(
-                                value = editableDetails,
-                                onValueChange = { editableDetails = it },
-                                label = { Text("Details (Markdown)") },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(220.dp),
-                                maxLines = Int.MAX_VALUE
-                            )
-                        }
-                    } else {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(selectedTicket.ticket.title, style = MaterialTheme.typography.titleLarge)
-                            Text(
-                                "Status: ${selectedTicket.ticket.status.displayText}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                "Project: $selectedProjectName",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            SelectionContainer(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxWidth()
-                                    .verticalScroll(rememberScrollState())
-                            ) {
-                                Markdown(
-                                    selectedTicket.ticket.details.ifBlank { "*No details yet.*" }
-                                )
-                            }
-                        }
-                    }
+@Composable
+private fun TicketColumn(
+    status: TicketStatus,
+    tickets: List<TicketsStorage.PersistedTicket>,
+    projectNamesById: Map<Int, String>,
+    selectedTicketPath: String?,
+    onTicketSelected: (TicketsStorage.PersistedTicket) -> Unit,
+    onColumnPositioned: (Rect) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .width(260.dp)
+            .fillMaxHeight()
+            .onGloballyPositioned { coords ->
+                onColumnPositioned(Rect(coords.positionInRoot(), coords.size.toSize()))
+            }
+            .background(
+                MaterialTheme.colorScheme.surfaceVariant,
+                RoundedCornerShape(12.dp)
+            )
+            .padding(12.dp)
+    ) {
+        Text(status.displayText, style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (tickets.isEmpty()) {
+                Text(
+                    "No tickets yet",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                tickets.forEach { entry ->
+                    val projectName = projectNamesById[entry.ticket.projectId] ?: "No project"
+                    val isSelected = entry.file.canonicalPath == selectedTicketPath
+                    TicketCard(
+                        entry = entry,
+                        projectName = projectName,
+                        isSelected = isSelected,
+                        onClick = { onTicketSelected(entry) }
+                    )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun TicketCard(
+    entry: TicketsStorage.PersistedTicket,
+    projectName: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
+        ),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                entry.ticket.title,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                projectName,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TicketDetailsPanel(
+    selectedTicket: TicketsStorage.PersistedTicket,
+    selectedProjectName: String,
+    projects: List<ProjectsStorage.PersistedProject>,
+    isEditing: Boolean,
+    editableTitle: String,
+    onTitleChange: (String) -> Unit,
+    editableStatus: String,
+    onStatusChange: (String) -> Unit,
+    editableDetails: String,
+    onDetailsChange: (String) -> Unit,
+    projectDropdownExpanded: Boolean,
+    onProjectDropdownToggle: (Boolean) -> Unit,
+    statusDropdownExpanded: Boolean,
+    onStatusDropdownToggle: (Boolean) -> Unit,
+    onProjectSelected: (Int) -> Unit,
+    onStatusSelected: (TicketStatus) -> Unit,
+    onSave: () -> Unit,
+    onEditToggle: (Boolean) -> Unit,
+    onDelete: () -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Ticket details", style = MaterialTheme.typography.titleMedium)
+            Button(onClick = onBack) {
+                Text("Back")
+            }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (isEditing) {
+                Button(onClick = onSave) { Text("Save") }
+            } else {
+                Button(onClick = { onEditToggle(true) }) { Text("Edit") }
+            }
+            Button(onClick = onDelete) { Text("Delete") }
+        }
+
+        if (isEditing) {
+            TicketEditorFields(
+                editableTitle = editableTitle,
+                onTitleChange = onTitleChange,
+                selectedProjectName = selectedProjectName,
+                projects = projects,
+                projectDropdownExpanded = projectDropdownExpanded,
+                onProjectDropdownToggle = onProjectDropdownToggle,
+                onProjectSelected = onProjectSelected,
+                editableStatus = editableStatus,
+                onStatusChange = onStatusChange,
+                statusDropdownExpanded = statusDropdownExpanded,
+                onStatusDropdownToggle = onStatusDropdownToggle,
+                onStatusSelected = onStatusSelected,
+                editableDetails = editableDetails,
+                onDetailsChange = onDetailsChange
+            )
+        } else {
+            TicketDetailsView(
+                selectedTicket = selectedTicket,
+                selectedProjectName = selectedProjectName
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TicketEditorFields(
+    editableTitle: String,
+    onTitleChange: (String) -> Unit,
+    selectedProjectName: String,
+    projects: List<ProjectsStorage.PersistedProject>,
+    projectDropdownExpanded: Boolean,
+    onProjectDropdownToggle: (Boolean) -> Unit,
+    onProjectSelected: (Int) -> Unit,
+    editableStatus: String,
+    onStatusChange: (String) -> Unit,
+    statusDropdownExpanded: Boolean,
+    onStatusDropdownToggle: (Boolean) -> Unit,
+    onStatusSelected: (TicketStatus) -> Unit,
+    editableDetails: String,
+    onDetailsChange: (String) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        TextField(
+            value = editableTitle,
+            onValueChange = onTitleChange,
+            label = { Text("Ticket title") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        ExposedDropdownMenuBox(
+            expanded = projectDropdownExpanded,
+            onExpandedChange = { onProjectDropdownToggle(!projectDropdownExpanded) }
+        ) {
+            TextField(
+                value = selectedProjectName,
+                onValueChange = {},
+                label = { Text("Project") },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth(),
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = projectDropdownExpanded) }
+            )
+            ExposedDropdownMenu(
+                expanded = projectDropdownExpanded,
+                onDismissRequest = { onProjectDropdownToggle(false) }
+            ) {
+                projects.forEach { projectEntry ->
+                    DropdownMenuItem(
+                        text = { Text(projectEntry.project.name) },
+                        onClick = { onProjectSelected(projectEntry.project.id) }
+                    )
+                }
+            }
+        }
+        ExposedDropdownMenuBox(
+            expanded = statusDropdownExpanded,
+            onExpandedChange = { onStatusDropdownToggle(!statusDropdownExpanded) }
+        ) {
+            TextField(
+                value = editableStatus,
+                onValueChange = onStatusChange,
+                label = { Text("Status") },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth(),
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = statusDropdownExpanded) }
+            )
+            ExposedDropdownMenu(
+                expanded = statusDropdownExpanded,
+                onDismissRequest = { onStatusDropdownToggle(false) }
+            ) {
+                TicketStatus.entries.forEach { status ->
+                    DropdownMenuItem(
+                        text = { Text(status.displayText) },
+                        onClick = { onStatusSelected(status) }
+                    )
+                }
+            }
+        }
+        TextField(
+            value = editableDetails,
+            onValueChange = onDetailsChange,
+            label = { Text("Details (Markdown)") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp),
+            maxLines = Int.MAX_VALUE
+        )
+    }
+}
+
+@Composable
+private fun TicketDetailsView(
+    selectedTicket: TicketsStorage.PersistedTicket,
+    selectedProjectName: String
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(selectedTicket.ticket.title, style = MaterialTheme.typography.titleLarge)
+        Text(
+            "Status: ${selectedTicket.ticket.status.displayText}",
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Text(
+            "Project: $selectedProjectName",
+            style = MaterialTheme.typography.bodyMedium
+        )
+        SelectionContainer(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+        ) {
+            Markdown(selectedTicket.ticket.details.ifBlank { "*No details yet.*" })
         }
     }
 }
