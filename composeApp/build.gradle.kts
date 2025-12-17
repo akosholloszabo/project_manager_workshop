@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.kotlinxSerialization)
 }
 
 kotlin {
@@ -15,6 +16,7 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
+            implementation(compose.materialIconsExtended)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
@@ -36,6 +38,7 @@ kotlin {
             implementation("com.mikepenz:multiplatform-markdown-renderer:${mikpezVersion}")
 // OR for Material 3 themed apps
             implementation("com.mikepenz:multiplatform-markdown-renderer-m3:${mikpezVersion}")
+            implementation(libs.kotlinx.serialization.json)
         }
     }
 }

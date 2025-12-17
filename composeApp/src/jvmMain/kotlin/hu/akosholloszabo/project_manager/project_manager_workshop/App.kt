@@ -39,7 +39,7 @@ private val isLinuxOs = osNameLower.contains("nux") || osNameLower.contains("nix
 fun App() {
     var currentScreen by rememberSaveable { mutableStateOf<Screen>(Screen.Notes) }
     var startupComplete by rememberSaveable { mutableStateOf(false) }
-    var workingFolder by rememberSaveable { mutableStateOf<String?>(null) }
+    var workingFolder by rememberSaveable { mutableStateOf<String?>("D:\\git\\akosholloszabo\\project_manadger_workshop_2025_01\\samples") }
 
     AppTheme {
         Scaffold(

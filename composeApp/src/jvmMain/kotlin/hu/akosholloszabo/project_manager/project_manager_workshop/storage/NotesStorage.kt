@@ -1,10 +1,10 @@
-package hu.akosholloszabo.project_manager.project_manager_workshop.screens
+package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Locale
+import java.util.*
 
 object NotesStorage {
     private const val NOTES_FOLDER_NAME = "notes"
@@ -16,7 +16,7 @@ object NotesStorage {
     fun ensureNotesDirectory(root: String?): File? {
         val folder = root?.let { File(it, NOTES_FOLDER_NAME) } ?: return null
         if (!folder.exists()) {
-            folder.mkdirs()
+            if (!folder.mkdirs()) return null
         }
         return folder
     }
@@ -34,7 +34,7 @@ object NotesStorage {
         val timestamp = LocalDateTime.now().format(timestampFormatter)
         val file = File(folder, "$baseName-$timestamp$NOTE_EXTENSION")
         val defaultTitle = title?.takeIf { it.isNotBlank() } ?: "New note"
-        val defaultContent = if (content.isNotBlank()) content else "# $defaultTitle\n\n"
+        val defaultContent = content.ifBlank { "# $defaultTitle\n\n" }
         return runCatching {
             file.writeText(defaultContent)
             noteFromFile(file)

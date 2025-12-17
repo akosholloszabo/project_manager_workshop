@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -32,14 +35,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.m3.Markdown
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
+import hu.akosholloszabo.project_manager.project_manager_workshop.storage.NotesStorage
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import java.io.File
-import androidx.compose.foundation.text.selection.SelectionContainer
-
-// Added imports for scrolling and layout weight
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 
 @Composable
 fun NotesScreenContent(workingFolder: String? = null) {
@@ -158,12 +155,14 @@ fun NotesScreenContent(workingFolder: String? = null) {
                             Text("New note")
                         }
                         selectedNote?.let {
-                            if (isEditing) {
-                                Button(onClick = { saveCurrentNote() }) { Text("Save") }
-                            } else {
-                                Button(onClick = { isEditing = true }) { Text("Edit") }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                if (isEditing) {
+                                    Button(onClick = { saveCurrentNote() }) { Text("Save") }
+                                } else {
+                                    Button(onClick = { isEditing = true }) { Text("Edit") }
+                                }
+                                Button(onClick = { deleteCurrentNote() }) { Text("Delete") }
                             }
-                            Button(onClick = { deleteCurrentNote() }) { Text("Delete") }
                         }
                     }
                 }
@@ -185,7 +184,9 @@ fun NotesScreenContent(workingFolder: String? = null) {
                                 modifier = Modifier.fillMaxSize()
                             )
                         } else {
-                            SelectionContainer(modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxSize()) {
+                            SelectionContainer(
+                                modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxSize()
+                            ) {
                                 Markdown(selectedNote.note.content)
                             }
                         }
