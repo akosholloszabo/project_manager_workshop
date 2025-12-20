@@ -23,9 +23,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -49,6 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import com.mikepenz.markdown.m3.Markdown
+import hu.akosholloszabo.project_manager.project_manager_workshop.component.ReadOnlyDropdownField
 import hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.ProjectsStorage
@@ -538,40 +536,6 @@ fun TicketsScreenPreviewDark() {
     AppTheme(darkTheme = true) {
         Surface(color = Color(0xFF121212), modifier = Modifier.fillMaxSize()) {
             TicketsScreenContent()
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ReadOnlyDropdownField(
-    value: String,
-    label: String,
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    dropdownContent: @Composable ColumnScope.() -> Unit
-) {
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { onExpandedChange(!expanded) }
-    ) {
-        val fillMaxWidth = Modifier
-            .fillMaxWidth()
-        TextField(
-            value = value,
-            onValueChange = {},
-            label = { Text(label) },
-            modifier = fillMaxWidth
-                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true),
-            readOnly = true,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
-        )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { onExpandedChange(false) },
-            modifier = Modifier.exposedDropdownSize()
-        ) {
-            dropdownContent()
         }
     }
 }
