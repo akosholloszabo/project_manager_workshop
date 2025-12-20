@@ -25,13 +25,13 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.actions.CrudAc
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TicketBoard
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TicketDetailsPanel
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoPaneLayout
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketBoardState
+import hu.akosholloszabo.project_manager.project_manager_workshop.component.TicketBoardStateHolder
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TicketsScreenContent(workingFolder: String) {
-    val boardState = remember(workingFolder) { TicketBoardState(workingFolder) }
+    val boardState = remember(workingFolder) { TicketBoardStateHolder(workingFolder) }
     LaunchedEffect(boardState, workingFolder) {
         boardState.loadInitialData()
     }
@@ -66,15 +66,7 @@ fun TicketsScreenContent(workingFolder: String) {
             detail = if (activeTicket != null) {
                 {
                     TicketDetailsPanel(
-                        selectedTicket = activeTicket,
-                        projects = boardState.projects,
-                        startInEdit = boardState.shouldStartEditingSelected,
-                        onPendingEditConsumed = boardState::consumePendingEdit,
-                        onTicketSaved = boardState::onTicketSaved,
-                        onAction = boardState::handleAction,
-                        onSave = boardState::saveCurrentTicket,
-                        onDelete = boardState::deleteCurrentTicket,
-                        onBack = boardState::clearSelection,
+                        boardState = boardState,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

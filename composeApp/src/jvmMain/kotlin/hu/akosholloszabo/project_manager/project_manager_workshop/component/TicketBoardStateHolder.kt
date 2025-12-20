@@ -1,14 +1,18 @@
-package hu.akosholloszabo.project_manager.project_manager_workshop.model
+package hu.akosholloszabo.project_manager.project_manager_workshop.component
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import hu.akosholloszabo.project_manager.project_manager_workshop.actions.CrudAction
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketCardState
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketColumnState
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.ProjectsStorage
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.TicketsStorage
 
-internal class TicketBoardState(private val workingFolder: String) {
+class TicketBoardStateHolder(private val workingFolder: String) {
     private val projectsState = mutableStateListOf<Pair<Int, String>>()
     private val ticketsState = mutableStateListOf<TicketsStorage.PersistedTicket>()
 
@@ -54,13 +58,24 @@ internal class TicketBoardState(private val workingFolder: String) {
             }
 
     fun loadInitialData() {
-        refreshProjects()
+        val loadedProjects = ProjectsStorage
+            .loadProjects(workingFolder)
+            .map { it.project.id to it.project.name }
+        projectsState.apply {
+            clear()
+            addAll(loadedProjects)
+        }
+
         refreshTickets()
     }
 
     fun handleAction(action: CrudAction) {
         when (action) {
-            CrudAction.Create -> createNewTicket()
+            CrudAction.Create -> {
+                val created = TicketsStorage.createTicket(workingFolder) ?: return
+                pendingEditTicket = created
+                refreshTickets(preserve = created)
+            }
             CrudAction.Edit -> pendingEditTicket = selectedTicket
             CrudAction.Save -> selectedTicket?.let { current ->
                 saveCurrentTicket(current.ticket)
@@ -115,22 +130,6 @@ internal class TicketBoardState(private val workingFolder: String) {
             true
         } else {
             false
-        }
-    }
-
-    private fun createNewTicket() {
-        val created = TicketsStorage.createTicket(workingFolder) ?: return
-        pendingEditTicket = created
-        refreshTickets(preserve = created)
-    }
-
-    private fun refreshProjects() {
-        val loadedProjects = ProjectsStorage
-            .loadProjects(workingFolder)
-            .map { it.project.id to it.project.name }
-        projectsState.apply {
-            clear()
-            addAll(loadedProjects)
         }
     }
 
