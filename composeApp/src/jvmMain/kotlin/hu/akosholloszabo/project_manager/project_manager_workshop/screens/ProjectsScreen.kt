@@ -1,6 +1,8 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.screens
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -66,16 +68,20 @@ fun ProjectsScreenContent(workingFolder: String) {
                         DetailHeader(
                             title = selectedProject?.project?.name ?: "Projects",
                             actions = {
-                                CrudActionBar(
+                                Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    hasSelection = selectedProject != null,
-                                    isEditing = controller.isEditing,
-                                    onNew = controller::createProject,
-                                    onEdit = controller::startEditing,
-                                    onSave = controller::saveCurrentProject,
-                                    onDelete = controller::deleteCurrentProject,
-                                    labels = CrudActionLabels(newLabel = "New project")
-                                )
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    CrudActionBar(
+                                        hasSelection = selectedProject != null,
+                                        isEditing = controller.isEditing,
+                                        onNew = controller::createProject,
+                                        onEdit = controller::startEditing,
+                                        onSave = controller::saveCurrentProject,
+                                        onDelete = controller::deleteCurrentProject,
+                                        labels = CrudActionLabels(newLabel = "New project")
+                                    )
+                                }
                             }
                         )
                     },
@@ -120,58 +126,6 @@ private fun ProjectListPane(
     ) { project, _ ->
         Text(project.project.name, style = MaterialTheme.typography.titleMedium)
         SimpleDivider(modifier = Modifier.padding(top = 8.dp))
-    }
-}
-
-@Composable
-private fun ProjectActionsBar(
-    hasSelection: Boolean,
-    isEditing: Boolean,
-    onNew: () -> Unit,
-    onEdit: () -> Unit,
-    onSave: () -> Unit,
-    onDelete: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    CrudActionBar(
-        modifier = Modifier.fillMaxWidth(),
-        hasSelection = hasSelection,
-        isEditing = isEditing,
-        onNew = onNew,
-        onEdit = onEdit,
-        onSave = onSave,
-        onDelete = onDelete,
-        labels = CrudActionLabels(newLabel = "New project")
-    )
-}
-
-@Composable
-private fun ProjectDetailsSurface(
-    selectedProject: ProjectsStorage.PersistedProject?,
-    isEditing: Boolean,
-    buffer: ProjectEditBuffer,
-    onNameChange: (String) -> Unit,
-    onDescriptionChange: (String) -> Unit,
-    onDetailsChange: (String) -> Unit
-) {
-    if (selectedProject == null) {
-        Text(
-            "Select a project to view or edit it.",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        return
-    }
-
-    if (isEditing) {
-        ProjectEditor(
-            buffer = buffer,
-            onNameChange = onNameChange,
-            onDescriptionChange = onDescriptionChange,
-            onDetailsChange = onDetailsChange
-        )
-    } else {
-        ProjectViewer(selectedProject)
     }
 }
 

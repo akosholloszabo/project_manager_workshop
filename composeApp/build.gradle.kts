@@ -42,8 +42,6 @@ kotlin {
                 }
             }
 
-            implementation("org.commonmark:commonmark:0.21.0")
-            implementation("org.commonmark:commonmark-ext-gfm-tables:0.21.0")
             val mikpezVersion = "0.38.1"
             // Core library
             implementation("com.mikepenz:multiplatform-markdown-renderer:${mikpezVersion}")
