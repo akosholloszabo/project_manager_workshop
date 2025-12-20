@@ -35,8 +35,8 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 fun App() {
     var currentScreen by rememberSaveable { mutableStateOf<Screen>(Screen.Notes) }
-    var startupComplete by rememberSaveable { mutableStateOf(false) }
     var workingFolder by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingWorkingFolder by rememberSaveable { mutableStateOf<String?>(null) }
 
     AppTheme {
         Scaffold(
@@ -60,22 +60,23 @@ fun App() {
                         .fillMaxSize()
                         .padding(innerPadding)
                 ) {
-                    if (!startupComplete) {
+                    val resolvedFolder = workingFolder
+                    if (resolvedFolder == null) {
                         WorkingFolderScreen(
-                            selectedFolder = workingFolder,
+                            selectedFolder = pendingWorkingFolder,
                             onPickFolder = {
                                 runBlocking {
                                     FileChooser.chooseDirectory()?.let {
-                                        workingFolder = it
+                                        pendingWorkingFolder = it
                                     }
                                 }
                             },
                             onConfirm = { folder ->
                                 workingFolder = folder
-                                startupComplete = true
+                                pendingWorkingFolder = folder
                             },
                             onClearSelection = {
-                                workingFolder = null
+                                pendingWorkingFolder = null
                             }
                         )
                     } else {
@@ -103,13 +104,14 @@ fun App() {
 
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                                 when (currentScreen) {
-                                    is Screen.Notes -> NotesScreenContent(workingFolder)
-                                    is Screen.Projects -> ProjectsScreenContent(workingFolder)
-                                    is Screen.Tickets -> TicketsScreenContent(workingFolder)
+                                    is Screen.Notes -> NotesScreenContent(resolvedFolder)
+                                    is Screen.Projects -> ProjectsScreenContent(resolvedFolder)
+                                    is Screen.Tickets -> TicketsScreenContent(resolvedFolder)
                                 }
                             }
                         }
                     }
+
                 }
             }
         )

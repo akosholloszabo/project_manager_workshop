@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -32,22 +31,23 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.toSize
 import com.mikepenz.markdown.m3.Markdown
-import hu.akosholloszabo.project_manager.project_manager_workshop.component.ReadOnlyDropdownField
 import hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme
+import hu.akosholloszabo.project_manager.project_manager_workshop.actions.CrudAction
+import hu.akosholloszabo.project_manager.project_manager_workshop.component.CrudActionBar
+import hu.akosholloszabo.project_manager.project_manager_workshop.component.DetailEditorPane
+import hu.akosholloszabo.project_manager.project_manager_workshop.component.DetailHeader
+import hu.akosholloszabo.project_manager.project_manager_workshop.component.ReadOnlyDropdownField
+import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoPaneLayout
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.ProjectsStorage
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.TicketsStorage
@@ -55,101 +55,9 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TicketsScreenContent(workingFolder: String? = null) {
-    val projectsState = remember { mutableStateListOf<ProjectsStorage.PersistedProject>() }
-    val ticketsState = remember { mutableStateListOf<TicketsStorage.PersistedTicket>() }
-    var selectedTicketPath by rememberSaveable { mutableStateOf<String?>(null) }
-    var isEditing by rememberSaveable { mutableStateOf(false) }
-    var editableTitle by rememberSaveable { mutableStateOf("") }
-    var editableProjectId by rememberSaveable { mutableStateOf<Int?>(null) }
-    var editableStatus by rememberSaveable { mutableStateOf(TicketStatus.default.displayText) }
-    var editableDetails by rememberSaveable { mutableStateOf("") }
-    var statusDropdownExpanded by rememberSaveable { mutableStateOf(false) }
-    var projectDropdownExpanded by rememberSaveable { mutableStateOf(false) }
-    val columnBounds = remember { mutableStateMapOf<TicketStatus, Rect>() }
-
-    fun refreshProjects() {
-        val loaded = ProjectsStorage.loadProjects(workingFolder)
-        projectsState.apply {
-            clear()
-            addAll(loaded)
-        }
-    }
-
-    fun refreshTickets(preservePath: String? = null) {
-        val loaded = TicketsStorage.loadTickets(workingFolder)
-        val previousSelection = selectedTicketPath
-        ticketsState.apply {
-            clear()
-            addAll(loaded)
-        }
-        selectedTicketPath = when {
-            preservePath != null && loaded.any { it.file.canonicalPath == preservePath } -> preservePath
-            previousSelection != null && loaded.any { it.file.canonicalPath == previousSelection } -> previousSelection
-            else -> null
-        }
-    }
-
-    LaunchedEffect(workingFolder) {
-        isEditing = false
-        refreshProjects()
-        refreshTickets()
-    }
-
-    val selectedTicket = selectedTicketPath?.let { path ->
-        ticketsState.find { it.file.canonicalPath == path }
-    }
-
-    LaunchedEffect(selectedTicket?.file?.canonicalPath, isEditing) {
-        if (!isEditing) {
-            editableTitle = selectedTicket?.ticket?.title ?: ""
-            editableProjectId = selectedTicket?.ticket?.projectId ?: projectsState.firstOrNull()?.project?.id
-            editableStatus = selectedTicket?.ticket?.status?.displayText ?: TicketStatus.default.displayText
-            editableDetails = selectedTicket?.ticket?.details ?: ""
-        }
-    }
-
-    fun createNewTicket() {
-        val created = TicketsStorage.createTicket(workingFolder) ?: return
-        isEditing = true
-        refreshTickets(preservePath = created.file.canonicalPath)
-        editableTitle = created.ticket.title
-        editableProjectId = created.ticket.projectId
-        editableStatus = created.ticket.status.displayText
-        editableDetails = created.ticket.details
-    }
-
-    fun saveCurrentTicket() {
-        val current = selectedTicket ?: return
-        val projectIdValue = editableProjectId ?: current.ticket.projectId
-        val updated = current.ticket.copy(
-            title = editableTitle.trim().ifEmpty { current.ticket.title },
-            projectId = projectIdValue,
-            status = TicketStatus.fromDisplay(editableStatus),
-            details = editableDetails
-        )
-        if (TicketsStorage.saveTicket(updated, current.file, editableDetails)) {
-            isEditing = false
-            refreshTickets(preservePath = current.file.canonicalPath)
-        }
-    }
-
-    fun deleteCurrentTicket() {
-        val current = selectedTicket ?: return
-        if (TicketsStorage.deleteTicket(current.file)) {
-            isEditing = false
-            refreshTickets()
-        }
-    }
-
-    val selectedProjectEntry = projectsState.find { it.project.id == editableProjectId }
-    val selectedProjectName = selectedProjectEntry?.project?.name ?: "No project"
-    val projectNamesById = projectsState.associate { it.project.id to it.project.name }
-    val selectedTicketProjectName = selectedTicket?.ticket?.projectId?.let { projectNamesById[it] } ?: "No project"
-
-    val ticketsByStatus = TicketStatus.entries.associateWith { status ->
-        ticketsState.filter { it.ticket.status == status }
-    }
+fun TicketsScreenContent(workingFolder: String) {
+    val boardState = rememberTicketBoardState(workingFolder)
+    val activeTicket = boardState.selectedTicket
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(
@@ -159,92 +67,49 @@ fun TicketsScreenContent(workingFolder: String? = null) {
             Column {
                 Text("Tickets", style = MaterialTheme.typography.titleLarge)
             }
-            Button(onClick = { createNewTicket() }, enabled = workingFolder != null) {
+            Button(onClick = { boardState.handleAction(CrudAction.Create) }) {
                 Text("New ticket")
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Row(modifier = Modifier.fillMaxSize()) {
-            TicketBoard(
-                ticketsByStatus = ticketsByStatus,
-                projectNamesById = projectNamesById,
-                selectedTicketPath = selectedTicketPath,
-                onTicketSelected = { entry ->
-                    if (isEditing) {
-                        saveCurrentTicket()
-                    }
-                    isEditing = false
-                    selectedTicketPath = entry.file.canonicalPath
-                },
-                onColumnPositioned = { status, rect -> columnBounds[status] = rect },
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            )
-
-            if (selectedTicket != null) {
-                Spacer(modifier = Modifier.width(16.dp))
-                val editorState = TicketEditorState(
-                    title = editableTitle,
-                    projectName = selectedProjectName,
-                    projectDropdownExpanded = projectDropdownExpanded,
-                    status = editableStatus,
-                    statusDropdownExpanded = statusDropdownExpanded,
-                    details = editableDetails
-                )
-                val editorCallbacks = TicketEditorCallbacks(
-                    onTitleChange = { editableTitle = it },
-                    onProjectDropdownToggle = { projectDropdownExpanded = it },
-                    onProjectSelected = { projectId ->
-                        editableProjectId = projectId
-                        projectDropdownExpanded = false
-                    },
-                    onStatusDropdownToggle = { statusDropdownExpanded = it },
-                    onStatusSelected = { status ->
-                        editableStatus = status.displayText
-                        statusDropdownExpanded = false
-                    },
-                    onDetailsChange = { editableDetails = it }
-                )
-                val detailsState = TicketDetailsState(
-                    selectedTicket = selectedTicket,
-                    projects = projectsState,
-                    selectedProjectName = selectedProjectName,
-                    displayProjectName = selectedTicketProjectName,
-                    isEditing = isEditing,
-                    editorState = editorState
-                )
-                val detailsCallbacks = TicketDetailsCallbacks(
-                    editorCallbacks = editorCallbacks,
-                    onSave = { saveCurrentTicket() },
-                    onEditToggle = { isEditing = it },
-                    onDelete = { deleteCurrentTicket() },
-                    onBack = {
-                        selectedTicketPath = null
-                        isEditing = false
-                    }
-                )
-                TicketDetailsPanel(
-                    state = detailsState,
-                    callbacks = detailsCallbacks,
-                    modifier = Modifier
-                        .width(1024.dp)
-                        .fillMaxHeight()
-                )
-            }
-        }
+        TwoPaneLayout(
+            modifier = Modifier.fillMaxSize(),
+            master = {
+                key(boardState.ticketBoardVersion) {
+                    TicketBoard(
+                        columns = boardState.columns,
+                        onTicketSelected = boardState::selectTicket,
+                        modifier = Modifier.fillMaxHeight()
+                    )
+                }
+            },
+            detail = if (activeTicket != null) {
+                {
+                    TicketDetailsPanel(
+                        selectedTicket = activeTicket,
+                        projects = boardState.projects,
+                        projectNamesById = boardState.projectNamesById,
+                        startInEdit = boardState.shouldStartEditingSelected,
+                        onPendingEditConsumed = boardState::consumePendingEdit,
+                        onTicketSaved = boardState::onTicketSaved,
+                        onAction = boardState::handleAction,
+                        onSave = boardState::saveCurrentTicket,
+                        onDelete = boardState::deleteCurrentTicket,
+                        onBack = boardState::clearSelection,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            } else null
+        )
     }
 }
 
 @Composable
 private fun TicketBoard(
-    ticketsByStatus: Map<TicketStatus, List<TicketsStorage.PersistedTicket>>,
-    projectNamesById: Map<Int, String>,
-    selectedTicketPath: String?,
+    columns: List<TicketColumnState>,
     onTicketSelected: (TicketsStorage.PersistedTicket) -> Unit,
-    onColumnPositioned: (TicketStatus, Rect) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val boardScrollState = rememberScrollState()
@@ -252,15 +117,11 @@ private fun TicketBoard(
         modifier = modifier.horizontalScroll(boardScrollState),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        TicketStatus.entries.forEach { status ->
-            key(status) {
+        columns.forEach { column ->
+            key(column.status) {
                 TicketColumn(
-                    status = status,
-                    tickets = ticketsByStatus[status].orEmpty(),
-                    projectNamesById = projectNamesById,
-                    selectedTicketPath = selectedTicketPath,
-                    onTicketSelected = onTicketSelected,
-                    onColumnPositioned = { rect -> onColumnPositioned(status, rect) }
+                    columnState = column,
+                    onTicketSelected = onTicketSelected
                 )
             }
         }
@@ -269,28 +130,21 @@ private fun TicketBoard(
 
 @Composable
 private fun TicketColumn(
-    status: TicketStatus,
-    tickets: List<TicketsStorage.PersistedTicket>,
-    projectNamesById: Map<Int, String>,
-    selectedTicketPath: String?,
+    columnState: TicketColumnState,
     onTicketSelected: (TicketsStorage.PersistedTicket) -> Unit,
-    onColumnPositioned: (Rect) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .width(260.dp)
             .fillMaxHeight()
-            .onGloballyPositioned { coords ->
-                onColumnPositioned(Rect(coords.positionInRoot(), coords.size.toSize()))
-            }
             .background(
                 MaterialTheme.colorScheme.surfaceVariant,
                 RoundedCornerShape(12.dp)
             )
             .padding(12.dp)
     ) {
-        Text(status.displayText, style = MaterialTheme.typography.titleMedium)
+        Text(columnState.status.displayText, style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Column(
             modifier = Modifier
@@ -299,21 +153,17 @@ private fun TicketColumn(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (tickets.isEmpty()) {
+            if (columnState.cards.isEmpty()) {
                 Text(
                     "No tickets yet",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                tickets.forEach { entry ->
-                    val projectName = projectNamesById[entry.ticket.projectId] ?: "No project"
-                    val isSelected = entry.file.canonicalPath == selectedTicketPath
+                columnState.cards.forEach { card ->
                     TicketCard(
-                        entry = entry,
-                        projectName = projectName,
-                        isSelected = isSelected,
-                        onClick = { onTicketSelected(entry) }
+                        cardState = card,
+                        onClick = { onTicketSelected(card.persisted) }
                     )
                 }
             }
@@ -323,15 +173,14 @@ private fun TicketColumn(
 
 @Composable
 private fun TicketCard(
-    entry: TicketsStorage.PersistedTicket,
-    projectName: String,
-    isSelected: Boolean,
+    cardState: TicketCardState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val ticket = cardState.persisted.ticket
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
+            containerColor = if (cardState.isSelected) {
                 MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
             } else {
                 MaterialTheme.colorScheme.surface
@@ -343,14 +192,14 @@ private fun TicketCard(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                entry.ticket.title,
+                ticket.title,
                 style = MaterialTheme.typography.titleMedium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                projectName,
+                cardState.projectName,
                 style = MaterialTheme.typography.bodySmall
             )
         }
@@ -360,131 +209,171 @@ private fun TicketCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TicketDetailsPanel(
-    state: TicketDetailsState,
-    callbacks: TicketDetailsCallbacks,
+    selectedTicket: TicketsStorage.PersistedTicket,
+    projects: List<ProjectSummary>,
+    projectNamesById: Map<Int, String>,
+    startInEdit: Boolean,
+    onPendingEditConsumed: () -> Unit,
+    onTicketSaved: (Ticket) -> Unit,
+    onAction: (CrudAction) -> Unit,
+    onSave: (Ticket) -> Ticket?,
+    onDelete: () -> Boolean,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    val ticketKey = selectedTicket.file.canonicalPath
+    var isEditing by rememberSaveable(ticketKey) { mutableStateOf(false) }
+    var editorTicket by rememberSaveable(ticketKey, stateSaver = TicketSaver) {
+        mutableStateOf(selectedTicket.ticket)
+    }
+    var projectDropdownExpanded by rememberSaveable(ticketKey) { mutableStateOf(false) }
+    var statusDropdownExpanded by rememberSaveable(ticketKey) { mutableStateOf(false) }
+
+    LaunchedEffect(selectedTicket.ticket, isEditing) {
+        if (!isEditing) {
+            editorTicket = selectedTicket.ticket
+        }
+    }
+
+    LaunchedEffect(ticketKey, startInEdit) {
+        if (startInEdit) {
+            isEditing = true
+            editorTicket = selectedTicket.ticket
+            onPendingEditConsumed()
+        }
+    }
+
+    val displayProjectName = projectNamesById[selectedTicket.ticket.projectId] ?: "No project"
+    val editorProjectName = projectNamesById[editorTicket.projectId] ?: "No project"
+
+    DetailEditorPane(
         modifier = modifier
             .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("Ticket details", style = MaterialTheme.typography.titleMedium)
-            Button(onClick = callbacks.onBack) {
-                Text("Back")
-            }
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (state.isEditing) {
-                Button(onClick = callbacks.onSave) { Text("Save") }
-            } else {
-                Button(onClick = { callbacks.onEditToggle(true) }) { Text("Edit") }
-            }
-            Button(onClick = callbacks.onDelete) { Text("Delete") }
-        }
-
-        if (state.isEditing) {
+        verticalSpacing = 12.dp,
+        header = {
+            DetailHeader(
+                title = "Ticket details",
+                actions = {
+                    Column {
+                        Button(onClick = {
+                            isEditing = false
+                            onBack()
+                        }) {
+                            Text("Back")
+                        }
+                        CrudActionBar(
+                            modifier = Modifier.fillMaxWidth(),
+                            hasSelection = true,
+                            isEditing = isEditing,
+                            onEdit = {
+                                isEditing = true
+                                onAction(CrudAction.Edit)
+                            },
+                            onSave = {
+                                val updated = onSave(editorTicket)
+                                if (updated != null) {
+                                    editorTicket = updated
+                                    isEditing = false
+                                    onTicketSaved(updated)
+                                }
+                            },
+                            onDelete = {
+                                if (onDelete()) {
+                                    onPendingEditConsumed()
+                                    onBack()
+                                }
+                            }
+                        )
+                    }
+                }
+            )
+        },
+        isEditing = isEditing,
+        editContent = {
             TicketEditorFields(
-                state = state.editorState,
-                projects = state.projects,
-                callbacks = callbacks.editorCallbacks
+                ticket = editorTicket,
+                projects = projects,
+                projectName = editorProjectName,
+                projectDropdownExpanded = projectDropdownExpanded,
+                onProjectDropdownToggle = { projectDropdownExpanded = it },
+                onProjectSelected = { projectId ->
+                    editorTicket = editorTicket.copy(projectId = projectId)
+                    projectDropdownExpanded = false
+                },
+                statusDropdownExpanded = statusDropdownExpanded,
+                onStatusDropdownToggle = { statusDropdownExpanded = it },
+                onStatusSelected = { status ->
+                    editorTicket = editorTicket.copy(status = status)
+                    statusDropdownExpanded = false
+                },
+                onTitleChange = { editorTicket = editorTicket.copy(title = it) },
+                onDetailsChange = { editorTicket = editorTicket.copy(details = it) }
             )
-        } else {
+        },
+        viewContent = {
             TicketDetailsView(
-                selectedTicket = state.selectedTicket,
-                projectName = state.displayProjectName
+                selectedTicket = selectedTicket.ticket,
+                projectName = displayProjectName
             )
         }
-    }
+    )
 }
-
-private data class TicketEditorState(
-    val title: String,
-    val projectName: String,
-    val projectDropdownExpanded: Boolean,
-    val status: String,
-    val statusDropdownExpanded: Boolean,
-    val details: String
-)
-
-private data class TicketEditorCallbacks(
-    val onTitleChange: (String) -> Unit,
-    val onProjectDropdownToggle: (Boolean) -> Unit,
-    val onProjectSelected: (Int) -> Unit,
-    val onStatusDropdownToggle: (Boolean) -> Unit,
-    val onStatusSelected: (TicketStatus) -> Unit,
-    val onDetailsChange: (String) -> Unit
-)
-
-private data class TicketDetailsState(
-    val selectedTicket: TicketsStorage.PersistedTicket,
-    val projects: List<ProjectsStorage.PersistedProject>,
-    val selectedProjectName: String,
-    val displayProjectName: String,
-    val isEditing: Boolean,
-    val editorState: TicketEditorState
-)
-
-private data class TicketDetailsCallbacks(
-    val editorCallbacks: TicketEditorCallbacks,
-    val onSave: () -> Unit,
-    val onEditToggle: (Boolean) -> Unit,
-    val onDelete: () -> Unit,
-    val onBack: () -> Unit
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TicketEditorFields(
-    state: TicketEditorState,
-    projects: List<ProjectsStorage.PersistedProject>,
-    callbacks: TicketEditorCallbacks
+    ticket: Ticket,
+    projects: List<ProjectSummary>,
+    projectName: String,
+    projectDropdownExpanded: Boolean,
+    onProjectDropdownToggle: (Boolean) -> Unit,
+    onProjectSelected: (Int) -> Unit,
+    statusDropdownExpanded: Boolean,
+    onStatusDropdownToggle: (Boolean) -> Unit,
+    onStatusSelected: (TicketStatus) -> Unit,
+    onTitleChange: (String) -> Unit,
+    onDetailsChange: (String) -> Unit
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().fillMaxHeight()
     ) {
         TextField(
-            value = state.title,
-            onValueChange = callbacks.onTitleChange,
+            value = ticket.title,
+            onValueChange = onTitleChange,
             label = { Text("Ticket title") },
             modifier = Modifier.fillMaxWidth()
         )
         ReadOnlyDropdownField(
-            value = state.projectName,
+            value = projectName,
             label = "Project",
-            expanded = state.projectDropdownExpanded,
-            onExpandedChange = callbacks.onProjectDropdownToggle
+            expanded = projectDropdownExpanded,
+            onExpandedChange = onProjectDropdownToggle
         ) {
             projects.forEach { projectEntry ->
                 DropdownMenuItem(
-                    text = { Text(projectEntry.project.name) },
-                    onClick = { callbacks.onProjectSelected(projectEntry.project.id) }
+                    text = { Text(projectEntry.name) },
+                    onClick = { onProjectSelected(projectEntry.id) }
                 )
             }
         }
         ReadOnlyDropdownField(
-            value = state.status,
+            value = ticket.status.displayText,
             label = "Status",
-            expanded = state.statusDropdownExpanded,
-            onExpandedChange = callbacks.onStatusDropdownToggle
+            expanded = statusDropdownExpanded,
+            onExpandedChange = onStatusDropdownToggle
         ) {
             TicketStatus.entries.forEach { status ->
                 DropdownMenuItem(
                     text = { Text(status.displayText) },
-                    onClick = { callbacks.onStatusSelected(status) }
+                    onClick = { onStatusSelected(status) }
                 )
             }
         }
         TextField(
-            value = state.details,
-            onValueChange = callbacks.onDetailsChange,
+            value = ticket.details,
+            onValueChange = onDetailsChange,
             label = { Text("Details (Markdown)") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -496,13 +385,13 @@ private fun TicketEditorFields(
 
 @Composable
 private fun TicketDetailsView(
-    selectedTicket: TicketsStorage.PersistedTicket,
+    selectedTicket: Ticket,
     projectName: String
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(selectedTicket.ticket.title, style = MaterialTheme.typography.titleLarge)
+        Text(selectedTicket.title, style = MaterialTheme.typography.titleLarge)
         Text(
-            "Status: ${selectedTicket.ticket.status.displayText}",
+            "Status: ${selectedTicket.status.displayText}",
             style = MaterialTheme.typography.bodyMedium
         )
         Text(
@@ -515,8 +404,186 @@ private fun TicketDetailsView(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
         ) {
-            Markdown(selectedTicket.ticket.details.ifBlank { "*No details yet.*" })
+            Markdown(selectedTicket.details.ifBlank { "*No details yet.*" })
         }
+    }
+}
+
+private val TicketSaver: Saver<Ticket, Any> = Saver(
+    save = { ticket ->
+        listOf(ticket.id, ticket.title, ticket.projectId, ticket.status.name, ticket.details)
+    },
+    restore = { raw ->
+        val data = raw as List<*>
+        Ticket(
+            id = data[0] as Int,
+            title = data[1] as String,
+            projectId = data[2] as Int,
+            status = TicketStatus.valueOf(data[3] as String),
+            details = data[4] as String
+        )
+    }
+)
+
+private data class ProjectSummary(val id: Int, val name: String)
+
+private data class TicketColumnState(
+    val status: TicketStatus,
+    val cards: List<TicketCardState>
+)
+
+private data class TicketCardState(
+    val persisted: TicketsStorage.PersistedTicket,
+    val projectName: String,
+    val isSelected: Boolean
+)
+
+@Composable
+private fun rememberTicketBoardState(workingFolder: String): TicketBoardState {
+    val state = remember(workingFolder) { TicketBoardState(workingFolder) }
+    LaunchedEffect(state, workingFolder) {
+        state.loadInitialData()
+    }
+    return state
+}
+
+private class TicketBoardState(private val workingFolder: String) {
+    private val projectsState = mutableStateListOf<ProjectSummary>()
+    private val ticketsState = mutableStateListOf<TicketsStorage.PersistedTicket>()
+
+    val projects: List<ProjectSummary>
+        get() = projectsState
+
+    val projectNamesById: Map<Int, String>
+        get() = projectsState.associate { it.id to it.name }
+
+    var selectedTicket by mutableStateOf<TicketsStorage.PersistedTicket?>(null)
+        private set
+
+    private var pendingEditTicket by mutableStateOf<TicketsStorage.PersistedTicket?>(null)
+
+    var ticketBoardVersion by mutableStateOf(0)
+        private set
+
+    val shouldStartEditingSelected: Boolean
+        get() = selectedTicket?.file?.canonicalPath == pendingEditTicket?.file?.canonicalPath
+
+    val columns: List<TicketColumnState>
+        get() {
+            val projectNames = projectNamesById
+            val selectedPath = selectedTicket?.file?.canonicalPath
+            return TicketStatus.entries.map { status ->
+                val cards = ticketsState
+                    .filter { it.ticket.status == status }
+                    .map { persisted ->
+                        TicketCardState(
+                            persisted = persisted,
+                            projectName = projectNames[persisted.ticket.projectId] ?: "No project",
+                            isSelected = persisted.file.canonicalPath == selectedPath
+                        )
+                    }
+                TicketColumnState(status = status, cards = cards)
+            }
+        }
+
+    fun loadInitialData() {
+        refreshProjects()
+        refreshTickets()
+    }
+
+    fun handleAction(action: CrudAction) {
+        when (action) {
+            CrudAction.Create -> createNewTicket()
+            CrudAction.Edit -> pendingEditTicket = selectedTicket
+            CrudAction.Save -> selectedTicket?.let { current ->
+                saveCurrentTicket(current.ticket)
+                pendingEditTicket = null
+            }
+
+            CrudAction.Delete -> if (deleteCurrentTicket()) {
+                pendingEditTicket = null
+                selectedTicket = null
+            }
+        }
+    }
+
+    fun selectTicket(entry: TicketsStorage.PersistedTicket) {
+        selectedTicket = entry
+    }
+
+    fun clearSelection() {
+        selectedTicket = null
+        pendingEditTicket = null
+    }
+
+    fun consumePendingEdit() {
+        pendingEditTicket = null
+    }
+
+    fun onTicketSaved(@Suppress("UNUSED_PARAMETER") ticket: Ticket) {
+        pendingEditTicket = null
+    }
+
+    fun saveCurrentTicket(draft: Ticket): Ticket? {
+        val current = selectedTicket ?: return null
+        val trimmedTitle = draft.title.trim().ifEmpty { current.ticket.title }
+        val updated = current.ticket.copy(
+            title = trimmedTitle,
+            projectId = draft.projectId,
+            status = draft.status,
+            details = draft.details
+        )
+        return if (TicketsStorage.saveTicket(updated, current.file, draft.details)) {
+            refreshTickets(preserve = current)
+            updated
+        } else {
+            null
+        }
+    }
+
+    fun deleteCurrentTicket(): Boolean {
+        val current = selectedTicket ?: return false
+        return if (TicketsStorage.deleteTicket(current.file)) {
+            refreshTickets()
+            true
+        } else {
+            false
+        }
+    }
+
+    private fun createNewTicket() {
+        val created = TicketsStorage.createTicket(workingFolder) ?: return
+        pendingEditTicket = created
+        refreshTickets(preserve = created)
+    }
+
+    private fun refreshProjects() {
+        val loadedProjects = ProjectsStorage
+            .loadProjects(workingFolder)
+            .map { ProjectSummary(id = it.project.id, name = it.project.name) }
+        projectsState.apply {
+            clear()
+            addAll(loadedProjects)
+        }
+    }
+
+    private fun refreshTickets(preserve: TicketsStorage.PersistedTicket? = null) {
+        val loaded = TicketsStorage.loadTickets(workingFolder)
+        ticketsState.apply {
+            clear()
+            addAll(loaded)
+        }
+        selectedTicket = resolveTicketMatch(preserve ?: selectedTicket, loaded)
+        pendingEditTicket = resolveTicketMatch(pendingEditTicket, loaded)
+        ticketBoardVersion++
+    }
+
+    private fun resolveTicketMatch(
+        target: TicketsStorage.PersistedTicket?,
+        candidates: List<TicketsStorage.PersistedTicket>
+    ): TicketsStorage.PersistedTicket? {
+        target ?: return null
+        return candidates.firstOrNull { it.file.canonicalPath == target.file.canonicalPath }
     }
 }
 
@@ -525,7 +592,7 @@ private fun TicketDetailsView(
 fun TicketsScreenPreviewLight() {
     AppTheme(darkTheme = false) {
         Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-            TicketsScreenContent()
+            TicketsScreenContent(workingFolder = "preview")
         }
     }
 }
@@ -534,8 +601,8 @@ fun TicketsScreenPreviewLight() {
 @Composable
 fun TicketsScreenPreviewDark() {
     AppTheme(darkTheme = true) {
-        Surface(color = Color(0xFF121212), modifier = Modifier.fillMaxSize()) {
-            TicketsScreenContent()
+        Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
+            TicketsScreenContent(workingFolder = "preview")
         }
     }
 }
