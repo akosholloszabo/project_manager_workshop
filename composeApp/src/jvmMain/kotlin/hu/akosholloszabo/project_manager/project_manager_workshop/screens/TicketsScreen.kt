@@ -1,13 +1,11 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -23,9 +21,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
@@ -47,11 +45,8 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import com.mikepenz.markdown.m3.Markdown
 import hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme
@@ -529,7 +524,7 @@ private fun TicketDetailsView(
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 640)
 @Composable
-fun TicketsPreviewLight() {
+fun TicketsScreenPreviewLight() {
     AppTheme(darkTheme = false) {
         Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
             TicketsScreenContent()
@@ -539,7 +534,7 @@ fun TicketsPreviewLight() {
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 640)
 @Composable
-fun TicketsPreviewDark() {
+fun TicketsScreenPreviewDark() {
     AppTheme(darkTheme = true) {
         Surface(color = Color(0xFF121212), modifier = Modifier.fillMaxSize()) {
             TicketsScreenContent()
@@ -556,37 +551,27 @@ private fun ReadOnlyDropdownField(
     onExpandedChange: (Boolean) -> Unit,
     dropdownContent: @Composable ColumnScope.() -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val density = LocalDensity.current
-    var anchorSize by remember { mutableStateOf(IntSize.Zero) }
-    val dropdownWidth: Dp? = anchorSize.width.takeIf { it > 0 }?.let { with(density) { it.toDp() } }
-
-    Box {
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { onExpandedChange(!expanded) }
+    ) {
+        val fillMaxWidth = Modifier
+            .fillMaxWidth()
         TextField(
             value = value,
             onValueChange = {},
             label = { Text(label) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { coords -> anchorSize = coords.size },
+            modifier = fillMaxWidth
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true),
             readOnly = true,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
         )
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null
-                ) { onExpandedChange(!expanded) }
-        )
-    }
-
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { onExpandedChange(false) },
-        modifier = dropdownWidth?.let { Modifier.width(it) } ?: Modifier
-    ) {
-        dropdownContent()
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { onExpandedChange(false) },
+            modifier = Modifier.exposedDropdownSize()
+        ) {
+            dropdownContent()
+        }
     }
 }
