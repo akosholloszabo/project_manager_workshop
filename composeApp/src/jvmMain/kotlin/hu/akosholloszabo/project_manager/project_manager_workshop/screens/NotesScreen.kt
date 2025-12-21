@@ -16,7 +16,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.m3.Markdown
@@ -108,9 +111,20 @@ fun NotesScreenContent(workingFolder: String) {
                     },
                     isEditing = isEditing,
                     editContent = {
+                        val selectionSuffix = selectedNotePath ?: "unselected"
+                        val noteEditorKey = "note-$selectionSuffix"
+                        var draftContent by rememberSaveable(noteEditorKey) { mutableStateOf(uiState.editableContent) }
+                        LaunchedEffect(noteEditorKey, uiState.editableContent) {
+                            if (draftContent != uiState.editableContent) {
+                                draftContent = uiState.editableContent
+                            }
+                        }
                         TextField(
-                            value = uiState.editableContent,
-                            onValueChange = notesViewModel::updateContent,
+                            value = draftContent,
+                            onValueChange = {
+                                draftContent = it
+                                notesViewModel.updateContent(it)
+                            },
                             modifier = Modifier.fillMaxSize()
                         )
                     },

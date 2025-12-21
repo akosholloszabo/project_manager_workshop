@@ -20,7 +20,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.m3.Markdown
@@ -97,17 +100,45 @@ fun ProjectsScreenContent(workingFolder: String) {
                     },
                     isEditing = uiState.isEditing,
                     editContent = {
+                        val editorKey = "project-${uiState.selectedProjectPath ?: "unselected"}"
+                        val nameKey = "$editorKey-name"
+                        val descriptionKey = "$editorKey-description"
+                        val detailsKey = "$editorKey-details"
+                        var draftName by rememberSaveable(nameKey) { mutableStateOf(uiState.editBuffer.name) }
+                        var draftDescription by rememberSaveable(descriptionKey) { mutableStateOf(uiState.editBuffer.description) }
+                        var draftDetails by rememberSaveable(detailsKey) { mutableStateOf(uiState.editBuffer.details) }
+                        LaunchedEffect(nameKey, uiState.editBuffer.name) {
+                            if (draftName != uiState.editBuffer.name) {
+                                draftName = uiState.editBuffer.name
+                            }
+                        }
+                        LaunchedEffect(descriptionKey, uiState.editBuffer.description) {
+                            if (draftDescription != uiState.editBuffer.description) {
+                                draftDescription = uiState.editBuffer.description
+                            }
+                        }
+                        LaunchedEffect(detailsKey, uiState.editBuffer.details) {
+                            if (draftDetails != uiState.editBuffer.details) {
+                                draftDetails = uiState.editBuffer.details
+                            }
+                        }
                         Column(modifier = Modifier.fillMaxSize()) {
                             TextField(
-                                value = uiState.editBuffer.name,
-                                onValueChange = { it: String -> projectsViewModel.updateName(it) },
+                                value = draftName,
+                                onValueChange = {
+                                    draftName = it
+                                    projectsViewModel.updateName(it)
+                                },
                                 label = { Text("Project name") },
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Spacer(Modifier.height(8.dp))
                             TextField(
-                                value = uiState.editBuffer.description,
-                                onValueChange = { it: String -> projectsViewModel.updateDescription(it) },
+                                value = draftDescription,
+                                onValueChange = {
+                                    draftDescription = it
+                                    projectsViewModel.updateDescription(it)
+                                },
                                 label = { Text("Description") },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -116,8 +147,11 @@ fun ProjectsScreenContent(workingFolder: String) {
                             )
                             Spacer(Modifier.height(8.dp))
                             TextField(
-                                value = uiState.editBuffer.details,
-                                onValueChange = { it: String -> projectsViewModel.updateDetails(it) },
+                                value = draftDetails,
+                                onValueChange = {
+                                    draftDetails = it
+                                    projectsViewModel.updateDetails(it)
+                                },
                                 label = { Text("Details (Markdown)") },
                                 modifier = Modifier
                                     .fillMaxWidth()

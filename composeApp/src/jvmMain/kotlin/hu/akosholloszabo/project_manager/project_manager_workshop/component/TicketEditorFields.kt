@@ -9,6 +9,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
@@ -26,13 +31,31 @@ fun TicketEditorFields(
     onStatusDropdownToggle: (Boolean) -> Unit,
     onTicketChange: (Ticket) -> Unit
 ) {
+    val ticketKey = "ticket-${ticket.id}"
+    var title by rememberSaveable(ticketKey) { mutableStateOf(ticket.title) }
+    var details by rememberSaveable(ticketKey) { mutableStateOf(ticket.details) }
+
+    LaunchedEffect(ticketKey, ticket.title) {
+        if (title != ticket.title) {
+            title = ticket.title
+        }
+    }
+    LaunchedEffect(ticketKey, ticket.details) {
+        if (details != ticket.details) {
+            details = ticket.details
+        }
+    }
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().fillMaxHeight()
     ) {
         TextField(
-            value = ticket.title,
-            onValueChange = { onTicketChange(ticket.copy(title = it)) },
+            value = title,
+            onValueChange = {
+                title = it
+                onTicketChange(ticket.copy(title = it))
+            },
             label = { Text("Ticket title") },
             modifier = Modifier.fillMaxWidth()
         )
@@ -69,8 +92,11 @@ fun TicketEditorFields(
             }
         }
         TextField(
-            value = ticket.details,
-            onValueChange = { onTicketChange(ticket.copy(details = it)) },
+            value = details,
+            onValueChange = {
+                details = it
+                onTicketChange(ticket.copy(details = it))
+            },
             label = { Text("Details (Markdown)") },
             modifier = Modifier
                 .fillMaxWidth()
