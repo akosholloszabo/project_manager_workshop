@@ -16,15 +16,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.m3.Markdown
 import hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme
-import hu.akosholloszabo.project_manager.project_manager_workshop.actions.CrudAction
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.CrudActionBar
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.CrudActionLabels
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.DetailEditorPane
@@ -33,12 +29,16 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.component.Empt
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SelectableList
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoPaneLayout
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.NotesScreenState
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.NoteStore
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.NotesViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import java.io.File
 
 @Composable
-fun NotesScreenContent(workingFolder: String) {
+fun NotesScreen(workingFolder: String) {
     val notesViewModel = remember(workingFolder) {
         NotesViewModel(NoteStore(workingFolder))
     }
@@ -46,22 +46,29 @@ fun NotesScreenContent(workingFolder: String) {
         notesViewModel.refresh()
     }
     val uiState by notesViewModel.uiState.collectAsState()
+    NotesScreenContent(
+        uiState = uiState,
+        onCreateNote = notesViewModel::createNote,
+        onStartEditing = notesViewModel::startEditing,
+        onSaveNote = notesViewModel::saveNote,
+        onDeleteNote = notesViewModel::deleteNote,
+        onSelectNote = notesViewModel::selectNote,
+        onContentChange = notesViewModel::updateContent
+    )
+}
 
-    fun handleAction(action: CrudAction) {
-        when (action) {
-            CrudAction.Create -> notesViewModel.createNote()
-            CrudAction.Edit -> notesViewModel.startEditing()
-            CrudAction.Save -> notesViewModel.saveNote()
-            CrudAction.Delete -> notesViewModel.deleteNote()
-        }
-    }
-
-    val notes = uiState.notes
-    val selectedNote = uiState.selectedNote
-    val selectedNotePath = uiState.selectedNotePath
-    val isEditing = uiState.isEditing
-
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+@Composable
+fun NotesScreenContent(
+    uiState: NotesScreenState,
+    onCreateNote: () -> Unit,
+    onStartEditing: () -> Unit,
+    onSaveNote: () -> Unit,
+    onDeleteNote: () -> Unit,
+    onSelectNote: (String) -> Unit,
+    onContentChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         Text("Notes", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
         TwoPaneLayout(
@@ -69,17 +76,11 @@ fun NotesScreenContent(workingFolder: String) {
             masterWeight = 0.33f,
             master = {
                 SelectableList(
-                    items = notes,
-                    selectedKey = selectedNotePath,
+                    items = uiState.notes,
+                    selectedKey = uiState.selectedNotePath,
                     modifier = Modifier.fillMaxSize(),
                     keyOf = { it.file.canonicalPath },
-                    onItemClick = { note ->
-                        val targetPath = note.file.canonicalPath
-                        if (isEditing && selectedNote?.file?.canonicalPath != targetPath) {
-                            notesViewModel.saveNote()
-                        }
-                        notesViewModel.selectNote(targetPath)
-                    }
+                    onItemClick = { note -> onSelectNote(note.file.canonicalPath) }
                 ) { note, _ ->
                     Text(
                         note.value.title,
@@ -95,49 +96,36 @@ fun NotesScreenContent(workingFolder: String) {
                     verticalSpacing = 8.dp,
                     header = {
                         DetailHeader(
-                            title = selectedNote?.value?.title ?: "No note selected",
+                            title = uiState.selectedNote?.value?.title ?: "No note selected",
                             actions = {
                                 CrudActionBar(
-                                    hasSelection = selectedNote != null,
-                                    isEditing = isEditing,
-                                    onNew = { handleAction(CrudAction.Create) },
-                                    onEdit = { handleAction(CrudAction.Edit) },
-                                    onSave = { handleAction(CrudAction.Save) },
-                                    onDelete = { handleAction(CrudAction.Delete) },
+                                    hasSelection = uiState.selectedNote != null,
+                                    isEditing = uiState.isEditing,
+                                    onNew = onCreateNote,
+                                    onEdit = onStartEditing,
+                                    onSave = onSaveNote,
+                                    onDelete = onDeleteNote,
                                     labels = CrudActionLabels(newLabel = "New note")
                                 )
                             }
                         )
                     },
-                    isEditing = isEditing,
+                    isEditing = uiState.isEditing,
                     editContent = {
-                        val selectionSuffix = selectedNotePath ?: "unselected"
-                        val noteEditorKey = "note-$selectionSuffix"
-                        var draftContent by rememberSaveable(noteEditorKey) { mutableStateOf(uiState.editableContent) }
-                        LaunchedEffect(noteEditorKey, uiState.editableContent) {
-                            if (draftContent != uiState.editableContent) {
-                                draftContent = uiState.editableContent
-                            }
-                        }
                         TextField(
-                            value = draftContent,
-                            onValueChange = {
-                                draftContent = it
-                                notesViewModel.updateContent(it)
-                            },
+                            value = uiState.editableContent,
+                            onValueChange = onContentChange,
                             modifier = Modifier.fillMaxSize()
                         )
                     },
                     viewContent = {
-                        if (selectedNote == null) {
-                            EmptyDetailHint(message = "Select a note to view or edit it.")
-                        } else {
+                        uiState.selectedNote?.let { note ->
                             SelectionContainer(
                                 modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxSize()
                             ) {
-                                Markdown(selectedNote.value.content)
+                                Markdown(note.value.content)
                             }
-                        }
+                        } ?: EmptyDetailHint("Select a note to view or edit it.")
                     }
                 )
             }
@@ -150,7 +138,15 @@ fun NotesScreenContent(workingFolder: String) {
 fun NotesScreenPreviewLight() {
     AppTheme(darkTheme = false) {
         Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-            NotesScreenContent(workingFolder = "preview")
+            NotesScreenContent(
+                uiState = previewNotesState(),
+                onCreateNote = {},
+                onStartEditing = {},
+                onSaveNote = {},
+                onDeleteNote = {},
+                onSelectNote = {},
+                onContentChange = {}
+            )
         }
     }
 }
@@ -160,7 +156,31 @@ fun NotesScreenPreviewLight() {
 fun NotesScreenPreviewDark() {
     AppTheme(darkTheme = true) {
         Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-            NotesScreenContent(workingFolder = "preview")
+            NotesScreenContent(
+                uiState = previewNotesState(),
+                onCreateNote = {},
+                onStartEditing = {},
+                onSaveNote = {},
+                onDeleteNote = {},
+                onSelectNote = {},
+                onContentChange = {}
+            )
         }
     }
+}
+
+private fun previewPersistedNote(name: String, id: Int, title: String, content: String): Persisted<Note> {
+    val file = File(name).absoluteFile
+    return Persisted(file, Note(id, title, content))
+}
+
+private fun previewNotesState(): NotesScreenState {
+    val firstNote = previewPersistedNote("first-note.md", 1, "First note", "# Preview\nThis is the first note.")
+    val secondNote = previewPersistedNote("second-note.md", 2, "Second note", "Second entry markdown content.")
+    return NotesScreenState(
+        notes = listOf(firstNote, secondNote),
+        selectedNotePath = firstNote.file.absolutePath,
+        selectedNote = firstNote,
+        editableContent = firstNote.value.content
+    )
 }

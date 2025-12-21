@@ -16,9 +16,8 @@ import kotlinx.coroutines.launch
 
 class NotesViewModel(
     private val noteStore: NoteStore,
-    coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) {
-    private val scope = coroutineScope
 
     private val _selectedNotePath = MutableStateFlow<String?>(null)
     private val _isEditing = MutableStateFlow(false)

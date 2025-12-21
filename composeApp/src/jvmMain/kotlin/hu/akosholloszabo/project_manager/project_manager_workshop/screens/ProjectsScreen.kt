@@ -88,10 +88,10 @@ fun ProjectsScreenContent(workingFolder: String) {
                                     CrudActionBar(
                                         hasSelection = uiState.selectedProject != null,
                                         isEditing = uiState.isEditing,
-                                        onNew = { projectsViewModel.createProject() },
-                                        onEdit = { projectsViewModel.startEditing() },
-                                        onSave = { projectsViewModel.saveCurrentProject() },
-                                        onDelete = { projectsViewModel.deleteCurrentProject() },
+                                        onNew = projectsViewModel::createProject,
+                                        onEdit = projectsViewModel::startEditing,
+                                        onSave = projectsViewModel::saveCurrentProject,
+                                        onDelete = projectsViewModel::deleteCurrentProject,
                                         labels = CrudActionLabels(newLabel = "New project")
                                     )
                                 }

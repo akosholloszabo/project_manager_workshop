@@ -15,10 +15,9 @@ import kotlinx.coroutines.withContext
 
 class NoteStore(
     private val workingFolder: String?,
-    coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    private val scope : CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
-    private val scope = coroutineScope
 
     private val _notes = MutableStateFlow<List<Persisted<Note>>>(emptyList())
     val notes: StateFlow<List<Persisted<Note>>> = _notes.asStateFlow()
