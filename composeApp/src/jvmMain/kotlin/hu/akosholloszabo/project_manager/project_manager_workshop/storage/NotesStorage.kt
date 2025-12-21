@@ -1,6 +1,7 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import java.io.File
 import java.util.*
 
@@ -11,19 +12,18 @@ object NotesStorage {
         fallbackName = "note"
     )
 
-    data class PersistedNote(val file: File, val note: Note)
 
     fun ensureNotesDirectory(root: String?): File? {
         return FileStorageHelper.ensureStorageDirectory(root, storageSpec)
     }
 
-    fun loadNotes(root: String?): List<PersistedNote> {
+    fun loadNotes(root: String?): List<Persisted<Note>> {
         val folder = ensureNotesDirectory(root) ?: return emptyList()
         return FileStorageHelper.listStorageFiles(folder, storageSpec)
             .mapNotNull(::noteFromFile)
     }
 
-    fun createNote(root: String?, title: String? = null, content: String = ""): PersistedNote? {
+    fun createNote(root: String?, title: String? = null, content: String = ""): Persisted<Note>? {
         val folder = ensureNotesDirectory(root) ?: return null
         val file = FileStorageHelper.createTimestampedFile(folder, title, storageSpec)
         val defaultTitle = title?.takeIf { it.isNotBlank() } ?: "New note"
@@ -47,13 +47,13 @@ object NotesStorage {
         }.getOrDefault(false)
     }
 
-    private fun noteFromFile(file: File): PersistedNote? {
+    private fun noteFromFile(file: File): Persisted<Note>? {
         return runCatching {
             val content = file.readText()
             val title = deriveTitle(file, content)
             val embeddedId = extractId(content)
             val normalizedId = embeddedId ?: file.canonicalPath.hashCode()
-            PersistedNote(file, Note(normalizedId, title, content))
+            Persisted<Note>(file, Note(normalizedId, title, content))
         }.getOrNull()
     }
 

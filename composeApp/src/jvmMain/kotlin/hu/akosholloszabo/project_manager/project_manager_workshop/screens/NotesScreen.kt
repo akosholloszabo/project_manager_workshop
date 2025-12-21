@@ -14,13 +14,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.m3.Markdown
@@ -34,78 +30,33 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.component.Empt
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SelectableList
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoPaneLayout
-import hu.akosholloszabo.project_manager.project_manager_workshop.storage.NotesStorage
+import hu.akosholloszabo.project_manager.project_manager_workshop.store.NoteStore
+import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.NotesViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun NotesScreenContent(workingFolder: String) {
-    val notesState = remember { mutableStateListOf<NotesStorage.PersistedNote>() }
-    var selectedNotePath by rememberSaveable { mutableStateOf<String?>(null) }
-    var isEditing by rememberSaveable { mutableStateOf(false) }
-    var editableContent by rememberSaveable { mutableStateOf("") }
-
-    fun refreshNotes(preservePath: String? = null) {
-        val loaded = NotesStorage.loadNotes(workingFolder)
-        notesState.apply {
-            clear()
-            addAll(loaded)
-        }
-        selectedNotePath = when {
-            preservePath != null && loaded.any { it.file.canonicalPath == preservePath } -> preservePath
-            loaded.isNotEmpty() -> loaded[0].file.canonicalPath
-            else -> null
-        }
+    val notesViewModel = remember(workingFolder) {
+        NotesViewModel(NoteStore(workingFolder))
     }
-
     LaunchedEffect(workingFolder) {
-        isEditing = false
-        refreshNotes()
+        notesViewModel.refresh()
     }
-
-    val selectedNote by remember(notesState, selectedNotePath) {
-        derivedStateOf {
-            selectedNotePath?.let { path ->
-                notesState.firstOrNull { it.file.canonicalPath == path }
-            }
-        }
-    }
-
-    LaunchedEffect(selectedNote?.file?.canonicalPath, isEditing) {
-        if (!isEditing) {
-            editableContent = selectedNote?.note?.content ?: ""
-        }
-    }
+    val uiState by notesViewModel.uiState.collectAsState()
 
     fun handleAction(action: CrudAction) {
         when (action) {
-            CrudAction.Create -> {
-                val created = NotesStorage.createNote(workingFolder) ?: return
-                isEditing = true
-                refreshNotes(preservePath = created.file.canonicalPath)
-                editableContent = created.note.content
-            }
-
-            CrudAction.Edit -> if (selectedNote != null) {
-                isEditing = true
-            }
-
-            CrudAction.Save -> {
-                val current = selectedNote ?: return
-                if (NotesStorage.saveNoteContent(current.file, editableContent)) {
-                    isEditing = false
-                    refreshNotes(preservePath = current.file.canonicalPath)
-                }
-            }
-
-            CrudAction.Delete -> {
-                val current = selectedNote ?: return
-                if (NotesStorage.deleteNote(current.file)) {
-                    isEditing = false
-                    refreshNotes()
-                }
-            }
+            CrudAction.Create -> notesViewModel.createNote()
+            CrudAction.Edit -> notesViewModel.startEditing()
+            CrudAction.Save -> notesViewModel.saveNote()
+            CrudAction.Delete -> notesViewModel.deleteNote()
         }
     }
+
+    val notes = uiState.notes
+    val selectedNote = uiState.selectedNote
+    val selectedNotePath = uiState.selectedNotePath
+    val isEditing = uiState.isEditing
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Notes", style = MaterialTheme.typography.titleLarge)
@@ -114,17 +65,25 @@ fun NotesScreenContent(workingFolder: String) {
             modifier = Modifier.fillMaxSize(),
             masterWeight = 0.33f,
             master = {
-                NotesSidebar(
-                    notes = notesState,
-                    selectedPath = selectedNotePath,
-                    modifier = Modifier.fillMaxSize()
-                ) { note ->
-                    val targetPath = note.file.canonicalPath
-                    if (isEditing && selectedNote?.file?.canonicalPath != targetPath) {
-                        handleAction(CrudAction.Save)
+                SelectableList(
+                    items = notes,
+                    selectedKey = selectedNotePath,
+                    modifier = Modifier.fillMaxSize(),
+                    keyOf = { it.file.canonicalPath },
+                    onItemClick = { note ->
+                        val targetPath = note.file.canonicalPath
+                        if (isEditing && selectedNote?.file?.canonicalPath != targetPath) {
+                            notesViewModel.saveNote()
+                        }
+                        notesViewModel.selectNote(targetPath)
                     }
-                    isEditing = false
-                    selectedNotePath = targetPath
+                ) { note, _ ->
+                    Text(
+                        note.value.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    SimpleDivider(modifier = Modifier.padding(top = 8.dp))
                 }
             },
             detail = {
@@ -133,7 +92,7 @@ fun NotesScreenContent(workingFolder: String) {
                     verticalSpacing = 8.dp,
                     header = {
                         DetailHeader(
-                            title = selectedNote?.note?.title ?: "No note selected",
+                            title = selectedNote?.value?.title ?: "No note selected",
                             actions = {
                                 CrudActionBar(
                                     hasSelection = selectedNote != null,
@@ -149,59 +108,26 @@ fun NotesScreenContent(workingFolder: String) {
                     },
                     isEditing = isEditing,
                     editContent = {
-                        NoteEditorContent(editableContent, onContentChange = { editableContent = it })
+                        TextField(
+                            value = uiState.editableContent,
+                            onValueChange = notesViewModel::updateContent,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     },
                     viewContent = {
-                        NoteViewerContent(note = selectedNote)
+                        if (selectedNote == null) {
+                            EmptyDetailHint(message = "Select a note to view or edit it.")
+                        } else {
+                            SelectionContainer(
+                                modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxSize()
+                            ) {
+                                Markdown(selectedNote.value.content)
+                            }
+                        }
                     }
                 )
             }
         )
-    }
-}
-
-@Composable
-private fun NotesSidebar(
-    notes: List<NotesStorage.PersistedNote>,
-    selectedPath: String?,
-    modifier: Modifier = Modifier,
-    onSelectNote: (NotesStorage.PersistedNote) -> Unit
-) {
-    SelectableList(
-        items = notes,
-        selectedKey = selectedPath,
-        modifier = modifier,
-        keyOf = { it.file.canonicalPath },
-        onItemClick = onSelectNote
-    ) { note, _ ->
-        Text(
-            note.note.title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        SimpleDivider(modifier = Modifier.padding(top = 8.dp))
-    }
-}
-
-@Composable
-private fun NoteEditorContent(content: String, onContentChange: (String) -> Unit) {
-    TextField(
-        value = content,
-        onValueChange = onContentChange,
-        modifier = Modifier.fillMaxSize()
-    )
-}
-
-@Composable
-private fun NoteViewerContent(note: NotesStorage.PersistedNote?) {
-    if (note == null) {
-        EmptyDetailHint(message = "Select a note to view or edit it.")
-    } else {
-        SelectionContainer(
-            modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxSize()
-        ) {
-            Markdown(note.note.content)
-        }
     }
 }
 

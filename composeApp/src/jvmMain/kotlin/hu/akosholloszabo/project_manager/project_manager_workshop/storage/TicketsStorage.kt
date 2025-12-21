@@ -1,5 +1,6 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import kotlinx.serialization.Serializable
@@ -16,8 +17,6 @@ object TicketsStorage {
 
     private val json = FileStorageHelper.defaultJson
 
-    data class PersistedTicket(val file: File, val ticket: Ticket)
-
     @Serializable
     private data class TicketMetadata(
         val id: Int,
@@ -30,7 +29,7 @@ object TicketsStorage {
         return FileStorageHelper.ensureStorageDirectory(root, storageSpec)
     }
 
-    fun loadTickets(root: String?): List<PersistedTicket> {
+    fun loadTickets(root: String?): List<Persisted<Ticket>> {
         val folder = ensureTicketsDirectory(root) ?: return emptyList()
         return FileStorageHelper.listStorageFiles(folder, storageSpec)
             .mapNotNull(::ticketFromFile)
@@ -42,7 +41,7 @@ object TicketsStorage {
         projectId: Int? = null,
         status: TicketStatus = TicketStatus.default,
         details: String = ""
-    ): PersistedTicket? {
+    ): Persisted<Ticket>? {
         val folder = ensureTicketsDirectory(root) ?: return null
         val file = FileStorageHelper.createTimestampedFile(folder, title, storageSpec)
         val defaultTitle = title?.takeIf { it.isNotBlank() } ?: "New ticket"
@@ -75,7 +74,7 @@ object TicketsStorage {
         }.getOrDefault(false)
     }
 
-    private fun ticketFromFile(file: File): PersistedTicket? {
+    private fun ticketFromFile(file: File): Persisted<Ticket>? {
         return runCatching {
             val content = file.readText()
             val parsed = json.decodeFromString<TicketMetadata>(content)
@@ -86,7 +85,7 @@ object TicketsStorage {
                 status = TicketStatus.fromDisplay(parsed.status),
                 details = FileStorageHelper.readDetails(file, storageSpec)
             )
-            PersistedTicket(file, normalized)
+            Persisted<Ticket>(file, normalized)
         }.getOrNull()
     }
 }

@@ -17,13 +17,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketColumnState
-import hu.akosholloszabo.project_manager.project_manager_workshop.storage.TicketsStorage
 
 @Composable
 fun TicketColumn(
     columnState: TicketColumnState,
-    onTicketSelected: (TicketsStorage.PersistedTicket) -> Unit,
+    onTicketSelected: (Persisted<Ticket>) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(

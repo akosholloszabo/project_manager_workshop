@@ -18,10 +18,6 @@ object FileStorageHelper {
         val detailExtension: String? = null
     )
 
-    fun jsonStorageSpec(folderName: String, fallbackName: String, detailExtension: String = ".md"): StorageSpec {
-        return StorageSpec(folderName, ".json", fallbackName, detailExtension)
-    }
-
     fun ensureDirectory(root: String?, folderName: String): File? {
         val folder = root?.let { File(it, folderName) } ?: return null
         if (!folder.exists() && !folder.mkdirs()) return null

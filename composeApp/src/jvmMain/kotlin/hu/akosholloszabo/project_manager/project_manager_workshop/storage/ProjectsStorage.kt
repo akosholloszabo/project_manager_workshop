@@ -1,5 +1,6 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -14,19 +15,17 @@ object ProjectsStorage {
 
     private val json = FileStorageHelper.defaultJson
 
-    data class PersistedProject(val file: File, val project: Project)
-
     fun ensureProjectsDirectory(root: String?): File? {
         return FileStorageHelper.ensureStorageDirectory(root, storageSpec)
     }
 
-    fun loadProjects(root: String?): List<PersistedProject> {
+    fun loadProjects(root: String?): List<Persisted<Project>> {
         val folder = ensureProjectsDirectory(root) ?: return emptyList()
         return FileStorageHelper.listStorageFiles(folder, storageSpec)
             .mapNotNull(::projectFromFile)
     }
 
-    fun createProject(root: String?, name: String? = null, description: String = ""): PersistedProject? {
+    fun createProject(root: String?, name: String? = null, description: String = ""): Persisted<Project>? {
         val folder = ensureProjectsDirectory(root) ?: return null
         val file = FileStorageHelper.createTimestampedFile(folder, name, storageSpec)
         val defaultName = name?.takeIf { it.isNotBlank() } ?: "New project"
@@ -52,14 +51,14 @@ object ProjectsStorage {
         }.getOrDefault(false)
     }
 
-    private fun projectFromFile(file: File): PersistedProject? {
+    private fun projectFromFile(file: File): Persisted<Project>? {
         return runCatching {
             val content = file.readText()
             val parsed = json.decodeFromString<Project>(content)
             val normalized = parsed.copy(
                 details = FileStorageHelper.readDetails(file, storageSpec)
             )
-            PersistedProject(file, normalized)
+            Persisted<Project>(file, normalized)
         }.getOrNull()
     }
 }

@@ -22,7 +22,7 @@ fun TicketCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val ticket = cardState.persisted.ticket
+    val ticket = cardState.persisted.value
     Card(
         colors = CardDefaults.cardColors(
             containerColor = if (cardState.isSelected) {

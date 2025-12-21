@@ -13,7 +13,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -21,43 +20,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import hu.akosholloszabo.project_manager.project_manager_workshop.actions.CrudAction
-import hu.akosholloszabo.project_manager.project_manager_workshop.component.TicketBoardStateHolder
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketsScreenState
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TicketDetailsPanel(
-    boardState: TicketBoardStateHolder,
+    state: TicketsScreenState,
+    onEdit: () -> Unit,
+    onSave: () -> Unit,
+    onDelete: () -> Unit,
+    onBack: () -> Unit,
+    onTicketChange: (Ticket) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val selectedTicket = boardState.selectedTicket ?: return
-    val ticketKey = selectedTicket.file.canonicalPath
-    var isEditing by rememberSaveable(ticketKey) { mutableStateOf(false) }
-    var editorTicket by rememberSaveable(ticketKey, stateSaver = TicketSaver) {
-        mutableStateOf(
-            selectedTicket.ticket
-        )
-    }
+    val selectedTicket = state.selectedTicket ?: return
+    val editorTicket = state.editorTicket ?: selectedTicket.value
+    val ticketKey = "${selectedTicket.file.canonicalPath}-${state.boardVersion}"
     var projectDropdownExpanded by rememberSaveable(ticketKey) { mutableStateOf(false) }
     var statusDropdownExpanded by rememberSaveable(ticketKey) { mutableStateOf(false) }
-
-    LaunchedEffect(selectedTicket.ticket, isEditing) {
-        if (!isEditing) {
-            editorTicket = selectedTicket.ticket
-        }
-    }
-
-    LaunchedEffect(ticketKey, boardState.shouldStartEditingSelected) {
-        if (boardState.shouldStartEditingSelected) {
-            isEditing = true
-            editorTicket = selectedTicket.ticket
-            boardState.consumePendingEdit()
-        }
-    }
-
-    val projectNamesById = boardState.projects.toMap()
-    val displayProjectName = projectNamesById[selectedTicket.ticket.projectId] ?: "No project"
+    val projectNamesById = state.projects.toMap()
+    val displayProjectName = projectNamesById[selectedTicket.value.projectId] ?: "No project"
 
     DetailEditorPane(
         modifier = modifier
@@ -76,51 +60,34 @@ fun TicketDetailsPanel(
                         CrudActionBar(
                             modifier = Modifier.weight(1f, false),
                             hasSelection = true,
-                            isEditing = isEditing,
-                            onEdit = {
-                                isEditing = true
-                                boardState.handleAction(CrudAction.Edit)
-                            },
-                            onSave = {
-                                val updated = boardState.saveCurrentTicket(editorTicket)
-                                if (updated != null) {
-                                    editorTicket = updated
-                                    isEditing = false
-                                    boardState.onTicketSaved(updated)
-                                }
-                            },
-                            onDelete = {
-                                if (boardState.deleteCurrentTicket()) {
-                                    boardState.clearSelection()
-                                }
-                            }
+                            isEditing = state.isEditing,
+                            onEdit = if (!state.isEditing) onEdit else null,
+                            onSave = if (state.isEditing) onSave else null,
+                            onDelete = onDelete
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Button(onClick = {
-                            isEditing = false
-                            boardState.clearSelection()
-                        }) {
+                        Button(onClick = onBack) {
                             Text("Back")
                         }
                     }
                 }
             )
         },
-        isEditing = isEditing,
+        isEditing = state.isEditing,
         editContent = {
             TicketEditorFields(
                 ticket = editorTicket,
-                projects = boardState.projects,
+                projects = state.projects,
                 projectDropdownExpanded = projectDropdownExpanded,
                 onProjectDropdownToggle = { projectDropdownExpanded = it },
                 statusDropdownExpanded = statusDropdownExpanded,
                 onStatusDropdownToggle = { statusDropdownExpanded = it },
-                onTicketChange = { editorTicket = it }
+                onTicketChange = onTicketChange
             )
         },
         viewContent = {
             TicketDetailsView(
-                selectedTicket = selectedTicket.ticket,
+                selectedTicket = selectedTicket.value,
                 projectName = displayProjectName
             )
         }
