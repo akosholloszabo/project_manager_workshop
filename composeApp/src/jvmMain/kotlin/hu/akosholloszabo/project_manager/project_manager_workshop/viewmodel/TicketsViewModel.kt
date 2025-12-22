@@ -20,36 +20,21 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class TicketsViewModel(
-    private val ticketStore: TicketStore,
-    private val workingFolder: String?,
-    coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val workingFolder: String?
 ) {
-    private val scope = coroutineScope
+    private val ticketStore: TicketStore = TicketStore(workingFolder)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val _selectedTicketPath = MutableStateFlow<String?>(null)
     private val _isEditing = MutableStateFlow(false)
     val isEditing: StateFlow<Boolean> = _isEditing.asStateFlow()
 
-    private val _editTitle = MutableStateFlow("")
-    private val _editProjectId = MutableStateFlow(0)
-    private val _editStatus = MutableStateFlow(TicketStatus.default)
-    private val _editDetails = MutableStateFlow("")
-    val editTitle: StateFlow<String> = _editTitle.asStateFlow()
-    val editProjectId: StateFlow<Int> = _editProjectId.asStateFlow()
-    val editStatus: StateFlow<TicketStatus> = _editStatus.asStateFlow()
-    val editDetails: StateFlow<String> = _editDetails.asStateFlow()
+    val editTitle = MutableStateFlow("")
+    val editProjectId = MutableStateFlow(0)
+    val editStatus = MutableStateFlow(TicketStatus.default)
+    val editDetails = MutableStateFlow("")
 
     private val _projects = MutableStateFlow<List<Pair<Int, String>>>(emptyList())
-    private val _boardVersion = MutableStateFlow(0)
-
-    private val _editingDraft = combine(
-        _editTitle,
-        _editProjectId,
-        _editStatus,
-        _editDetails
-    ) { title, projectId, status, details ->
-        Ticket(id = 0, title = title, projectId = projectId, status = status, details = details)
-    }
 
     private val _columns = combine(
         ticketStore.tickets,
@@ -70,30 +55,6 @@ class TicketsViewModel(
     val selectedTicket: StateFlow<Persisted<Ticket>?> = _selectedTicket
 
     val projects: StateFlow<List<Pair<Int, String>>> = _projects.asStateFlow()
-    val boardVersion: StateFlow<Int> = _boardVersion.asStateFlow()
-
-    val editorTicket: StateFlow<Ticket?> = combine(
-        _selectedTicket,
-        _isEditing,
-        _editingDraft
-    ) { selected, editing, draft ->
-        if (editing) {
-            selected?.value?.copy(
-                title = draft.title,
-                projectId = draft.projectId,
-                status = draft.status,
-                details = draft.details
-            ) ?: Ticket(
-                id = selected?.value?.id ?: 0,
-                title = draft.title,
-                projectId = draft.projectId,
-                status = draft.status,
-                details = draft.details
-            )
-        } else {
-            selected?.value
-        }
-    }.stateIn(scope, SharingStarted.Eagerly, null)
 
     init {
         scope.launch {
@@ -112,11 +73,8 @@ class TicketsViewModel(
         scope.launch { loadProjects() }
     }
 
-    fun refresh() {
-        scope.launch {
-            ticketStore.refresh()
-            bumpBoardVersion()
-        }
+    fun refresh() = scope.launch {
+        ticketStore.refresh()
     }
 
     fun createTicket() {
@@ -127,7 +85,6 @@ class TicketsViewModel(
                 _selectedTicketPath.tryEmit(path)
                 emitEditorFields(created.value)
                 _isEditing.tryEmit(true)
-                bumpBoardVersion()
             }
         }
     }
@@ -145,47 +102,25 @@ class TicketsViewModel(
         }
     }
 
-    fun updateTitle(value: String) {
-        _editTitle.tryEmit(value)
-    }
-
-    fun updateProjectId(value: Int) {
-        _editProjectId.tryEmit(value)
-    }
-
-    fun updateStatus(value: TicketStatus) {
-        _editStatus.tryEmit(value)
-    }
-
-    fun updateDetails(value: String) {
-        _editDetails.tryEmit(value)
-    }
-
-    fun saveTicket() {
-        scope.launch {
-            val current = currentSelectedTicket() ?: return@launch
-            val updatedTicket = current.value.copy(
-                title = _editTitle.value.trim().ifEmpty { current.value.title },
-                projectId = _editProjectId.value,
-                status = _editStatus.value,
-                details = _editDetails.value
-            )
-            val updatedPersisted = current.copy(value = updatedTicket)
-            if (ticketStore.saveTicket(updatedPersisted, updatedTicket)) {
-                _isEditing.tryEmit(false)
-                emitEditorFields(updatedTicket)
-                bumpBoardVersion()
-            }
+    fun saveTicket() = scope.launch {
+        val current = currentSelectedTicket() ?: return@launch
+        val updatedTicket = current.value.copy(
+            title = editTitle.value.trim().ifEmpty { current.value.title },
+            projectId = editProjectId.value,
+            status = editStatus.value,
+            details = editDetails.value
+        )
+        val updatedPersisted = current.copy(value = updatedTicket)
+        if (ticketStore.saveTicket(updatedPersisted, updatedTicket)) {
+            _isEditing.tryEmit(false)
+            emitEditorFields(updatedTicket)
         }
     }
 
-    fun deleteTicket() {
-        scope.launch {
-            val current = currentSelectedTicket() ?: return@launch
-            if (ticketStore.deleteTicket(current)) {
-                clearSelection()
-                bumpBoardVersion()
-            }
+    fun deleteTicket() = scope.launch {
+        val current = currentSelectedTicket() ?: return@launch
+        if (ticketStore.deleteTicket(current)) {
+            clearSelection()
         }
     }
 
@@ -200,10 +135,8 @@ class TicketsViewModel(
         return ticketStore.tickets.value.firstOrNull { it.file.canonicalPath == path }
     }
 
-    private suspend fun loadProjects() {
-        val loaded = withContext(Dispatchers.IO) {
-            ProjectsStorage.loadProjects(workingFolder).map { it.value.id to it.value.name }
-        }
+    private suspend fun loadProjects() = withContext(Dispatchers.IO) {
+        val loaded = ProjectsStorage.loadProjects(workingFolder).map { it.value.id to it.value.name }
         _projects.tryEmit(loaded)
     }
 
@@ -236,21 +169,17 @@ class TicketsViewModel(
         }
     }
 
-    private fun bumpBoardVersion() {
-        _boardVersion.tryEmit(_boardVersion.value + 1)
-    }
-
     private fun emitEditorFields(ticket: Ticket) {
-        _editTitle.tryEmit(ticket.title)
-        _editProjectId.tryEmit(ticket.projectId)
-        _editStatus.tryEmit(ticket.status)
-        _editDetails.tryEmit(ticket.details)
+        editTitle.tryEmit(ticket.title)
+        editProjectId.tryEmit(ticket.projectId)
+        editStatus.tryEmit(ticket.status)
+        editDetails.tryEmit(ticket.details)
     }
 
     private fun resetEditorFields() {
-        _editTitle.tryEmit("")
-        _editProjectId.tryEmit(0)
-        _editStatus.tryEmit(TicketStatus.default)
-        _editDetails.tryEmit("")
+        editTitle.tryEmit("")
+        editProjectId.tryEmit(0)
+        editStatus.tryEmit(TicketStatus.default)
+        editDetails.tryEmit("")
     }
 }

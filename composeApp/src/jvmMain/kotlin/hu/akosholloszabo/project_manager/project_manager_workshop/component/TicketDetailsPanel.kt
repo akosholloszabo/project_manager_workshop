@@ -25,7 +25,6 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketSt
 fun TicketDetailsPanel(
     selectedTicket: Persisted<Ticket>,
     projects: List<Pair<Int, String>>,
-    boardVersion: Int,
     isEditing: StateAndEvent<Boolean>,
     title: StateAndEvent<String>,
     projectId: StateAndEvent<Int>,
@@ -37,7 +36,6 @@ fun TicketDetailsPanel(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val ticketKey = "${selectedTicket.file.canonicalPath}-$boardVersion"
     val projectNamesById = projects.toMap()
     val displayProjectName = projectNamesById[selectedTicket.value.projectId] ?: "No project"
 

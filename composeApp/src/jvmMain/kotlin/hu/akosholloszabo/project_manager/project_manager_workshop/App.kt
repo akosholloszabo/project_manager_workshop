@@ -25,8 +25,7 @@ import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.NotesScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.ProjectsScreen
-import hu.akosholloszabo.project_manager.project_manager_workshop.screens.ProjectsScreenContent
-import hu.akosholloszabo.project_manager.project_manager_workshop.screens.TicketsScreenContent
+import hu.akosholloszabo.project_manager.project_manager_workshop.screens.TicketsScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.WorkingFolderScreen
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -107,7 +106,7 @@ fun App() {
                                 when (currentScreen) {
                                     is Screen.Notes -> NotesScreen(resolvedFolder)
                                     is Screen.Projects -> ProjectsScreen(resolvedFolder)
-                                    is Screen.Tickets -> TicketsScreenContent(resolvedFolder)
+                                    is Screen.Tickets -> TicketsScreen(resolvedFolder)
                                 }
                             }
                         }
