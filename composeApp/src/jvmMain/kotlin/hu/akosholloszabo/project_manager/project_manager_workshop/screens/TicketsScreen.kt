@@ -38,7 +38,10 @@ fun TicketsScreenContent(workingFolder: String) {
     LaunchedEffect(workingFolder) {
         viewModel.refresh()
     }
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val columns by viewModel.columns.collectAsStateWithLifecycle()
+    val selectedTicket by viewModel.selectedTicket.collectAsStateWithLifecycle()
+    val projects by viewModel.projects.collectAsStateWithLifecycle()
+    val boardVersion by viewModel.boardVersion.collectAsStateWithLifecycle()
     val isEditing by viewModel.isEditing.collectAsStateWithLifecycle()
     val title by viewModel.editTitle.collectAsStateWithLifecycle()
     val projectId by viewModel.editProjectId.collectAsStateWithLifecycle()
@@ -69,21 +72,21 @@ fun TicketsScreenContent(workingFolder: String) {
         TwoPaneLayout(
             modifier = Modifier.fillMaxSize(),
             master = {
-                key(uiState.boardVersion) {
+                key(boardVersion) {
                     TicketBoard(
-                        columns = uiState.columns,
+                        columns = columns,
                         onTicketSelected = viewModel::selectTicket,
                         modifier = Modifier.fillMaxHeight()
                     )
                 }
             },
-            detail = if (uiState.selectedTicket != null || uiState.isEditing) {
+            detail = if (selectedTicket != null || isEditing) {
                 {
-                    val selected = uiState.selectedTicket ?: return@TwoPaneLayout
+                    val selected = selectedTicket ?: return@TwoPaneLayout
                     TicketDetailsPanel(
                         selectedTicket = selected,
-                        projects = uiState.projects,
-                        boardVersion = uiState.boardVersion,
+                        projects = projects,
+                        boardVersion = boardVersion,
                         isEditing = isEditingState,
                         title = titleState,
                         projectId = projectState,

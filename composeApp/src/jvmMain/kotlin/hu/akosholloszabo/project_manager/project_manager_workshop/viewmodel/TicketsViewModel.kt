@@ -5,7 +5,6 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketCardState
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketColumnState
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketsScreenState
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.ProjectsStorage
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.TicketStore
 import kotlinx.coroutines.CoroutineScope
@@ -16,7 +15,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,85 +42,58 @@ class TicketsViewModel(
     private val _projects = MutableStateFlow<List<Pair<Int, String>>>(emptyList())
     private val _boardVersion = MutableStateFlow(0)
 
-    private data class BaseAccumulator(
-        val tickets: List<Persisted<Ticket>>,
-        val projects: List<Pair<Int, String>>,
-        val selectedPath: String? = null,
-        val editing: Boolean = false,
-        val title: String = "",
-        val projectId: Int = 0,
-        val status: TicketStatus = TicketStatus.default,
-        val details: String = ""
-    )
+    private val _editingDraft = combine(
+        _editTitle,
+        _editProjectId,
+        _editStatus,
+        _editDetails
+    ) { title, projectId, status, details ->
+        Ticket(id = 0, title = title, projectId = projectId, status = status, details = details)
+    }
 
-    private val _baseUiState = ticketStore.tickets
-        .combine(_projects) { tickets, projects ->
-            BaseAccumulator(tickets = tickets, projects = projects)
-        }
-        .combine(_selectedTicketPath) { acc, selectedPath ->
-            acc.copy(selectedPath = selectedPath)
-        }
-        .combine(_isEditing) { acc, editing ->
-            acc.copy(editing = editing)
-        }
-        .combine(_editTitle) { acc, title ->
-            acc.copy(title = title)
-        }
-        .combine(_editProjectId) { acc, projectId ->
-            acc.copy(projectId = projectId)
-        }
-        .combine(_editStatus) { acc, status ->
-            acc.copy(status = status)
-        }
-        .combine(_editDetails) { acc, details ->
-            acc.copy(details = details)
-        }
-        .map { acc ->
-            CoreUiState(
-                tickets = acc.tickets,
-                projects = acc.projects,
-                selectedPath = acc.selectedPath,
-                editing = acc.editing,
-                editorFields = Ticket(
-                    id = acc.tickets.firstOrNull { it.file.canonicalPath == acc.selectedPath }?.value?.id ?: 0,
-                    title = acc.title,
-                    projectId = acc.projectId,
-                    status = acc.status,
-                    details = acc.details
-                )
+    private val _columns = combine(
+        ticketStore.tickets,
+        _projects,
+        _selectedTicketPath
+    ) { tickets, projects, selectedPath ->
+        val projectNames = projects.associate { it.first to it.second }
+        buildColumns(tickets, projectNames, selectedPath)
+    }.stateIn(scope, SharingStarted.Eagerly, emptyList())
+    val columns: StateFlow<List<TicketColumnState>> = _columns
+
+    private val _selectedTicket = combine(
+        ticketStore.tickets,
+        _selectedTicketPath
+    ) { tickets, path ->
+        path?.let { key -> tickets.firstOrNull { it.file.canonicalPath == key } }
+    }.stateIn(scope, SharingStarted.Eagerly, null)
+    val selectedTicket: StateFlow<Persisted<Ticket>?> = _selectedTicket
+
+    val projects: StateFlow<List<Pair<Int, String>>> = _projects.asStateFlow()
+    val boardVersion: StateFlow<Int> = _boardVersion.asStateFlow()
+
+    val editorTicket: StateFlow<Ticket?> = combine(
+        _selectedTicket,
+        _isEditing,
+        _editingDraft
+    ) { selected, editing, draft ->
+        if (editing) {
+            selected?.value?.copy(
+                title = draft.title,
+                projectId = draft.projectId,
+                status = draft.status,
+                details = draft.details
+            ) ?: Ticket(
+                id = selected?.value?.id ?: 0,
+                title = draft.title,
+                projectId = draft.projectId,
+                status = draft.status,
+                details = draft.details
             )
-        }
-
-    val uiState: StateFlow<TicketsScreenState> = combine(
-        _baseUiState,
-        _boardVersion
-    ) { coreState, version ->
-        val selectedTicket = coreState.selectedPath?.let { path ->
-            coreState.tickets.firstOrNull { it.file.canonicalPath == path }
-        }
-        val projectNames = coreState.projects.associate { it.first to it.second }
-        val columns = buildColumns(coreState.tickets, projectNames, coreState.selectedPath)
-
-        val editorTicket = if (coreState.editing) {
-            selectedTicket?.value?.copy(
-                title = coreState.editorFields.title,
-                projectId = coreState.editorFields.projectId,
-                status = coreState.editorFields.status,
-                details = coreState.editorFields.details
-            ) ?: coreState.editorFields
         } else {
-            selectedTicket?.value
+            selected?.value
         }
-
-        TicketsScreenState(
-            columns = columns,
-            selectedTicket = selectedTicket,
-            editorTicket = editorTicket,
-            isEditing = coreState.editing,
-            projects = coreState.projects,
-            boardVersion = version
-        )
-    }.stateIn(scope, SharingStarted.Eagerly, TicketsScreenState())
+    }.stateIn(scope, SharingStarted.Eagerly, null)
 
     init {
         scope.launch {
@@ -282,12 +253,4 @@ class TicketsViewModel(
         _editStatus.tryEmit(TicketStatus.default)
         _editDetails.tryEmit("")
     }
-
-    private data class CoreUiState(
-        val tickets: List<Persisted<Ticket>>,
-        val projects: List<Pair<Int, String>>,
-        val selectedPath: String?,
-        val editing: Boolean,
-        val editorFields: Ticket
-    )
 }
