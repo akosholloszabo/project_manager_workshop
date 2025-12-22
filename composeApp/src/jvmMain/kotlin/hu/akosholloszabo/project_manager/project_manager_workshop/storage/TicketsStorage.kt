@@ -29,11 +29,10 @@ object TicketsStorage {
         return FileStorageHelper.ensureStorageDirectory(root, storageSpec)
     }
 
-    fun loadTickets(root: String?): List<Persisted<Ticket>> {
-        val folder = ensureTicketsDirectory(root) ?: return emptyList()
-        return FileStorageHelper.listStorageFiles(folder, storageSpec)
+    fun loadTickets(root: String?): List<Persisted<Ticket>> = withTicketsDirectory(root) { folder ->
+        FileStorageHelper.listStorageFiles(folder, storageSpec)
             .mapNotNull(::ticketFromFile)
-    }
+    } ?: emptyList()
 
     fun createTicket(
         root: String?,
@@ -42,40 +41,46 @@ object TicketsStorage {
         status: TicketStatus = TicketStatus.default,
         details: String = ""
     ): Persisted<Ticket>? {
-        val folder = ensureTicketsDirectory(root) ?: return null
-        val file = FileStorageHelper.createTimestampedFile(folder, title, storageSpec)
-        val defaultTitle = title?.takeIf { it.isNotBlank() } ?: "New ticket"
-        val ticket = Ticket(
-            id = EntityIdGenerator.newId(),
-            title = defaultTitle,
-            projectId = projectId ?: 0,
-            status = status,
-            details = details
-        )
-        return runCatching {
-            saveTicket(ticket, file, details)
-            ticketFromFile(file)
-        }.getOrNull()
+        return withTicketsDirectory(root) { folder ->
+            val file = FileStorageHelper.createTimestampedFile(folder, title, storageSpec)
+            val defaultTitle = title?.takeIf { it.isNotBlank() } ?: "New ticket"
+            val ticket = Ticket(
+                id = EntityIdGenerator.newId(),
+                title = defaultTitle,
+                projectId = projectId ?: 0,
+                status = status,
+                details = details
+            )
+            safe {
+                saveTicket(ticket, file, details)
+                ticketFromFile(file)
+            }
+        }
     }
 
     fun saveTicket(ticket: Ticket, file: File, details: String): Boolean {
-        return runCatching {
-            val metadata = TicketMetadata(ticket.id, ticket.title, ticket.projectId, ticket.status.displayText)
+        return safe {
+            val metadata = TicketMetadata(
+                ticket.id,
+                ticket.title,
+                ticket.projectId,
+                ticket.status.displayText
+            )
             file.writeText(json.encodeToString(metadata))
             FileStorageHelper.writeDetails(file, storageSpec, details)
             true
-        }.getOrDefault(false)
+        } ?: false
     }
 
     fun deleteTicket(file: File): Boolean {
-        return runCatching {
+        return safe {
             FileStorageHelper.deleteDetails(file, storageSpec)
             file.delete()
-        }.getOrDefault(false)
+        } ?: false
     }
 
     private fun ticketFromFile(file: File): Persisted<Ticket>? {
-        return runCatching {
+        return safe {
             val content = file.readText()
             val parsed = json.decodeFromString<TicketMetadata>(content)
             val normalized = Ticket(
@@ -85,7 +90,14 @@ object TicketsStorage {
                 status = TicketStatus.fromDisplay(parsed.status),
                 details = FileStorageHelper.readDetails(file, storageSpec)
             )
-            Persisted<Ticket>(file, normalized)
-        }.getOrNull()
+            Persisted(file, normalized)
+        }
     }
+
+    private inline fun <T> withTicketsDirectory(root: String?, action: (File) -> T): T? {
+        val folder = ensureTicketsDirectory(root) ?: return null
+        return action(folder)
+    }
+
+    private inline fun <T> safe(block: () -> T): T? = runCatching(block).getOrNull()
 }

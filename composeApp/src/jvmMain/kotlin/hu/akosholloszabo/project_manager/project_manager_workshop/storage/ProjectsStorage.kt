@@ -20,45 +20,54 @@ object ProjectsStorage {
     }
 
     fun loadProjects(root: String?): List<Persisted<Project>> {
-        val folder = ensureProjectsDirectory(root) ?: return emptyList()
-        return FileStorageHelper.listStorageFiles(folder, storageSpec)
-            .mapNotNull(::projectFromFile)
+        return withProjectsDirectory(root) { folder ->
+            FileStorageHelper.listStorageFiles(folder, storageSpec)
+                .mapNotNull(::projectFromFile)
+        } ?: emptyList()
     }
 
     fun createProject(root: String?, name: String? = null, description: String = ""): Persisted<Project>? {
-        val folder = ensureProjectsDirectory(root) ?: return null
-        val file = FileStorageHelper.createTimestampedFile(folder, name, storageSpec)
-        val defaultName = name?.takeIf { it.isNotBlank() } ?: "New project"
-        val project = Project(EntityIdGenerator.newId(), defaultName, description)
-        return runCatching {
-            saveProject(project, file, "")
-            projectFromFile(file)
-        }.getOrNull()
+        return withProjectsDirectory(root) { folder ->
+            val file = FileStorageHelper.createTimestampedFile(folder, name, storageSpec)
+            val defaultName = name?.takeIf { it.isNotBlank() } ?: "New project"
+            val project = Project(EntityIdGenerator.newId(), defaultName, description)
+            safe {
+                saveProject(project, file, "")
+                projectFromFile(file)
+            }
+        }
     }
 
     fun saveProject(project: Project, file: File, details: String): Boolean {
-        return runCatching {
+        return safe {
             file.writeText(json.encodeToString(project))
             FileStorageHelper.writeDetails(file, storageSpec, details)
             true
-        }.getOrDefault(false)
+        } ?: false
     }
 
     fun deleteProject(file: File): Boolean {
-        return runCatching {
+        return safe {
             FileStorageHelper.deleteDetails(file, storageSpec)
             file.delete()
-        }.getOrDefault(false)
+        } ?: false
     }
 
     private fun projectFromFile(file: File): Persisted<Project>? {
-        return runCatching {
+        return safe {
             val content = file.readText()
             val parsed = json.decodeFromString<Project>(content)
             val normalized = parsed.copy(
                 details = FileStorageHelper.readDetails(file, storageSpec)
             )
-            Persisted<Project>(file, normalized)
-        }.getOrNull()
+            Persisted(file, normalized)
+        }
     }
+
+    private inline fun <T> withProjectsDirectory(root: String?, action: (File) -> T): T? {
+        val folder = ensureProjectsDirectory(root) ?: return null
+        return action(folder)
+    }
+
+    private inline fun <T> safe(block: () -> T): T? = runCatching(block).getOrNull()
 }

@@ -2,8 +2,6 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel
 
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.ProjectEditBuffer
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.ProjectsScreenState
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.ProjectStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -11,6 +9,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -22,60 +21,62 @@ class ProjectsViewModel(
     private val scope = coroutineScope
 
     private val _selectedProjectPath = MutableStateFlow<String?>(null)
-    private val _isEditing = MutableStateFlow(false)
-    private val _editBuffer = MutableStateFlow(ProjectEditBuffer())
+    val selectedProjectPath: StateFlow<String?> = _selectedProjectPath.asStateFlow()
+    val isEditing = MutableStateFlow(false)
 
-    val uiState: StateFlow<ProjectsScreenState> = combine(
+    private val _editName = MutableStateFlow("")
+    val editName: StateFlow<String> = _editName.asStateFlow()
+    private val _editDescription = MutableStateFlow("")
+    val editDescription: StateFlow<String> = _editDescription.asStateFlow()
+    private val _editDetails = MutableStateFlow("")
+    val editDetails: StateFlow<String> = _editDetails.asStateFlow()
+
+    val projects: StateFlow<List<Persisted<Project>>> = projectStore.projects
+
+    val selectedProject: StateFlow<Persisted<Project>?> = combine(
         projectStore.projects,
-        _selectedProjectPath,
-        _isEditing,
-        _editBuffer
-    ) { projects, selectedPath, editing, buffer ->
-        val selectedProject = selectedPath?.let { path ->
-            projects.firstOrNull { it.file.canonicalPath == path }
-        }
-        ProjectsScreenState(
-            projects = projects,
-            selectedProjectPath = selectedPath,
-            selectedProject = selectedProject,
-            isEditing = editing,
-            editBuffer = buffer
-        )
-    }.stateIn(scope, SharingStarted.Eagerly, ProjectsScreenState())
+        _selectedProjectPath
+    ) { projects, path ->
+        projects.findByPath(path)
+    }.stateIn(scope, SharingStarted.Eagerly, null)
 
     init {
         scope.launch {
             projectStore.projects.collect { projects ->
                 val nextPath = determineSelection(projects)
                 if (nextPath != _selectedProjectPath.value) {
-                    setSelectedProjectPathInternal(nextPath, projects, refreshBuffer = !_isEditing.value)
+                    setSelectedProjectPathInternal(nextPath, projects, refreshBuffer = !isEditing.value)
                 }
             }
         }
     }
 
     fun refresh() {
-        projectStore.refresh()
+        projectStore.refreshProjects()
     }
 
     fun createProject() {
         scope.launch {
-            val created = projectStore.createProject()
-            if (created != null) {
-                _selectedProjectPath.value = created.file.canonicalPath
-                _editBuffer.value = editBufferFrom(created.value)
-                _isEditing.value = true
+            projectStore.createProject()?.let { created ->
+                _selectedProjectPath.tryEmit(created.file.canonicalPath)
+                _editName.tryEmit(created.value.name)
+                _editDescription.tryEmit(created.value.description)
+                _editDetails.tryEmit(created.value.details)
+                isEditing.tryEmit(true)
             }
         }
     }
 
     fun startEditing() {
         val current = currentSelectedProject() ?: return
-        _editBuffer.value = editBufferFrom(current.value)
-        _isEditing.value = true
+        _editName.tryEmit(current.value.name)
+        _editDescription.tryEmit(current.value.description)
+        _editDetails.tryEmit(current.value.details)
+        isEditing.tryEmit(true)
     }
 
     fun saveCurrentProject() {
+        if (!isEditing.value) return
         scope.launch {
             persistCurrentProject()
         }
@@ -85,57 +86,57 @@ class ProjectsViewModel(
         val current = currentSelectedProject() ?: return
         scope.launch {
             if (projectStore.deleteProject(current)) {
-                _isEditing.value = false
-                _editBuffer.value = ProjectEditBuffer()
-                _selectedProjectPath.value = null
+                isEditing.tryEmit(false)
+                _editName.tryEmit("")
+                _editDescription.tryEmit("")
+                _editDetails.tryEmit("")
+                _selectedProjectPath.tryEmit(null)
             }
         }
     }
 
     fun selectProject(path: String) {
         scope.launch {
-            if (_isEditing.value) {
-                persistCurrentProject()
-            }
-            setSelectedProjectPathInternal(path, projectStore.projects.value, refreshBuffer = !_isEditing.value)
+            if (_selectedProjectPath.value == path) return@launch
+            if (!saveIfEditing()) return@launch
+            setSelectedProjectPathInternal(path, projectStore.projects.value, refreshBuffer = true)
         }
     }
 
     fun updateName(value: String) {
-        _editBuffer.value = _editBuffer.value.copy(name = value)
+        _editName.tryEmit(value)
     }
 
     fun updateDescription(value: String) {
-        _editBuffer.value = _editBuffer.value.copy(description = value)
+        _editDescription.tryEmit(value)
     }
 
     fun updateDetails(value: String) {
-        _editBuffer.value = _editBuffer.value.copy(details = value)
-    }
-
-    private fun editBufferFrom(project: Project): ProjectEditBuffer {
-        return ProjectEditBuffer(
-            name = project.name,
-            description = project.description,
-            details = project.details
-        )
+        _editDetails.tryEmit(value)
     }
 
     private suspend fun persistCurrentProject(): Boolean {
         val current = currentSelectedProject() ?: return false
-        val trimmedName = _editBuffer.value.name.trim().ifEmpty { current.value.name }
+        val trimmedName = _editName.value.trim().ifEmpty { current.value.name }
         val updatedProject = current.value.copy(
             name = trimmedName,
-            description = _editBuffer.value.description,
-            details = _editBuffer.value.details
+            description = _editDescription.value,
+            details = _editDetails.value
         )
         val updatedPersisted = current.copy(value = updatedProject)
-        val success = projectStore.saveProject(updatedPersisted, _editBuffer.value.details)
+        val success = projectStore.saveProject(updatedPersisted, _editDetails.value)
         if (success) {
-            _isEditing.value = false
-            _editBuffer.value = editBufferFrom(updatedProject)
+            _editName.tryEmit(updatedProject.name)
+            _editDescription.tryEmit(updatedProject.description)
+            _editDetails.tryEmit(updatedProject.details)
+            isEditing.tryEmit(false)
         }
         return success
+    }
+
+    private suspend fun saveIfEditing(): Boolean {
+        if (!isEditing.value) return true
+        return persistCurrentProject()
     }
 
     private fun currentSelectedProject(): Persisted<Project>? {
@@ -157,15 +158,25 @@ class ProjectsViewModel(
         projects: List<Persisted<Project>>,
         refreshBuffer: Boolean
     ) {
-        _selectedProjectPath.value = path
-        if (!_isEditing.value && refreshBuffer) {
+        _selectedProjectPath.tryEmit(path)
+        if (!isEditing.value && refreshBuffer) {
             val selected = path?.let { target ->
                 projects.firstOrNull { it.file.canonicalPath == target }
             }
-            _editBuffer.value = selected?.let { editBufferFrom(it.value) } ?: ProjectEditBuffer()
+            selected?.let {
+                _editName.tryEmit(it.value.name)
+                _editDescription.tryEmit(it.value.description)
+                _editDetails.tryEmit(it.value.details)
+            } ?: run {
+                _editName.tryEmit("")
+                _editDescription.tryEmit("")
+                _editDetails.tryEmit("")
+            }
         }
     }
+
+    private fun List<Persisted<Project>>.findByPath(path: String?): Persisted<Project>? =
+        path?.let { requested ->
+            firstOrNull { it.file.canonicalPath == requested }
+        }
 }
-
-
-

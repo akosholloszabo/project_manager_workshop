@@ -16,13 +16,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme
+import hu.akosholloszabo.project_manager.project_manager_workshop.StateAndEvent
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TicketBoard
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TicketDetailsPanel
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoPaneLayout
@@ -37,7 +38,18 @@ fun TicketsScreenContent(workingFolder: String) {
     LaunchedEffect(workingFolder) {
         viewModel.refresh()
     }
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isEditing by viewModel.isEditing.collectAsStateWithLifecycle()
+    val title by viewModel.editTitle.collectAsStateWithLifecycle()
+    val projectId by viewModel.editProjectId.collectAsStateWithLifecycle()
+    val status by viewModel.editStatus.collectAsStateWithLifecycle()
+    val details by viewModel.editDetails.collectAsStateWithLifecycle()
+
+    val isEditingState = StateAndEvent(state = isEditing) { shouldEdit -> if (shouldEdit) viewModel.startEditing() }
+    val titleState = StateAndEvent(state = title, event = viewModel::updateTitle)
+    val projectState = StateAndEvent(state = projectId, event = viewModel::updateProjectId)
+    val statusState = StateAndEvent(state = status, event = viewModel::updateStatus)
+    val detailsState = StateAndEvent(state = details, event = viewModel::updateDetails)
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(
@@ -67,13 +79,20 @@ fun TicketsScreenContent(workingFolder: String) {
             },
             detail = if (uiState.selectedTicket != null || uiState.isEditing) {
                 {
+                    val selected = uiState.selectedTicket ?: return@TwoPaneLayout
                     TicketDetailsPanel(
-                        state = uiState,
+                        selectedTicket = selected,
+                        projects = uiState.projects,
+                        boardVersion = uiState.boardVersion,
+                        isEditing = isEditingState,
+                        title = titleState,
+                        projectId = projectState,
+                        status = statusState,
+                        details = detailsState,
                         onEdit = viewModel::startEditing,
                         onSave = viewModel::saveTicket,
                         onDelete = viewModel::deleteTicket,
                         onBack = viewModel::clearSelection,
-                        onTicketChange = viewModel::updateEditorTicket,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
