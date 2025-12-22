@@ -1,7 +1,6 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel
 
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.NotesScreenState
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.NoteStore
 import kotlinx.coroutines.CoroutineScope
@@ -10,129 +9,110 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class NotesViewModel(
-    private val noteStore: NoteStore,
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val noteStore: NoteStore
 ) {
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val _selectedNotePath = MutableStateFlow<String?>(null)
-    private val _isEditing = MutableStateFlow(false)
-    private val _editableContent = MutableStateFlow("")
+    val selectedNotePath: StateFlow<String?> = _selectedNotePath.asStateFlow()
+    val isEditing = MutableStateFlow(false)
+    val editableContent = MutableStateFlow("")
 
-    val uiState: StateFlow<NotesScreenState> = combine(
+    val notes = noteStore.notes
+
+    val selectedNote: StateFlow<Persisted<Note>?> = combine(
         noteStore.notes,
-        _selectedNotePath,
-        _isEditing,
-        _editableContent
-    ) { notes, path, editing, editableContent ->
-        val selectedNote = path?.let { target ->
-            notes.firstOrNull { it.file.canonicalPath == target }
-        }
-        NotesScreenState(
-            notes = notes,
-            selectedNotePath = path,
-            selectedNote = selectedNote,
-            isEditing = editing,
-            editableContent = editableContent
-        )
-    }.stateIn(scope, SharingStarted.Eagerly, NotesScreenState())
+        _selectedNotePath
+    ) { notes, path ->
+        notes.findByPath(path)
+    }.stateIn(scope, SharingStarted.Eagerly, null)
+
 
     init {
         scope.launch {
-            noteStore.notes.collect { notes ->
-                val nextPath = determineSelection(notes)
+            noteStore.notes.collect { currentNotes ->
+                val nextPath = currentNotes.determineSelection(_selectedNotePath.value)
                 if (nextPath != _selectedNotePath.value) {
-                    setSelectedNotePathInternal(nextPath, notes, refreshContent = !_isEditing.value)
+                    updateSelection(nextPath, currentNotes, refreshContent = !isEditing.value)
                 }
             }
         }
     }
 
-    fun refresh() {
-        noteStore.refresh()
-    }
+    fun refresh() = noteStore.refreshNotes()
 
-    fun createNote() {
-        scope.launch {
-            val created = noteStore.createNote()
-            if (created != null) {
-                _selectedNotePath.value = created.file.canonicalPath
-                _editableContent.value = created.value.content
-                _isEditing.value = true
-            }
+    fun createNote() = scope.launch {
+        noteStore.createNote()?.let { created ->
+            _selectedNotePath.tryEmit(created.file.canonicalPath)
+            editableContent.tryEmit(created.value.content)
+            isEditing.tryEmit(true)
         }
     }
 
-    fun startEditing() {
-        _isEditing.value = true
-    }
-
-    fun saveNote() {
-        val note = currentSelectedNote() ?: return
-        val content = _editableContent.value
-        scope.launch {
-            if (noteStore.saveNote(note, content)) {
-                stopEditing(content)
-            }
+    fun saveNote() = scope.launch {
+        val note = selectedNote.value ?: return@launch
+        val content = editableContent.value
+        if (noteStore.saveNote(note, content)) {
+            stopEditing(content)
         }
     }
 
-    fun deleteNote() {
-        val note = currentSelectedNote() ?: return
-        scope.launch {
-            if (noteStore.deleteNote(note)) {
-                _selectedNotePath.value = null
-                stopEditing("")
-            }
+    fun deleteNote() = scope.launch {
+        selectedNote.value?.takeIf { noteStore.deleteNote(it) }?.let {
+            _selectedNotePath.tryEmit(null)
+            stopEditing("")
         }
     }
 
-    fun selectNote(path: String) {
-        val notes = noteStore.notes.value
-        setSelectedNotePathInternal(path, notes, refreshContent = !_isEditing.value)
+    fun selectNote(path: String) = scope.launch {
+        if (_selectedNotePath.value == path) return@launch
+        if (!saveIfEditing()) return@launch
+        updateSelection(path, notes.value, refreshContent = true)
     }
 
-    fun updateContent(content: String) {
-        _editableContent.value = content
-    }
-
-    private fun currentSelectedNote(): Persisted<Note>? {
-        val path = _selectedNotePath.value ?: return null
-        return noteStore.notes.value.firstOrNull { it.file.canonicalPath == path }
-    }
-
-    private fun determineSelection(notes: List<Persisted<Note>>): String? {
-        val current = _selectedNotePath.value
-        return when {
-            current != null && notes.any { it.file.canonicalPath == current } -> current
-            notes.isNotEmpty() -> notes.first().file.canonicalPath
-            else -> null
+    private suspend fun saveIfEditing(): Boolean {
+        if (!isEditing.value) return true
+        val content = editableContent.value
+        val saved = selectedNote.value?.let { noteStore.saveNote(it, content) } ?: true
+        if (saved) {
+            stopEditing(content)
         }
+        return saved
     }
 
-    private fun setSelectedNotePathInternal(
+    private fun updateSelection(
         path: String?,
         notes: List<Persisted<Note>>,
         refreshContent: Boolean
     ) {
-        _selectedNotePath.value = path
-        if (!_isEditing.value && refreshContent) {
-            _editableContent.value = path?.let { requested ->
-                notes.firstOrNull { it.file.canonicalPath == requested }?.value?.content
-            } ?: ""
+        _selectedNotePath.tryEmit(path)
+        if (!isEditing.value && refreshContent) {
+            editableContent.tryEmit(notes.findByPath(path)?.value?.content ?: "")
         }
     }
 
     private fun stopEditing(savedContent: String? = null) {
-        _isEditing.value = false
-        _editableContent.value = savedContent
-            ?: currentSelectedNote()?.value?.content
-                ?: ""
+        isEditing.tryEmit(false)
+        editableContent.tryEmit(
+            savedContent ?: selectedNote.value?.value?.content ?: ""
+        )
     }
+
+    private fun List<Persisted<Note>>.findByPath(path: String?): Persisted<Note>? =
+        path?.let { requested ->
+            firstOrNull { it.file.canonicalPath == requested }
+        }
+
+    private fun List<Persisted<Note>>.determineSelection(currentPath: String?): String? =
+        when {
+            currentPath != null && any { it.file.canonicalPath == currentPath } -> currentPath
+            isNotEmpty() -> first().file.canonicalPath
+            else -> null
+        }
 }
-
-

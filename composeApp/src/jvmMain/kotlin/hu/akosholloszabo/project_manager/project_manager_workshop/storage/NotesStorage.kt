@@ -18,43 +18,45 @@ object NotesStorage {
     }
 
     fun loadNotes(root: String?): List<Persisted<Note>> {
-        val folder = ensureNotesDirectory(root) ?: return emptyList()
-        return FileStorageHelper.listStorageFiles(folder, storageSpec)
-            .mapNotNull(::noteFromFile)
+        return withNotesDirectory(root) { folder ->
+            FileStorageHelper.listStorageFiles(folder, storageSpec)
+                .mapNotNull(::noteFromFile)
+        } ?: emptyList()
     }
 
     fun createNote(root: String?, title: String? = null, content: String = ""): Persisted<Note>? {
-        val folder = ensureNotesDirectory(root) ?: return null
-        val file = FileStorageHelper.createTimestampedFile(folder, title, storageSpec)
-        val defaultTitle = title?.takeIf { it.isNotBlank() } ?: "New note"
-        val defaultContent = content.ifBlank { "# $defaultTitle\n\n" }
-        return runCatching {
-            file.writeText(defaultContent)
-            noteFromFile(file)
-        }.getOrNull()
+        return withNotesDirectory(root) { folder ->
+            val file = FileStorageHelper.createTimestampedFile(folder, title, storageSpec)
+            val defaultTitle = title?.takeIf { it.isNotBlank() } ?: "New note"
+            val defaultContent = content.ifBlank { "# $defaultTitle\n\n" }
+            safe {
+                file.writeText(defaultContent)
+                noteFromFile(file)
+            }
+        }
     }
 
     fun saveNoteContent(file: File, content: String): Boolean {
-        return runCatching {
+        return safe {
             file.writeText(content)
             true
-        }.getOrDefault(false)
+        } ?: false
     }
 
     fun deleteNote(file: File): Boolean {
-        return runCatching {
+        return safe {
             file.delete()
-        }.getOrDefault(false)
+        } ?: false
     }
 
     private fun noteFromFile(file: File): Persisted<Note>? {
-        return runCatching {
+        return safe {
             val content = file.readText()
             val title = deriveTitle(file, content)
             val embeddedId = extractId(content)
             val normalizedId = embeddedId ?: file.canonicalPath.hashCode()
-            Persisted<Note>(file, Note(normalizedId, title, content))
-        }.getOrNull()
+            Persisted(file, Note(normalizedId, title, content))
+        }
     }
 
     private fun deriveTitle(file: File, content: String): String {
@@ -81,4 +83,11 @@ object NotesStorage {
             ?: return null
         return idLine.removePrefix("<!-- id:").removeSuffix("-->").trim().toIntOrNull()
     }
+
+    private inline fun <T> withNotesDirectory(root: String?, action: (File) -> T): T? {
+        val folder = ensureNotesDirectory(root) ?: return null
+        return action(folder)
+    }
+
+    private inline fun <T> safe(block: () -> T): T? = runCatching(block).getOrNull()
 }
