@@ -33,15 +33,16 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.component.Simp
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoPaneLayout
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
-import hu.akosholloszabo.project_manager.project_manager_workshop.store.NoteStore
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.NotesViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.core.context.GlobalContext
+import org.koin.core.parameter.parametersOf
 import java.io.File
 
 @Composable
 fun NotesScreen(workingFolder: String) {
     val notesViewModel = remember(workingFolder) {
-        NotesViewModel(NoteStore(workingFolder))
+        GlobalContext.get().get<NotesViewModel> { parametersOf(workingFolder) }
     }
     LaunchedEffect(workingFolder) {
         notesViewModel.refresh()

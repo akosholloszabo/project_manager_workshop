@@ -36,15 +36,16 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.component.Simp
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoPaneLayout
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
-import hu.akosholloszabo.project_manager.project_manager_workshop.store.ProjectStore
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
+import org.koin.core.context.GlobalContext.get
+import org.koin.core.parameter.parametersOf
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.io.path.Path
 
 @Composable
 fun ProjectsScreen(workingFolder: String) {
     val projectsViewModel = remember(workingFolder) {
-        ProjectsViewModel(ProjectStore(workingFolder))
+        get().get<ProjectsViewModel> { parametersOf(workingFolder) }
     }
     LaunchedEffect(workingFolder) {
         projectsViewModel.refresh()

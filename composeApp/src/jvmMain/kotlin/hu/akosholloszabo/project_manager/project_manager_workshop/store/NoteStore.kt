@@ -13,6 +13,7 @@ import kotlinx.coroutines.withContext
 
 class NoteStore(
     private val workingFolder: String?,
+    private val notesStorage: NotesStorage
 ) {
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
@@ -25,7 +26,7 @@ class NoteStore(
 
     fun refreshNotes() {
         scope.launch {
-            val loaded = NotesStorage.loadNotes(workingFolder)
+            val loaded = notesStorage.loadNotes(workingFolder)
             _notes.emit(loaded)
         }
     }
@@ -33,7 +34,7 @@ class NoteStore(
     //TODO do it reactive instead of returning it directly
     suspend fun createNote(title: String? = null, content: String = ""): Persisted<Note>? {
         val created = withContext(Dispatchers.IO) {
-            NotesStorage.createNote(workingFolder, title, content)
+            notesStorage.createNote(workingFolder, title, content)
         }
         if (created != null) {
             refreshNotes()
@@ -43,7 +44,7 @@ class NoteStore(
 
     suspend fun saveNote(note: Persisted<Note>, content: String): Boolean {
         val success = withContext(Dispatchers.IO) {
-            NotesStorage.saveNoteContent(note.file, content)
+            notesStorage.saveNoteContent(note.file, content)
         }
         if (success) {
             refreshNotes()
@@ -53,7 +54,7 @@ class NoteStore(
 
     suspend fun deleteNote(note: Persisted<Note>): Boolean {
         val success = withContext(Dispatchers.IO) {
-            NotesStorage.deleteNote(note.file)
+            notesStorage.deleteNote(note.file)
         }
         if (success) {
             refreshNotes()
@@ -61,4 +62,3 @@ class NoteStore(
         return success
     }
 }
-

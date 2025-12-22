@@ -11,7 +11,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class TicketStore(
-    private val workingFolder: String?
+    private val workingFolder: String?,
+    private val ticketsStorage: TicketsStorage
 ) {
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
@@ -27,7 +28,7 @@ class TicketStore(
     }
 
     fun createTicket(): Persisted<Ticket>? {
-        val created = TicketsStorage.createTicket(workingFolder)
+        val created = ticketsStorage.createTicket(workingFolder)
         if (created != null) {
             refreshTickets()
         }
@@ -35,7 +36,7 @@ class TicketStore(
     }
 
     fun saveTicket(persisted: Persisted<Ticket>, draft: Ticket): Boolean {
-        val success = TicketsStorage.saveTicket(draft, persisted.file, draft.details)
+        val success = ticketsStorage.saveTicket(draft, persisted.file, draft.details)
         if (success) {
             refreshTickets()
         }
@@ -43,7 +44,7 @@ class TicketStore(
     }
 
     fun deleteTicket(persisted: Persisted<Ticket>): Boolean {
-        val success = TicketsStorage.deleteTicket(persisted.file)
+        val success = ticketsStorage.deleteTicket(persisted.file)
         if (success) {
             refreshTickets()
         }
@@ -52,7 +53,7 @@ class TicketStore(
 
     private fun refreshTickets() {
         scope.launch {
-            val loaded = TicketsStorage.loadTickets(workingFolder)
+            val loaded = ticketsStorage.loadTickets(workingFolder)
             _tickets.emit(loaded)
         }
     }

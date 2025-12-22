@@ -30,6 +30,8 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
             val lwjglVersion = "3.3.1"
             listOf("lwjgl", "lwjgl-nfd").forEach { lwjglDep ->
                 implementation("org.lwjgl:${lwjglDep}:${lwjglVersion}")

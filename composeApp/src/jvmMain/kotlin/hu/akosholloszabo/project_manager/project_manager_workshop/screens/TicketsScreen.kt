@@ -31,16 +31,17 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketCardState
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketColumnState
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
-import hu.akosholloszabo.project_manager.project_manager_workshop.store.TicketStore
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.core.context.GlobalContext
+import org.koin.core.parameter.parametersOf
 import java.io.File
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TicketsScreen(workingFolder: String) {
-    val viewModel = remember(workingFolder) { TicketsViewModel(workingFolder) }
+    val viewModel = remember(workingFolder) { GlobalContext.get().get<TicketsViewModel> { parametersOf(workingFolder) } }
     LaunchedEffect(workingFolder) {
         viewModel.refresh()
     }
@@ -55,16 +56,16 @@ fun TicketsScreen(workingFolder: String) {
 
     val isEditingState = StateAndEvent(state = isEditing) { shouldEdit -> if (shouldEdit) viewModel.startEditing() }
     val titleState = StateAndEvent(state = title, event = {
-        viewModel.editTitle.tryEmit(it)
+        viewModel._editTitle.tryEmit(it)
     })
     val projectState = StateAndEvent(state = projectId, event = {
-        viewModel.editProjectId.tryEmit(it)
+        viewModel._editProjectId.tryEmit(it)
     })
     val statusState = StateAndEvent(state = status, event = {
-        viewModel.editStatus.tryEmit(it)
+        viewModel._editStatus.tryEmit(it)
     })
     val detailsState = StateAndEvent(state = details, event = {
-        viewModel.editDetails.tryEmit(it)
+        viewModel._editDetails.tryEmit(it)
     })
 
     TicketsScreenContent(

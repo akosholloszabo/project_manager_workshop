@@ -12,7 +12,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class ProjectStore(
-    private val workingFolder: String?
+    private val workingFolder: String?,
+    private val projectsStorage: ProjectsStorage
 ) {
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
@@ -25,14 +26,14 @@ class ProjectStore(
 
     fun refreshProjects() {
         scope.launch {
-            val loaded = ProjectsStorage.loadProjects(workingFolder)
+            val loaded = projectsStorage.loadProjects(workingFolder)
             _projects.emit(loaded)
         }
     }
 
     suspend fun createProject(name: String? = null, description: String = ""): Persisted<Project>? {
         val created = withContext(Dispatchers.IO) {
-            ProjectsStorage.createProject(workingFolder, name, description)
+            projectsStorage.createProject(workingFolder, name, description)
         }
         if (created != null) {
             refreshProjects()
@@ -42,7 +43,7 @@ class ProjectStore(
 
     suspend fun saveProject(project: Persisted<Project>, details: String): Boolean {
         val success = withContext(Dispatchers.IO) {
-            ProjectsStorage.saveProject(project.value, project.file, details)
+            projectsStorage.saveProject(project.value, project.file, details)
         }
         if (success) {
             refreshProjects()
@@ -52,7 +53,7 @@ class ProjectStore(
 
     suspend fun deleteProject(project: Persisted<Project>): Boolean {
         val success = withContext(Dispatchers.IO) {
-            ProjectsStorage.deleteProject(project.file)
+            projectsStorage.deleteProject(project.file)
         }
         if (success) {
             refreshProjects()

@@ -20,19 +20,25 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class TicketsViewModel(
-    private val workingFolder: String?
+    private val ticketStore: TicketStore,
+    private val projectsStorage: ProjectsStorage,
+    private val workingFolder: String?,
+    coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) {
-    private val ticketStore: TicketStore = TicketStore(workingFolder)
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val scope = coroutineScope
 
     private val _selectedTicketPath = MutableStateFlow<String?>(null)
     private val _isEditing = MutableStateFlow(false)
     val isEditing: StateFlow<Boolean> = _isEditing.asStateFlow()
 
-    val editTitle = MutableStateFlow("")
-    val editProjectId = MutableStateFlow(0)
-    val editStatus = MutableStateFlow(TicketStatus.default)
-    val editDetails = MutableStateFlow("")
+    val _editTitle = MutableStateFlow("")
+    val _editProjectId = MutableStateFlow(0)
+    val _editStatus = MutableStateFlow(TicketStatus.default)
+    val _editDetails = MutableStateFlow("")
+    val editTitle: StateFlow<String> = _editTitle.asStateFlow()
+    val editProjectId: StateFlow<Int> = _editProjectId.asStateFlow()
+    val editStatus: StateFlow<TicketStatus> = _editStatus.asStateFlow()
+    val editDetails: StateFlow<String> = _editDetails.asStateFlow()
 
     private val _projects = MutableStateFlow<List<Pair<Int, String>>>(emptyList())
 
@@ -136,7 +142,7 @@ class TicketsViewModel(
     }
 
     private suspend fun loadProjects() = withContext(Dispatchers.IO) {
-        val loaded = ProjectsStorage.loadProjects(workingFolder).map { it.value.id to it.value.name }
+        val loaded = projectsStorage.loadProjects(workingFolder).map { it.value.id to it.value.name }
         _projects.tryEmit(loaded)
     }
 
@@ -170,16 +176,16 @@ class TicketsViewModel(
     }
 
     private fun emitEditorFields(ticket: Ticket) {
-        editTitle.tryEmit(ticket.title)
-        editProjectId.tryEmit(ticket.projectId)
-        editStatus.tryEmit(ticket.status)
-        editDetails.tryEmit(ticket.details)
+        _editTitle.tryEmit(ticket.title)
+        _editProjectId.tryEmit(ticket.projectId)
+        _editStatus.tryEmit(ticket.status)
+        _editDetails.tryEmit(ticket.details)
     }
 
     private fun resetEditorFields() {
-        editTitle.tryEmit("")
-        editProjectId.tryEmit(0)
-        editStatus.tryEmit(TicketStatus.default)
-        editDetails.tryEmit("")
+        _editTitle.tryEmit("")
+        _editProjectId.tryEmit(0)
+        _editStatus.tryEmit(TicketStatus.default)
+        _editDetails.tryEmit("")
     }
 }
