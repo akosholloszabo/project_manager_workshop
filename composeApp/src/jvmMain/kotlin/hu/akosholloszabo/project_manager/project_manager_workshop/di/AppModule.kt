@@ -14,18 +14,16 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.Work
 import org.koin.dsl.module
 
 val appModule = module {
-    single { NotesStorage }
-    single { ProjectsStorage }
-    single { TicketsStorage }
+    factory { NotesStorage }
+    factory { ProjectsStorage }
+    factory { TicketsStorage }
 
     single { WorkingFolderStore() }
-
     single { TicketStore(get(), get()) }
     single { ProjectStore(get(), get()) }
     single { NoteStore(get(), get()) }
 
-    single { WorkingFolderViewModel(get()) }
-
+    factory { WorkingFolderViewModel(get()) }
     factory {
         TicketsViewModel(
             ticketStore = get(),
