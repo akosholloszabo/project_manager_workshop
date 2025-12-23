@@ -1,7 +1,7 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.repository
 
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import kotlinx.serialization.Serializable
 
 interface TicketRepository {

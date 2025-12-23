@@ -1,8 +1,8 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.db
 
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Column
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 
 object TicketsTable : IntIdTable("tickets") {
     val title: Column<String> = varchar("title", 256)
