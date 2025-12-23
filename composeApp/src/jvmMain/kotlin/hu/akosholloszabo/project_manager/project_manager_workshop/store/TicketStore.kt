@@ -3,24 +3,31 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.store
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.TicketsStorage
+import hu.akosholloszabo.project_manager.project_manager_workshop.store.WorkingFolderStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class TicketStore(
-    private val workingFolder: String?,
+    private val workingFolderStore: WorkingFolderStore,
     private val ticketsStorage: TicketsStorage
 ) {
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val _tickets = MutableStateFlow<List<Persisted<Ticket>>>(emptyList())
     val tickets: StateFlow<List<Persisted<Ticket>>> = _tickets.asStateFlow()
 
     init {
-        refreshTickets()
+        scope.launch {
+            workingFolderStore.workingFolder.collectLatest {
+                refreshTickets()
+            }
+        }
     }
 
     fun refresh() {
@@ -28,7 +35,7 @@ class TicketStore(
     }
 
     fun createTicket(): Persisted<Ticket>? {
-        val created = ticketsStorage.createTicket(workingFolder)
+        val created = ticketsStorage.createTicket(workingFolderStore.workingFolder.value)
         if (created != null) {
             refreshTickets()
         }
@@ -53,7 +60,7 @@ class TicketStore(
 
     private fun refreshTickets() {
         scope.launch {
-            val loaded = ticketsStorage.loadTickets(workingFolder)
+            val loaded = ticketsStorage.loadTickets(workingFolderStore.workingFolder.value)
             _tickets.emit(loaded)
         }
     }

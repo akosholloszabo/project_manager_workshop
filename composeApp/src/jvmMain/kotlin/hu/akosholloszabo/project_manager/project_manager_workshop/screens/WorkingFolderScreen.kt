@@ -14,18 +14,34 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hu.akosholloszabo.project_manager.project_manager_workshop.FileChooser
+import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.WorkingFolderViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun WorkingFolderScreen(
-    selectedFolder: String?,
-    onPickFolder: () -> Unit,
-    onConfirm: (String) -> Unit,
-    onClearSelection: () -> Unit
+    workingFolderViewModel: WorkingFolderViewModel,
+    onContinue: () -> Unit
 ) {
+    val selectedFolder by workingFolderViewModel.selectedFolder.collectAsStateWithLifecycle()
+    var pendingFolder by rememberSaveable { mutableStateOf(selectedFolder) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(selectedFolder) {
+        pendingFolder = selectedFolder
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -42,31 +58,41 @@ fun WorkingFolderScreen(
         Spacer(Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = selectedFolder ?: "",
-            onValueChange = {},
+            value = pendingFolder ?: "",
+            onValueChange = { pendingFolder = it },
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Working folder") },
             placeholder = { Text("No folder selected yet") },
-            readOnly = true,
             singleLine = true
         )
 
         Spacer(Modifier.height(16.dp))
 
-        Button(onClick = onPickFolder) {
+        Button(onClick = {
+            scope.launch {
+                FileChooser.chooseDirectory()?.let { pendingFolder = it }
+            }
+        }) {
             Text("Choose folder...")
         }
 
         Spacer(Modifier.height(8.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { selectedFolder?.let(onConfirm) }, enabled = selectedFolder != null) {
+            Button(onClick = {
+                pendingFolder?.let {
+                    workingFolderViewModel.confirmFolder(it)
+                    onContinue()
+                }
+            }, enabled = pendingFolder != null) {
                 Text("Continue")
             }
-            TextButton(onClick = onClearSelection) {
+            TextButton(onClick = {
+                pendingFolder = null
+                workingFolderViewModel.clearSelection()
+            }) {
                 Text("Clear")
             }
         }
     }
 }
-

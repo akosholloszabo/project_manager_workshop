@@ -19,7 +19,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,17 +36,12 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoP
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
-import org.koin.core.context.GlobalContext.get
-import org.koin.core.parameter.parametersOf
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.io.path.Path
 
 @Composable
-fun ProjectsScreen(workingFolder: String) {
-    val projectsViewModel = remember(workingFolder) {
-        get().get<ProjectsViewModel> { parametersOf(workingFolder) }
-    }
-    LaunchedEffect(workingFolder) {
+fun ProjectsScreen(projectsViewModel: ProjectsViewModel) {
+    LaunchedEffect(projectsViewModel) {
         projectsViewModel.refresh()
     }
 

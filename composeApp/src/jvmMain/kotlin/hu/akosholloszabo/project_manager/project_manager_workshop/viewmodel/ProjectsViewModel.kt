@@ -15,10 +15,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class ProjectsViewModel(
-    private val projectStore: ProjectStore,
-    coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val projectStore: ProjectStore
 ) {
-    private val scope = coroutineScope
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val _selectedProjectPath = MutableStateFlow<String?>(null)
     val selectedProjectPath: StateFlow<String?> = _selectedProjectPath.asStateFlow()

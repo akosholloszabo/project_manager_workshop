@@ -6,10 +6,11 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.storage.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.NoteStore
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.ProjectStore
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.TicketStore
+import hu.akosholloszabo.project_manager.project_manager_workshop.store.WorkingFolderStore
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.NotesViewModel
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
-import org.koin.core.parameter.parametersOf
+import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.WorkingFolderViewModel
 import org.koin.dsl.module
 
 val appModule = module {
@@ -17,25 +18,29 @@ val appModule = module {
     single { ProjectsStorage }
     single { TicketsStorage }
 
-    factory { (workingFolder: String?) -> TicketStore(workingFolder, get()) }
-    factory { (workingFolder: String?) -> ProjectStore(workingFolder, get()) }
-    factory { (workingFolder: String?) -> NoteStore(workingFolder, get()) }
+    single { WorkingFolderStore() }
 
-    factory { (workingFolder: String?) ->
+    single { TicketStore(get(), get()) }
+    single { ProjectStore(get(), get()) }
+    single { NoteStore(get(), get()) }
+
+    single { WorkingFolderViewModel(get()) }
+
+    factory {
         TicketsViewModel(
-            ticketStore = get { parametersOf(workingFolder) },
+            ticketStore = get(),
             projectsStorage = get(),
-            workingFolder = workingFolder
+            workingFolderStore = get()
         )
     }
-    factory { (workingFolder: String?) ->
+    factory {
         ProjectsViewModel(
-            projectStore = get { parametersOf(workingFolder) }
+            projectStore = get()
         )
     }
-    factory { (workingFolder: String?) ->
+    factory {
         NotesViewModel(
-            noteStore = get { parametersOf(workingFolder) }
+            noteStore = get()
         )
     }
 }

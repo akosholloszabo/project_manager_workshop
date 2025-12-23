@@ -3,38 +3,50 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.store
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.NotesStorage
+import hu.akosholloszabo.project_manager.project_manager_workshop.store.WorkingFolderStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class NoteStore(
-    private val workingFolder: String?,
+    private val workingFolderStore: WorkingFolderStore,
     private val notesStorage: NotesStorage
 ) {
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val _notes = MutableStateFlow<List<Persisted<Note>>>(emptyList())
     val notes: StateFlow<List<Persisted<Note>>> = _notes.asStateFlow()
 
     init {
-        refreshNotes()
+        scope.launch {
+            workingFolderStore.workingFolder.collectLatest { folder ->
+                refreshNotesInternal(folder)
+            }
+        }
     }
 
     fun refreshNotes() {
         scope.launch {
-            val loaded = notesStorage.loadNotes(workingFolder)
-            _notes.emit(loaded)
+            refreshNotesInternal(workingFolderStore.workingFolder.value)
         }
     }
 
-    //TODO do it reactive instead of returning it directly
+    private suspend fun refreshNotesInternal(folder: String?) {
+        val loaded = withContext(Dispatchers.IO) {
+            notesStorage.loadNotes(folder)
+        }
+        _notes.emit(loaded)
+    }
+
     suspend fun createNote(title: String? = null, content: String = ""): Persisted<Note>? {
         val created = withContext(Dispatchers.IO) {
-            notesStorage.createNote(workingFolder, title, content)
+            notesStorage.createNote(workingFolderStore.workingFolder.value, title, content)
         }
         if (created != null) {
             refreshNotes()

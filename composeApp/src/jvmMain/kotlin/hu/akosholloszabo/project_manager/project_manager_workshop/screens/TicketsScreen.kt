@@ -17,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,39 +32,36 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketCo
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.koin.core.context.GlobalContext
-import org.koin.core.parameter.parametersOf
 import java.io.File
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TicketsScreen(workingFolder: String) {
-    val viewModel = remember(workingFolder) { GlobalContext.get().get<TicketsViewModel> { parametersOf(workingFolder) } }
-    LaunchedEffect(workingFolder) {
-        viewModel.refresh()
+fun TicketsScreen(ticketsViewModel: TicketsViewModel) {
+    LaunchedEffect(ticketsViewModel) {
+        ticketsViewModel.refresh()
     }
-    val columns by viewModel.columns.collectAsStateWithLifecycle()
-    val selectedTicket by viewModel.selectedTicket.collectAsStateWithLifecycle()
-    val projects by viewModel.projects.collectAsStateWithLifecycle()
-    val isEditing by viewModel.isEditing.collectAsStateWithLifecycle()
-    val title by viewModel.editTitle.collectAsStateWithLifecycle()
-    val projectId by viewModel.editProjectId.collectAsStateWithLifecycle()
-    val status by viewModel.editStatus.collectAsStateWithLifecycle()
-    val details by viewModel.editDetails.collectAsStateWithLifecycle()
+    val columns by ticketsViewModel.columns.collectAsStateWithLifecycle()
+    val selectedTicket by ticketsViewModel.selectedTicket.collectAsStateWithLifecycle()
+    val projects by ticketsViewModel.projects.collectAsStateWithLifecycle()
+    val isEditing by ticketsViewModel.isEditing.collectAsStateWithLifecycle()
+    val title by ticketsViewModel.editTitle.collectAsStateWithLifecycle()
+    val projectId by ticketsViewModel.editProjectId.collectAsStateWithLifecycle()
+    val status by ticketsViewModel.editStatus.collectAsStateWithLifecycle()
+    val details by ticketsViewModel.editDetails.collectAsStateWithLifecycle()
 
-    val isEditingState = StateAndEvent(state = isEditing) { shouldEdit -> if (shouldEdit) viewModel.startEditing() }
+    val isEditingState = StateAndEvent(state = isEditing) { shouldEdit -> if (shouldEdit) ticketsViewModel.startEditing() }
     val titleState = StateAndEvent(state = title, event = {
-        viewModel._editTitle.tryEmit(it)
+        ticketsViewModel._editTitle.tryEmit(it)
     })
     val projectState = StateAndEvent(state = projectId, event = {
-        viewModel._editProjectId.tryEmit(it)
+        ticketsViewModel._editProjectId.tryEmit(it)
     })
     val statusState = StateAndEvent(state = status, event = {
-        viewModel._editStatus.tryEmit(it)
+        ticketsViewModel._editStatus.tryEmit(it)
     })
     val detailsState = StateAndEvent(state = details, event = {
-        viewModel._editDetails.tryEmit(it)
+        ticketsViewModel._editDetails.tryEmit(it)
     })
 
     TicketsScreenContent(
@@ -77,12 +73,12 @@ fun TicketsScreen(workingFolder: String) {
         projectId = projectState,
         status = statusState,
         details = detailsState,
-        onTicketSelected = viewModel::selectTicket,
-        onCreateTicket = viewModel::createTicket,
-        onEdit = viewModel::startEditing,
-        onSave = viewModel::saveTicket,
-        onDelete = viewModel::deleteTicket,
-        onBack = viewModel::clearSelection
+        onTicketSelected = ticketsViewModel::selectTicket,
+        onCreateTicket = ticketsViewModel::createTicket,
+        onEdit = ticketsViewModel::startEditing,
+        onSave = ticketsViewModel::saveTicket,
+        onDelete = ticketsViewModel::deleteTicket,
+        onBack = ticketsViewModel::clearSelection
     )
 }
 

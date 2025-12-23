@@ -7,6 +7,7 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketCo
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.ProjectsStorage
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.TicketStore
+import hu.akosholloszabo.project_manager.project_manager_workshop.store.WorkingFolderStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,10 +23,9 @@ import kotlinx.coroutines.withContext
 class TicketsViewModel(
     private val ticketStore: TicketStore,
     private val projectsStorage: ProjectsStorage,
-    private val workingFolder: String?,
-    coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val workingFolderStore: WorkingFolderStore,
 ) {
-    private val scope = coroutineScope
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val _selectedTicketPath = MutableStateFlow<String?>(null)
     private val _isEditing = MutableStateFlow(false)
@@ -142,7 +142,9 @@ class TicketsViewModel(
     }
 
     private suspend fun loadProjects() = withContext(Dispatchers.IO) {
-        val loaded = projectsStorage.loadProjects(workingFolder).map { it.value.id to it.value.name }
+        val loaded = projectsStorage
+            .loadProjects(workingFolderStore.workingFolder.value)
+            .map { it.value.id to it.value.name }
         _projects.tryEmit(loaded)
     }
 

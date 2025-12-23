@@ -22,21 +22,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.NotesScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.ProjectsScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.TicketsScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.WorkingFolderScreen
-import kotlinx.coroutines.runBlocking
+import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.NotesViewModel
+import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
+import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
+import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.WorkingFolderViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true, widthDp = 360, heightDp = 640)
 @Composable
 fun App() {
     var currentScreen by rememberSaveable { mutableStateOf<Screen>(Screen.Notes) }
-    var workingFolder by rememberSaveable { mutableStateOf<String?>(null) }
-    var pendingWorkingFolder by rememberSaveable { mutableStateOf<String?>(null) }
+    val workingFolderViewModel: WorkingFolderViewModel = koinInject()
+    val workingFolder by workingFolderViewModel.selectedFolder.collectAsStateWithLifecycle()
 
     AppTheme {
         Scaffold(
@@ -60,29 +65,13 @@ fun App() {
                         .fillMaxSize()
                         .padding(innerPadding)
                 ) {
-                    val resolvedFolder = workingFolder
-                    if (resolvedFolder == null) {
+                    if (workingFolder == null) {
                         WorkingFolderScreen(
-                            selectedFolder = pendingWorkingFolder,
-                            onPickFolder = {
-                                runBlocking {
-                                    FileChooser.chooseDirectory()?.let {
-                                        pendingWorkingFolder = it
-                                    }
-                                }
-                            },
-                            onConfirm = { folder ->
-                                workingFolder = folder
-                                pendingWorkingFolder = folder
-                            },
-                            onClearSelection = {
-                                pendingWorkingFolder = null
-                            }
+                            workingFolderViewModel = workingFolderViewModel,
+                            onContinue = { currentScreen = Screen.Notes }
                         )
                     } else {
-                        Column(
-                            modifier = Modifier.fillMaxSize()
-                        ) {
+                        Column(modifier = Modifier.fillMaxSize()) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -104,14 +93,24 @@ fun App() {
 
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                                 when (currentScreen) {
-                                    is Screen.Notes -> NotesScreen(resolvedFolder)
-                                    is Screen.Projects -> ProjectsScreen(resolvedFolder)
-                                    is Screen.Tickets -> TicketsScreen(resolvedFolder)
+                                    is Screen.Notes -> {
+                                        val notesViewModel: NotesViewModel = koinInject()
+                                        NotesScreen(notesViewModel = notesViewModel)
+                                    }
+
+                                    is Screen.Projects -> {
+                                        val projectsViewModel: ProjectsViewModel = koinInject()
+                                        ProjectsScreen(projectsViewModel = projectsViewModel)
+                                    }
+
+                                    is Screen.Tickets -> {
+                                        val ticketsViewModel: TicketsViewModel = koinInject()
+                                        TicketsScreen(ticketsViewModel = ticketsViewModel)
+                                    }
                                 }
                             }
                         }
                     }
-
                 }
             }
         )
