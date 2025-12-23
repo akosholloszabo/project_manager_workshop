@@ -2,8 +2,8 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.store
 
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
+import hu.akosholloszabo.project_manager.project_manager_workshop.storage.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.TicketsStorage
-import hu.akosholloszabo.project_manager.project_manager_workshop.store.WorkingFolderStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class TicketStore(
     private val workingFolderStore: WorkingFolderStore,
@@ -24,8 +25,8 @@ class TicketStore(
 
     init {
         scope.launch {
-            workingFolderStore.workingFolder.collectLatest {
-                refreshTickets()
+            workingFolderStore.session.collectLatest { session ->
+                refreshTicketsInternal(session)
             }
         }
     }
@@ -35,7 +36,8 @@ class TicketStore(
     }
 
     fun createTicket(): Persisted<Ticket>? {
-        val created = ticketsStorage.createTicket(workingFolderStore.workingFolder.value)
+        val session = workingFolderStore.session.value ?: return null
+        val created = ticketsStorage.createTicket(session)
         if (created != null) {
             refreshTickets()
         }
@@ -43,7 +45,8 @@ class TicketStore(
     }
 
     fun saveTicket(persisted: Persisted<Ticket>, draft: Ticket): Boolean {
-        val success = ticketsStorage.saveTicket(draft, persisted.file, draft.details)
+        val session = workingFolderStore.session.value ?: return false
+        val success = ticketsStorage.saveTicket(session, draft, persisted.file, draft.details)
         if (success) {
             refreshTickets()
         }
@@ -51,7 +54,8 @@ class TicketStore(
     }
 
     fun deleteTicket(persisted: Persisted<Ticket>): Boolean {
-        val success = ticketsStorage.deleteTicket(persisted.file)
+        val session = workingFolderStore.session.value ?: return false
+        val success = ticketsStorage.deleteTicket(session, persisted.file)
         if (success) {
             refreshTickets()
         }
@@ -60,8 +64,14 @@ class TicketStore(
 
     private fun refreshTickets() {
         scope.launch {
-            val loaded = ticketsStorage.loadTickets(workingFolderStore.workingFolder.value)
-            _tickets.emit(loaded)
+            refreshTicketsInternal(workingFolderStore.session.value)
         }
+    }
+
+    private suspend fun refreshTicketsInternal(session: StorageSession?) {
+        val loaded = withContext(Dispatchers.IO) {
+            ticketsStorage.loadTickets(session)
+        }
+        _tickets.emit(loaded)
     }
 }

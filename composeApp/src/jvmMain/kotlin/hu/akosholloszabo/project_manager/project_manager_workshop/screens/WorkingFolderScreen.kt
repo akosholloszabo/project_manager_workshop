@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -22,6 +23,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,11 +39,14 @@ fun WorkingFolderScreen(
 ) {
     val selectedFolder by workingFolderViewModel.selectedFolder.collectAsStateWithLifecycle()
     var pendingFolder by rememberSaveable { mutableStateOf(selectedFolder) }
+    var password by rememberSaveable { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(selectedFolder) {
         pendingFolder = selectedFolder
     }
+
+    val canContinue = pendingFolder != null && (password.isNotBlank() || !workingFolderViewModel.requiresPassword)
 
     Column(
         modifier = Modifier
@@ -68,6 +74,21 @@ fun WorkingFolderScreen(
 
         Spacer(Modifier.height(16.dp))
 
+        if(workingFolderViewModel.requiresPassword) {
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Folder password") },
+                placeholder = { Text("Enter access password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            )
+
+            Spacer(Modifier.height(16.dp))
+        }
+
         Button(onClick = {
             scope.launch {
                 FileChooser.chooseDirectory()?.let { pendingFolder = it }
@@ -81,14 +102,16 @@ fun WorkingFolderScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = {
                 pendingFolder?.let {
-                    workingFolderViewModel.confirmFolder(it)
+                    workingFolderViewModel.confirmFolder(it, password)
+                    password = ""
                     onContinue()
                 }
-            }, enabled = pendingFolder != null) {
+            }, enabled = canContinue) {
                 Text("Continue")
             }
             TextButton(onClick = {
                 pendingFolder = null
+                password = ""
                 workingFolderViewModel.clearSelection()
             }) {
                 Text("Clear")

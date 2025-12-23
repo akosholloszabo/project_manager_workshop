@@ -1,9 +1,14 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.di
 
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.NotesStorage
+import hu.akosholloszabo.project_manager.project_manager_workshop.storage.PlainNotesStorage
+import hu.akosholloszabo.project_manager.project_manager_workshop.storage.PlainProjectsStorage
+import hu.akosholloszabo.project_manager.project_manager_workshop.storage.PlainTicketsStorage
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.ProjectsStorage
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.TicketsStorage
+import hu.akosholloszabo.project_manager.project_manager_workshop.store.EncryptedWorkingFolderStore
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.NoteStore
+import hu.akosholloszabo.project_manager.project_manager_workshop.store.PlainWorkingFolderStore
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.ProjectStore
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.TicketStore
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.WorkingFolderStore
@@ -14,11 +19,11 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.Work
 import org.koin.dsl.module
 
 val appModule = module {
-    factory { NotesStorage }
-    factory { ProjectsStorage }
-    factory { TicketsStorage }
+    factory<NotesStorage> { PlainNotesStorage() }
+    factory<ProjectsStorage> { PlainProjectsStorage() }
+    factory<TicketsStorage> { PlainTicketsStorage() }
+    single<WorkingFolderStore> { PlainWorkingFolderStore() }
 
-    single { WorkingFolderStore() }
     single { TicketStore(get(), get()) }
     single { ProjectStore(get(), get()) }
     single { NoteStore(get(), get()) }

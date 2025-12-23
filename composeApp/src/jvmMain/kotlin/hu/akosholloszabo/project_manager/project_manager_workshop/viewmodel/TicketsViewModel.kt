@@ -143,7 +143,7 @@ class TicketsViewModel(
 
     private suspend fun loadProjects() = withContext(Dispatchers.IO) {
         val loaded = projectsStorage
-            .loadProjects(workingFolderStore.workingFolder.value)
+            .loadProjects(workingFolderStore.session.value)
             .map { it.value.id to it.value.name }
         _projects.tryEmit(loaded)
     }

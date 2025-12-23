@@ -3,7 +3,7 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.store
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.NotesStorage
-import hu.akosholloszabo.project_manager.project_manager_workshop.store.WorkingFolderStore
+import hu.akosholloszabo.project_manager.project_manager_workshop.storage.StorageSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -25,28 +25,28 @@ class NoteStore(
 
     init {
         scope.launch {
-            workingFolderStore.workingFolder.collectLatest { folder ->
-                refreshNotesInternal(folder)
+            workingFolderStore.session.collectLatest { session ->
+                refreshNotesInternal(session)
             }
         }
     }
 
     fun refreshNotes() {
         scope.launch {
-            refreshNotesInternal(workingFolderStore.workingFolder.value)
+            refreshNotesInternal(workingFolderStore.session.value)
         }
     }
 
-    private suspend fun refreshNotesInternal(folder: String?) {
+    private suspend fun refreshNotesInternal(session: StorageSession?) {
         val loaded = withContext(Dispatchers.IO) {
-            notesStorage.loadNotes(folder)
+            notesStorage.loadNotes(session)
         }
         _notes.emit(loaded)
     }
 
     suspend fun createNote(title: String? = null, content: String = ""): Persisted<Note>? {
         val created = withContext(Dispatchers.IO) {
-            notesStorage.createNote(workingFolderStore.workingFolder.value, title, content)
+            notesStorage.createNote(workingFolderStore.session.value, title, content)
         }
         if (created != null) {
             refreshNotes()
@@ -56,7 +56,7 @@ class NoteStore(
 
     suspend fun saveNote(note: Persisted<Note>, content: String): Boolean {
         val success = withContext(Dispatchers.IO) {
-            notesStorage.saveNoteContent(note.file, content)
+            notesStorage.saveNoteContent(workingFolderStore.session.value, note.file, content)
         }
         if (success) {
             refreshNotes()
@@ -66,7 +66,7 @@ class NoteStore(
 
     suspend fun deleteNote(note: Persisted<Note>): Boolean {
         val success = withContext(Dispatchers.IO) {
-            notesStorage.deleteNote(note.file)
+            notesStorage.deleteNote(workingFolderStore.session.value, note.file)
         }
         if (success) {
             refreshNotes()

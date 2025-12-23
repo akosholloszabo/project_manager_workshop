@@ -50,7 +50,8 @@ fun TicketsScreen(ticketsViewModel: TicketsViewModel) {
     val status by ticketsViewModel.editStatus.collectAsStateWithLifecycle()
     val details by ticketsViewModel.editDetails.collectAsStateWithLifecycle()
 
-    val isEditingState = StateAndEvent(state = isEditing) { shouldEdit -> if (shouldEdit) ticketsViewModel.startEditing() }
+    val isEditingState =
+        StateAndEvent(state = isEditing) { shouldEdit -> if (shouldEdit) ticketsViewModel.startEditing() }
     val titleState = StateAndEvent(state = title, event = {
         ticketsViewModel._editTitle.tryEmit(it)
     })

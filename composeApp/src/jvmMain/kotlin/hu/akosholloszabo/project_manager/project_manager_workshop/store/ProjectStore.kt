@@ -3,7 +3,7 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.store
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.ProjectsStorage
-import hu.akosholloszabo.project_manager.project_manager_workshop.store.WorkingFolderStore
+import hu.akosholloszabo.project_manager.project_manager_workshop.storage.StorageSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -25,28 +25,28 @@ class ProjectStore(
 
     init {
         scope.launch {
-            workingFolderStore.workingFolder.collectLatest { folder ->
-                refreshProjectsInternal(folder)
+            workingFolderStore.session.collectLatest { session ->
+                refreshProjectsInternal(session)
             }
         }
     }
 
     fun refreshProjects() {
         scope.launch {
-            refreshProjectsInternal(workingFolderStore.workingFolder.value)
+            refreshProjectsInternal(workingFolderStore.session.value)
         }
     }
 
-    private suspend fun refreshProjectsInternal(folder: String?) {
+    private suspend fun refreshProjectsInternal(session: StorageSession?) {
         val loaded = withContext(Dispatchers.IO) {
-            projectsStorage.loadProjects(folder)
+            projectsStorage.loadProjects(session)
         }
         _projects.emit(loaded)
     }
 
     suspend fun createProject(name: String? = null, description: String = ""): Persisted<Project>? {
         val created = withContext(Dispatchers.IO) {
-            projectsStorage.createProject(workingFolderStore.workingFolder.value, name, description)
+            projectsStorage.createProject(workingFolderStore.session.value, name, description)
         }
         if (created != null) {
             refreshProjects()
@@ -56,7 +56,7 @@ class ProjectStore(
 
     suspend fun saveProject(project: Persisted<Project>, details: String): Boolean {
         val success = withContext(Dispatchers.IO) {
-            projectsStorage.saveProject(project.value, project.file, details)
+            projectsStorage.saveProject(workingFolderStore.session.value, project.value, project.file, details)
         }
         if (success) {
             refreshProjects()
@@ -66,7 +66,7 @@ class ProjectStore(
 
     suspend fun deleteProject(project: Persisted<Project>): Boolean {
         val success = withContext(Dispatchers.IO) {
-            projectsStorage.deleteProject(project.file)
+            projectsStorage.deleteProject(workingFolderStore.session.value, project.file)
         }
         if (success) {
             refreshProjects()
