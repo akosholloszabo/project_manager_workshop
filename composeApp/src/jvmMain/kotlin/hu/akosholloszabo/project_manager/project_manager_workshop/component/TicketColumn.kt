@@ -37,7 +37,7 @@ fun TicketColumn(
             )
             .padding(12.dp)
     ) {
-        Text(columnState.status.displayText, style = MaterialTheme.typography.titleMedium)
+        Text(columnState.status.name, style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Column(
             modifier = Modifier

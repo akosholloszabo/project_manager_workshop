@@ -22,7 +22,7 @@ fun TicketDetailsView(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(selectedTicket.title, style = MaterialTheme.typography.titleLarge)
         Text(
-            "Status: ${selectedTicket.status.displayText}",
+            "Status: ${selectedTicket.status.name}",
             style = MaterialTheme.typography.bodyMedium
         )
         Text(

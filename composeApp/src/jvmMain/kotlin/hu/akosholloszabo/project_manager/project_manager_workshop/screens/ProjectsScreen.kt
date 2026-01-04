@@ -37,6 +37,7 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persiste
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import java.lang.System.getProperty
 import kotlin.io.path.Path
 
 @Composable
@@ -92,7 +93,7 @@ fun ProjectsScreenContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.padding(16.dp)) {
-        Text("Projects", style = MaterialTheme.typography.titleLarge)
+        Text(getProperty("projects.title"), style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
 
         TwoPaneLayout(
@@ -116,7 +117,7 @@ fun ProjectsScreenContent(
                     verticalSpacing = 12.dp,
                     header = {
                         DetailHeader(
-                            title = selectedProject?.value?.name ?: "Projects",
+                            title = selectedProject?.value?.name ?: getProperty("projects.title"),
                             actions = {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -129,7 +130,12 @@ fun ProjectsScreenContent(
                                         onEdit = { isEditing.event(true) },
                                         onSave = onSaveProject,
                                         onDelete = onDeleteProject,
-                                        labels = CrudActionLabels(newLabel = "New project")
+                                        labels = CrudActionLabels(
+                                            newLabel = getProperty("projects.new"),
+                                            editLabel = getProperty("crud.edit"),
+                                            saveLabel = getProperty("crud.save"),
+                                            deleteLabel = getProperty("crud.delete")
+                                        )
                                     )
                                 }
                             }
@@ -141,14 +147,14 @@ fun ProjectsScreenContent(
                             TextField(
                                 value = name.state,
                                 onValueChange = name.event,
-                                label = { Text("Project name") },
+                                label = { Text(getProperty("projects.field.name")) },
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Spacer(Modifier.height(8.dp))
                             TextField(
                                 value = description.state,
                                 onValueChange = description.event,
-                                label = { Text("Description") },
+                                label = { Text(getProperty("projects.field.description")) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(120.dp),
@@ -158,7 +164,7 @@ fun ProjectsScreenContent(
                             TextField(
                                 value = details.state,
                                 onValueChange = details.event,
-                                label = { Text("Details (Markdown)") },
+                                label = { Text(getProperty("projects.field.details")) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(220.dp),
@@ -182,13 +188,13 @@ fun ProjectsScreenContent(
                                         .verticalScroll(rememberScrollState())
                                 ) {
                                     Markdown(
-                                        project.value.details.ifBlank { "*No details provided yet.*" }
+                                        project.value.details.ifBlank { getProperty("projects.empty.details") }
                                     )
                                 }
                             }
                         } ?: EmptyDetailHint(
-                            message = "Select a project to view or edit it.",
-                            description = "Choose from the list to the left"
+                            message = getProperty("projects.empty.message"),
+                            description = getProperty("projects.empty.description")
                         )
                     }
                 )

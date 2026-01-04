@@ -17,7 +17,12 @@ fun CrudActionBar(
     onEdit: (() -> Unit)? = null,
     onSave: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
-    labels: CrudActionLabels = CrudActionLabels(),
+    labels: CrudActionLabels = CrudActionLabels(
+        newLabel = TODO(),
+        editLabel = TODO(),
+        saveLabel = TODO(),
+        deleteLabel = TODO()
+    ),
     modifier: Modifier = Modifier
 ) {
     Row(

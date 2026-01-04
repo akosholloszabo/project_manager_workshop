@@ -46,7 +46,7 @@ class PlainTicketsStorage : BaseTicketsStorage() {
                 ticket.id,
                 ticket.title,
                 ticket.projectId,
-                ticket.status.displayText
+                ticket.status.name
             )
             file.writeText(json.encodeToString(metadata))
             writeDetails(file, details)

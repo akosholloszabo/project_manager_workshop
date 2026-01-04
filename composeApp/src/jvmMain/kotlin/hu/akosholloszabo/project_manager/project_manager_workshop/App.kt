@@ -33,11 +33,13 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.WorkingFolderViewModel
+import hu.akosholloszabo.project_manager.project_manager_workshop.strings.UiStrings
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.getKoin
 import org.koin.compose.koinInject
+import java.text.MessageFormat.format
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview(showBackground = true, widthDp = 360, heightDp = 640)
 @Composable
 fun App() {
     var currentScreen by rememberSaveable { mutableStateOf<Screen>(Screen.Notes) }
@@ -52,9 +54,9 @@ fun App() {
                 CenterAlignedTopAppBar(
                     title = {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Project Manager", modifier = Modifier.padding(0.dp))
+                            Text(getKoin().getProperty("app.title", ""), modifier = Modifier.padding(0.dp))
                             workingFolder?.let {
-                                Text("Working folder: $it", modifier = Modifier.padding(0.dp))
+                                Text(format(getKoin().getProperty("working.folder.summary", ""), it), modifier = Modifier.padding(0.dp))
                             }
                         }
                     },
@@ -71,7 +73,7 @@ fun App() {
                     if (needsWorkingFolder && workingFolder == null) {
                         WorkingFolderScreen(
                             workingFolderViewModel = workingFolderViewModel,
-                            onContinue = { currentScreen = Screen.Notes }
+                            onContinue = { currentScreen = Screen.Notes },
                         )
                     } else {
                         Column(modifier = Modifier.fillMaxSize()) {
@@ -82,13 +84,13 @@ fun App() {
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Button(onClick = { currentScreen = Screen.Notes }) {
-                                    Text("Notes")
+                                    Text(getKoin().getProperty("app.tab.notes", ""))
                                 }
                                 Button(onClick = { currentScreen = Screen.Projects }) {
-                                    Text("Projects")
+                                    Text(getKoin().getProperty("app.tab.projects", ""))
                                 }
                                 Button(onClick = { currentScreen = Screen.Tickets }) {
-                                    Text("Tickets")
+                                    Text(getKoin().getProperty("app.tab.tickets", ""))
                                 }
                             }
 
@@ -118,4 +120,10 @@ fun App() {
             }
         )
     }
+}
+
+@Preview(showBackground = true, widthDp = 360, heightDp = 640)
+@Composable
+fun AppPreview() {
+    App()
 }

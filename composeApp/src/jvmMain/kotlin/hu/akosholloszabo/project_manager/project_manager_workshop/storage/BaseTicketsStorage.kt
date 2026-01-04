@@ -70,7 +70,7 @@ abstract class BaseTicketsStorage : TicketsStorage {
                 id = parsed.id,
                 title = parsed.title,
                 projectId = parsed.projectId,
-                status = TicketStatus.fromDisplay(parsed.status),
+                status = TicketStatus.fromName(parsed.status),
                 details = readDetails(file)
             )
             Persisted(file, normalized)
@@ -86,11 +86,10 @@ abstract class BaseTicketsStorage : TicketsStorage {
                 id = parsed.id,
                 title = parsed.title,
                 projectId = parsed.projectId,
-                status = TicketStatus.fromDisplay(parsed.status),
+                status = TicketStatus.fromName(parsed.status),
                 details = readDetailsEncrypted(file, key)
             )
             Persisted(file, normalized)
         }
     }
 }
-

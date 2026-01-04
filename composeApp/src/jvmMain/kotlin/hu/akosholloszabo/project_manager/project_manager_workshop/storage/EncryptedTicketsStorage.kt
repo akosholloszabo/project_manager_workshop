@@ -48,7 +48,7 @@ class EncryptedTicketsStorage : BaseTicketsStorage() {
                 ticket.id,
                 ticket.title,
                 ticket.projectId,
-                ticket.status.displayText
+                ticket.status.name
             )
             file.writeText(StorageCipher.encrypt(json.encodeToString(metadata), key))
             writeDetailsEncrypted(file, key, details)
@@ -65,4 +65,3 @@ class EncryptedTicketsStorage : BaseTicketsStorage() {
         } ?: false
     }
 }
-

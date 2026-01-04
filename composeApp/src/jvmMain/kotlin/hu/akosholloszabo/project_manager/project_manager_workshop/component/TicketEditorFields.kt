@@ -58,14 +58,14 @@ fun TicketEditorFields(
             }
         }
         ReadOnlyDropdownField(
-            value = status.state.displayText,
+            value = status.state.name,
             label = "Status",
             expanded = statusDropdownExpanded,
             onExpandedChange = { statusDropdownExpanded = it }
         ) {
             TicketStatus.entries.forEach { entry ->
                 DropdownMenuItem(
-                    text = { Text(entry.displayText) },
+                    text = { Text(entry.name) },
                     onClick = {
                         status.event(entry)
                         statusDropdownExpanded = false

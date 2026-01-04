@@ -33,7 +33,10 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.CrudActi
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.NotesViewModel
+import hu.akosholloszabo.project_manager.project_manager_workshop.strings.UiStrings
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.getKoin
+import org.koin.compose.koinInject
 import java.io.File
 
 @Composable
@@ -81,7 +84,7 @@ fun NotesScreenContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
-        Text("Notes", style = MaterialTheme.typography.titleLarge)
+        Text(getKoin().getProperty("notes.title", ""), style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val masterWeight = if (maxWidth < 640.dp) 0.55f else 0.33f
@@ -112,7 +115,8 @@ fun NotesScreenContent(
                         verticalSpacing = 8.dp,
                         header = {
                             DetailHeader(
-                                title = selectedNote?.value?.title ?: "No note selected",
+                                title = selectedNote?.value?.title ?: getKoin()
+                                    .getProperty("notes.empty.message", ""),
                                 actions = {
                                     CrudActionBar(
                                         hasSelection = selectedNote != null,
@@ -121,7 +125,12 @@ fun NotesScreenContent(
                                         onEdit = { isEditing.event(true) },
                                         onSave = onSaveNote,
                                         onDelete = onDeleteNote,
-                                        labels = CrudActionLabels(newLabel = "New note")
+                                        labels = CrudActionLabels(
+                                            newLabel = getKoin().getProperty("notes.new", ""),
+                                            editLabel = getKoin().getProperty("crud.edit", ""),
+                                            saveLabel = getKoin().getProperty("crud.save", ""),
+                                            deleteLabel = getKoin().getProperty("crud.delete", "")
+                                        )
                                     )
                                 }
                             )
@@ -141,7 +150,10 @@ fun NotesScreenContent(
                                 ) {
                                     Markdown(note.value.content)
                                 }
-                            } ?: EmptyDetailHint("Select a note to view or edit it.")
+                            } ?: EmptyDetailHint(
+                                message = getKoin().getProperty("notes.empty.message", ""),
+                                description = getKoin().getProperty("notes.empty.description", "")
+                            )
                         }
                     )
                 }

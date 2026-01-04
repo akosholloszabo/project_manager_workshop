@@ -11,6 +11,7 @@ import org.koin.fileProperties
 fun main() = application {
     startKoin {
         fileProperties()
+        fileProperties("/strings.properties")
         modules(appModule)
     }
     Window(
