@@ -22,6 +22,7 @@ dependencies {
     implementation(libs.ktor.serverContentNegotiation)
     implementation(libs.ktor.serializationKotlinxJson)
     implementation(libs.ktor.serverCallLogging)
+    implementation(libs.ktor.certificates)
     implementation(libs.exposed.core)
     implementation(libs.exposed.dao)
     implementation(libs.exposed.jdbc)

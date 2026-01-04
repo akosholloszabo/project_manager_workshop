@@ -50,6 +50,14 @@ kotlin {
 // OR for Material 3 themed apps
             implementation("com.mikepenz:multiplatform-markdown-renderer-m3:${mikpezVersion}")
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.ktor.clientCore)
+            implementation(libs.ktor.clientCio)
+            implementation(libs.ktor.clientContentNegotiation)
+            implementation(libs.ktor.clientSerialization)
+            implementation(libs.ktor.certificates)
+        }
+        jvmTest.dependencies {
+            implementation(libs.kotlin.test)
         }
     }
 }

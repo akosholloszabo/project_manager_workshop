@@ -2,8 +2,8 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.store
 
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.ProjectsStorage
-import hu.akosholloszabo.project_manager.project_manager_workshop.storage.StorageSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

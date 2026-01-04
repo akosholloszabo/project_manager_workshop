@@ -74,7 +74,7 @@ fun WorkingFolderScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        if(workingFolderViewModel.requiresPassword) {
+        if (workingFolderViewModel.requiresPassword) {
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },

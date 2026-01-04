@@ -1,8 +1,9 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.store
 
+import hu.akosholloszabo.project_manager.project_manager_workshop.di.StorageBackend
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
-import hu.akosholloszabo.project_manager.project_manager_workshop.storage.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.TicketsStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +17,8 @@ import kotlinx.coroutines.withContext
 
 class TicketStore(
     private val workingFolderStore: WorkingFolderStore,
-    private val ticketsStorage: TicketsStorage
+    private val ticketsStorage: TicketsStorage,
+    private val storageBackend: StorageBackend
 ) {
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -36,7 +38,8 @@ class TicketStore(
     }
 
     fun createTicket(): Persisted<Ticket>? {
-        val session = workingFolderStore.session.value ?: return null
+        val session = workingFolderStore.session.value
+        if (requiresSession() && session == null) return null
         val created = ticketsStorage.createTicket(session)
         if (created != null) {
             refreshTickets()
@@ -45,7 +48,8 @@ class TicketStore(
     }
 
     fun saveTicket(persisted: Persisted<Ticket>, draft: Ticket): Boolean {
-        val session = workingFolderStore.session.value ?: return false
+        val session = workingFolderStore.session.value
+        if (requiresSession() && session == null) return false
         val success = ticketsStorage.saveTicket(session, draft, persisted.file, draft.details)
         if (success) {
             refreshTickets()
@@ -54,7 +58,8 @@ class TicketStore(
     }
 
     fun deleteTicket(persisted: Persisted<Ticket>): Boolean {
-        val session = workingFolderStore.session.value ?: return false
+        val session = workingFolderStore.session.value
+        if (requiresSession() && session == null) return false
         val success = ticketsStorage.deleteTicket(session, persisted.file)
         if (success) {
             refreshTickets()
@@ -74,4 +79,6 @@ class TicketStore(
         }
         _tickets.emit(loaded)
     }
+
+    private fun requiresSession(): Boolean = storageBackend != StorageBackend.SERVER
 }

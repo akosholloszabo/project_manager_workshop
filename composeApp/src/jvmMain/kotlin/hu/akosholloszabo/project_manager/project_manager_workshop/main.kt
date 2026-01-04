@@ -6,9 +6,11 @@ import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import hu.akosholloszabo.project_manager.project_manager_workshop.di.appModule
 import org.koin.core.context.startKoin
+import org.koin.fileProperties
 
 fun main() = application {
     startKoin {
+        fileProperties()
         modules(appModule)
     }
     Window(

@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
+import hu.akosholloszabo.project_manager.project_manager_workshop.di.StorageBackend
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.NotesScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.ProjectsScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.TicketsScreen
@@ -40,6 +41,8 @@ import org.koin.compose.koinInject
 @Composable
 fun App() {
     var currentScreen by rememberSaveable { mutableStateOf<Screen>(Screen.Notes) }
+    val storageBackend: StorageBackend = koinInject()
+    val needsWorkingFolder = storageBackend != StorageBackend.SERVER
     val workingFolderViewModel: WorkingFolderViewModel = koinInject()
     val workingFolder by workingFolderViewModel.selectedFolder.collectAsStateWithLifecycle()
 
@@ -65,7 +68,7 @@ fun App() {
                         .fillMaxSize()
                         .padding(innerPadding)
                 ) {
-                    if (workingFolder == null) {
+                    if (needsWorkingFolder && workingFolder == null) {
                         WorkingFolderScreen(
                             workingFolderViewModel = workingFolderViewModel,
                             onContinue = { currentScreen = Screen.Notes }

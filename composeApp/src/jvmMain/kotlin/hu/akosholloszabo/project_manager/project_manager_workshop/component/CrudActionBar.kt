@@ -7,6 +7,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.CrudActionLabels
 
 @Composable
 fun CrudActionBar(
@@ -35,9 +36,3 @@ fun CrudActionBar(
     }
 }
 
-data class CrudActionLabels(
-    val newLabel: String = "New",
-    val editLabel: String = "Edit",
-    val saveLabel: String = "Save",
-    val deleteLabel: String = "Delete"
-)

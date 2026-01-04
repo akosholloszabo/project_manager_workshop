@@ -1,4 +1,4 @@
-package hu.akosholloszabo.project_manager.project_manager_workshop.storage
+package hu.akosholloszabo.project_manager.project_manager_workshop.model
 
 import javax.crypto.SecretKey
 

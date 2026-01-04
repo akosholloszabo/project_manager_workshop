@@ -1,6 +1,6 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel
 
-import hu.akosholloszabo.project_manager.project_manager_workshop.storage.StorageSession
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.WorkingFolderStore
 import kotlinx.coroutines.flow.StateFlow
 
