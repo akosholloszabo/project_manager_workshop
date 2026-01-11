@@ -1,51 +1,27 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.store
 
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
-import hu.akosholloszabo.project_manager.project_manager_workshop.storage.StorageCipher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-interface WorkingFolderStore {
-    val workingFolder: StateFlow<String?>
-    val session: StateFlow<StorageSession?>
-    val requiresPassword: Boolean
-
-    fun confirmFolder(folder: String, password: String? = null)
-    fun clearSelection()
-}
-
-abstract class BaseWorkingFolderStore : WorkingFolderStore {
+abstract class WorkingFolderStore {
     protected val _session = MutableStateFlow<StorageSession?>(null)
-    override val session: StateFlow<StorageSession?> = _session.asStateFlow()
+    val session: StateFlow<StorageSession?> = _session.asStateFlow()
 
     protected val _workingFolder = MutableStateFlow<String?>(null)
-    override val workingFolder: StateFlow<String?> = _workingFolder.asStateFlow()
+    val workingFolder: StateFlow<String?> = _workingFolder.asStateFlow()
 
     protected fun updateSession(session: StorageSession?) {
         _session.tryEmit(session)
         _workingFolder.tryEmit(session?.folderPath)
     }
 
-    override fun clearSelection() {
+    fun clearSelection() {
         updateSession(null)
     }
-}
 
-class PlainWorkingFolderStore : BaseWorkingFolderStore() {
-    override val requiresPassword: Boolean = false
+    abstract val requiresPassword: Boolean
 
-    override fun confirmFolder(folder: String, password: String?) {
-        updateSession(StorageSession(folder, null))
-    }
-}
-
-class EncryptedWorkingFolderStore : BaseWorkingFolderStore() {
-    override val requiresPassword: Boolean = true
-
-    override fun confirmFolder(folder: String, password: String?) {
-        val secret = password?.trim().takeUnless { it.isNullOrEmpty() } ?: return
-        val key = StorageCipher.deriveKey(secret)
-        updateSession(StorageSession(folder, key))
-    }
+    abstract fun confirmFolder(folder: String, password: String? = null)
 }

@@ -27,7 +27,7 @@ fun TicketEditorFields(
     projects: Map<Int, String>,
     title: StateAndEvent<String>,
     projectId: StateAndEvent<Int>,
-    status: StateAndEvent<TicketStatus>,
+    status: StateAndEvent<TicketStatus?>,
     details: StateAndEvent<String>
 ) {
     var projectDropdownExpanded by rememberSaveable { mutableStateOf(false) }
@@ -60,7 +60,7 @@ fun TicketEditorFields(
             }
         }
         ReadOnlyDropdownField(
-            value = status.state.displayName,
+            value = status.state?.displayName ?: getKoin().getTextOrException("tickets.status.missing"),
             label = getKoin().getTextOrException("tickets.field.status"),
             expanded = statusDropdownExpanded,
             onExpandedChange = { statusDropdownExpanded = it }

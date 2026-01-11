@@ -5,6 +5,7 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.ProjectPayload
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.network.ProjectServerClient
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
@@ -20,7 +21,7 @@ class ServerProjectsStorage(private val client: ProjectServerClient) : ProjectsS
         details: String
     ): Persisted<Project> {
         val payload = ProjectPayload(
-            name = name.takeIf { it.isNotBlank() } ?: "New project",
+            name = name.takeIf { it.isNotBlank() } ?: getKoin().getTextOrException("projects.new"),
             description = description,
             details = ""
         )
@@ -45,9 +46,9 @@ class ServerProjectsStorage(private val client: ProjectServerClient) : ProjectsS
         return runBlocking { client.delete(id) }
     }
 
-    private fun persistProject(project: Project): Persisted<Project> = Persisted(ProjectFile(project.id), project)
+    private fun persistProject(project: Project): Persisted<Project> = Persisted(projectFile(project.id), project)
 
-    private fun ProjectFile(id: Int): File = File("server-project-$id.json")
+    private fun projectFile(id: Int): File = File("server-project-$id.json")
 
     private fun extractId(file: File): Int? = file.nameWithoutExtension
         .split('-')

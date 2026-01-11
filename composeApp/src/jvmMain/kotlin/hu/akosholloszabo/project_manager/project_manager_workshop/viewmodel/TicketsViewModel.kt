@@ -33,11 +33,11 @@ class TicketsViewModel(
 
     val _editTitle = MutableStateFlow("")
     val _editProjectId = MutableStateFlow(0)
-    val _editStatus = MutableStateFlow(TicketStatus.default)
+    val _editStatus = MutableStateFlow<TicketStatus?>(null)
     val _editDetails = MutableStateFlow("")
     val editTitle: StateFlow<String> = _editTitle.asStateFlow()
     val editProjectId: StateFlow<Int> = _editProjectId.asStateFlow()
-    val editStatus: StateFlow<TicketStatus> = _editStatus.asStateFlow()
+    val editStatus: StateFlow<TicketStatus?> = _editStatus.asStateFlow()
     val editDetails: StateFlow<String> = _editDetails.asStateFlow()
 
     private val _projects = MutableStateFlow<Map<Int, String>>(emptyMap())
@@ -187,7 +187,7 @@ class TicketsViewModel(
     private fun resetEditorFields() {
         _editTitle.tryEmit("")
         _editProjectId.tryEmit(0)
-        _editStatus.tryEmit(TicketStatus.default)
+        _editStatus.tryEmit(null)
         _editDetails.tryEmit("")
     }
 }

@@ -1,22 +1,16 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSpec
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.time.LocalDateTime.now
 import java.time.format.DateTimeFormatter.ofPattern
 import java.util.Locale.US
 
-object FileStorageHelper {
+class FileStorageHelper {
     val defaultJson = Json { encodeDefaults = true; prettyPrint = true }
 
     private val timestampFormatter = ofPattern("yyyyMMdd-HHmmss", US)
-
-    data class StorageSpec(
-        val folderName: String,
-        val primaryExtension: String,
-        val fallbackName: String,
-        val detailExtension: String? = null
-    )
 
     fun getSidecarFile(primaryFile: File, extension: String): File {
         val parent = primaryFile.parentFile ?: primaryFile
@@ -67,14 +61,6 @@ object FileStorageHelper {
         val timestamp = now().format(timestampFormatter)
         val normalizedExtension = ensureDotPrefix(spec.primaryExtension)
         return File(folder, "$sanitized-$timestamp$normalizedExtension")
-    }
-
-    fun readDetails(primaryFile: File, spec: StorageSpec): String {
-        return spec.detailExtension?.let {
-            runCatching {
-                ensureSidecarFile(primaryFile, it).readText()
-            }.getOrDefault("")
-        } ?: ""
     }
 
     fun writeDetails(primaryFile: File, spec: StorageSpec, content: String) {

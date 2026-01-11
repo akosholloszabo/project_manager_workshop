@@ -5,30 +5,33 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageS
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketMetadata
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
 import java.io.File
+import java.util.UUID.randomUUID
 
-class PlainTicketsStorage : BaseTicketsStorage() {
+class PlainTicketsStorage(fileStorageHelper: FileStorageHelper) : LocalTicketsStorage(fileStorageHelper) {
+    private val newTicketText by lazy { getKoin().getTextOrException("ticket.default.title") }
     override fun loadTickets(session: StorageSession?): List<Persisted<Ticket>> {
         return withTicketsDirectory(session) { folder ->
-            FileStorageHelper.listStorageFiles(folder, storageSpec)
+            fileStorageHelper.listStorageFiles(folder, storageSpec)
                 .mapNotNull(::ticketFromFile)
         } ?: emptyList()
     }
 
     override fun createTicket(
         session: StorageSession?,
-        title: String?,
-        projectId: Int?,
+        title: String,
+        projectId: Int,
         status: TicketStatus,
         details: String
     ): Persisted<Ticket>? {
         return withTicketsDirectory(session) { folder ->
-            val file = FileStorageHelper.createTimestampedFile(folder, title, storageSpec)
-            val defaultTitle = title?.takeIf { it.isNotBlank() } ?: "New ticket"
+            val file = fileStorageHelper.createTimestampedFile(folder, title, storageSpec)
+            val defaultTitle = title.takeIf { it.isNotBlank() } ?: newTicketText
             val ticket = Ticket(
-                id = EntityIdGenerator.newId(),
+                id = randomUUID().hashCode(),
                 title = defaultTitle,
-                projectId = projectId ?: 0,
+                projectId = projectId,
                 status = status,
                 details = details
             )
@@ -46,7 +49,7 @@ class PlainTicketsStorage : BaseTicketsStorage() {
                 ticket.id,
                 ticket.title,
                 ticket.projectId,
-                ticket.status.name
+                ticket.status?.name
             )
             file.writeText(json.encodeToString(metadata))
             writeDetails(file, details)
@@ -57,7 +60,7 @@ class PlainTicketsStorage : BaseTicketsStorage() {
     override fun deleteTicket(session: StorageSession?, file: File): Boolean {
         return session?.let {
             safe {
-                FileStorageHelper.deleteDetails(file, storageSpec)
+                fileStorageHelper.deleteDetails(file, storageSpec)
                 file.delete()
             }
         } ?: false

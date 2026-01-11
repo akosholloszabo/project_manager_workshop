@@ -5,15 +5,15 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persiste
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import java.io.File
 
-class PlainNotesStorage : BaseNotesStorage(), NotesStorage {
+class PlainNotesStorage(override val fileStorageHelper: FileStorageHelper) : LocalNotesStorage(), NotesStorage {
     override fun loadNotes(session: StorageSession?): List<Persisted<Note>> = withNotesDirectory(session) { folder ->
-        FileStorageHelper.listStorageFiles(folder, storageSpec())
+        fileStorageHelper.listStorageFiles(folder, storageSpec())
             .mapNotNull(::noteFromFile)
     } ?: emptyList()
 
     override fun createNote(session: StorageSession?, title: String?, content: String): Persisted<Note>? {
         return withNotesDirectory(session) { folder ->
-            val file = FileStorageHelper.createTimestampedFile(folder, title, storageSpec())
+            val file = fileStorageHelper.createTimestampedFile(folder, title, storageSpec())
             val noteContent = content.ifBlank { defaultContent(title) }
             safe {
                 file.writeText(noteContent)

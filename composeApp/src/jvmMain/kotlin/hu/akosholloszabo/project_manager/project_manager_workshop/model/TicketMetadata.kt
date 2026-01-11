@@ -7,6 +7,6 @@ data class TicketMetadata(
     val id: Int,
     val title: String,
     val projectId: Int,
-    val status: String
+    val status: String?
 )
 

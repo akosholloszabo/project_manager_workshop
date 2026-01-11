@@ -3,19 +3,25 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSpec
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
 import java.io.File
 import java.util.*
-import javax.crypto.SecretKey
 
-abstract class BaseNotesStorage {
-    protected val storageSpec = FileStorageHelper.StorageSpec(
+abstract class LocalNotesStorage : NotesStorage {
+    abstract val fileStorageHelper: FileStorageHelper
+
+    protected val storageSpec = StorageSpec(
         folderName = "notes",
         primaryExtension = ".md",
         fallbackName = "note"
     )
 
+    private val newNoteText by lazy { getKoin().getTextOrException("notes.default.title") }
+    private val untitledText by lazy { getKoin().getTextOrException("notes.default.untitled") }
+
     protected inline fun <T> withNotesDirectory(session: StorageSession?, action: (File) -> T): T? {
-        val folder = session?.let { FileStorageHelper.ensureStorageDirectory(it.folderPath, storageSpec) }
+        val folder = session?.let { fileStorageHelper.ensureStorageDirectory(it.folderPath, storageSpec) }
             ?: return null
         return action(folder)
     }
@@ -25,7 +31,7 @@ abstract class BaseNotesStorage {
         return file.canonicalPath.startsWith(canonicalRoot)
     }
 
-    protected fun defaultTitle(title: String?): String = title?.takeIf { it.isNotBlank() } ?: "New note"
+    protected fun defaultTitle(title: String?): String = title?.takeIf { it.isNotBlank() } ?: newNoteText
 
     protected fun defaultContent(title: String?): String = "# ${defaultTitle(title)}\n\n"
 
@@ -41,17 +47,6 @@ abstract class BaseNotesStorage {
         }
     }
 
-    protected fun noteFromFileEncrypted(file: File, key: SecretKey): Persisted<Note>? {
-        return safe {
-            val encryptedContent = file.readText()
-            val content = StorageCipher.tryDecrypt(encryptedContent, key) ?: return null
-            val parsedTitle = deriveTitle(file, content)
-            val embeddedId = extractId(content)
-            val normalizedId = embeddedId ?: file.canonicalPath.hashCode()
-            Persisted(file, Note(normalizedId, parsedTitle, content))
-        }
-    }
-
     protected fun storageSpec() = storageSpec
 
     protected fun deriveTitle(content: String, fallback: String): String {
@@ -60,11 +55,11 @@ abstract class BaseNotesStorage {
             ?.removePrefix("#")
             ?.trim()
             ?.takeUnless { it.isBlank() }
-        val resolvedFallback = fallback.takeUnless { it.isBlank() } ?: "Untitled"
+        val resolvedFallback = fallback.takeUnless { it.isBlank() } ?: untitledText
         return firstLineTitle ?: resolvedFallback
     }
 
-    private fun deriveTitle(file: File, content: String): String {
+    protected fun deriveTitle(file: File, content: String): String {
         return deriveTitle(content, fallbackTitle(file))
     }
 
@@ -74,10 +69,10 @@ abstract class BaseNotesStorage {
             .trim()
             .takeUnless { it.isBlank() }
         return fallback?.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.US) else it.toString() }
-            ?: "Untitled"
+            ?: untitledText
     }
 
-    private fun extractId(content: String): Int? {
+    protected fun extractId(content: String): Int? {
         val idLine = content.lineSequence()
             .firstOrNull { it.startsWith("<!-- id:") && it.endsWith("-->") }
             ?: return null

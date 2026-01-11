@@ -3,9 +3,10 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
+import org.koin.core.component.KoinComponent
 import java.io.File
 
-interface ProjectsStorage {
+interface ProjectsStorage : KoinComponent {
     fun loadProjects(session: StorageSession?): List<Persisted<Project>>
     fun createProject(
         session: StorageSession?,

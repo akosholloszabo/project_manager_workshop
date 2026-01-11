@@ -93,7 +93,7 @@ fun TicketsScreenContent(
     isEditing: StateAndEvent<Boolean>,
     title: StateAndEvent<String>,
     projectId: StateAndEvent<Int>,
-    status: StateAndEvent<TicketStatus>,
+    status: StateAndEvent<TicketStatus?>,
     details: StateAndEvent<String>,
     onTicketSelected: (Persisted<Ticket>) -> Unit,
     onCreateTicket: () -> Unit,

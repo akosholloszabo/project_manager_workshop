@@ -11,7 +11,7 @@ data class Ticket(
     val id: Int,
     val title: String,
     val projectId: Int,
-    val status: TicketStatus,
+    val status: TicketStatus?,
     @Transient
     val details: String = ""
 )

@@ -8,7 +8,22 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.network.NoteSe
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
-class ServerNotesStorage(private val client: NoteServerClient) : BaseNotesStorage(), NotesStorage {
+class ServerNotesStorage(private val client: NoteServerClient) : NotesStorage {
+
+    private fun deriveTitle(content: String, fallback: String): String {
+        val firstLineTitle = content.lineSequence()
+            .firstOrNull { it.isNotBlank() }
+            ?.removePrefix("#")
+            ?.trim()
+            ?.takeUnless { it.isBlank() }
+        val resolvedFallback = fallback.takeUnless { it.isBlank() } ?: "Untitled"
+        return firstLineTitle ?: resolvedFallback
+    }
+
+    private fun defaultTitle(title: String?): String = title?.takeIf { it.isNotBlank() } ?: "New note"
+
+    private fun defaultContent(title: String?): String = "# ${defaultTitle(title)}\n\n"
+
     override fun loadNotes(session: StorageSession?): List<Persisted<Note>> = runBlocking {
         client.getAll().map(::persistNote)
     }

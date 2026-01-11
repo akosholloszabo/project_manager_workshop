@@ -4,6 +4,7 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persiste
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageBackend
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.TicketsStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,7 +41,9 @@ class TicketStore(
     fun createTicket(): Persisted<Ticket>? {
         val session = workingFolderStore.session.value
         if (requiresSession() && session == null) return null
-        val created = ticketsStorage.createTicket(session)
+        val created = ticketsStorage.createTicket(
+            session, title = "", projectId = -1, status = TicketStatus.Backlog, details = ""
+        )
         if (created != null) {
             refreshTickets()
         }

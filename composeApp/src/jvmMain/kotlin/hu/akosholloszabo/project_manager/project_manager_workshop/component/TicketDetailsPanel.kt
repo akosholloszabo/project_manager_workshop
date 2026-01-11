@@ -29,7 +29,7 @@ fun TicketDetailsPanel(
     isEditing: StateAndEvent<Boolean>,
     title: StateAndEvent<String>,
     projectId: StateAndEvent<Int>,
-    status: StateAndEvent<TicketStatus>,
+    status: StateAndEvent<TicketStatus?>,
     details: StateAndEvent<String>,
     onEdit: () -> Unit,
     onSave: () -> Unit,

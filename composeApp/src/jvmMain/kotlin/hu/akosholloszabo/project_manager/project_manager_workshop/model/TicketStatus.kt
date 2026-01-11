@@ -20,7 +20,6 @@ enum class TicketStatus : KoinComponent {
 
 
     companion object {
-        val default: TicketStatus = Backlog
         fun fromName(name: String): TicketStatus = entries
             .firstOrNull { it.displayName == name || it.name == name }
             ?: throw Exception("No TicketStatus with name: $name")
