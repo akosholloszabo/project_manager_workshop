@@ -7,6 +7,6 @@ import kotlinx.serialization.Serializable
 data class TicketPayload(
     val title: String,
     val projectId: Int,
-    val status: TicketStatus = TicketStatus.default,
-    val details: String = ""
+    val status: TicketStatus,
+    val details: String
 )
