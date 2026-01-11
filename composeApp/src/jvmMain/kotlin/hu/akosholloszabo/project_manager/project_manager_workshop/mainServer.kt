@@ -23,12 +23,18 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.Tick
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
+import java.io.ByteArrayInputStream
+import java.io.File
+import java.security.KeyStore
+import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.X509TrustManager
 import java.util.*
 
 fun main() = application {
+    val classLoader = Thread.currentThread().contextClassLoader
     val props = Properties().apply {
-        javaClass.getResourceAsStream("/koinServer.properties")?.use { load(it) }
-        javaClass.getResourceAsStream("/strings.properties")?.use { load(it) }
+        classLoader?.getResourceAsStream("koinServer.properties")?.use { load(it) }
+        classLoader?.getResourceAsStream("strings.properties")?.use { load(it) }
     }
     val strings = Strings(props.entries.associate { (k, v) -> k.toString() to v.toString() })
     Texts.init(strings)
@@ -39,7 +45,8 @@ fun main() = application {
         host = props.getProperty("SERVER_HOST", "localhost"),
         httpsPort = props.getProperty("SERVER_HTTPS_PORT", "8443").toInt()
     )
-    val httpClient = httpClient()
+    val trustManager = loadTrustManager(props, classLoader)
+    val httpClient = httpClient(trustManager)
     val noteClient = NoteServerClient(apiConfig, httpClient)
     val projectClient = ProjectServerClient(apiConfig, httpClient)
     val ticketClient = TicketServerClient(apiConfig, httpClient)
@@ -70,6 +77,24 @@ fun main() = application {
     }
 }
 
-private fun httpClient() = io.ktor.client.HttpClient(io.ktor.client.engine.cio.CIO) {
+private fun loadTrustManager(props: Properties, classLoader: ClassLoader?): X509TrustManager {
+    val password = props.getProperty("project_manager.serverKeystorePassword", "changeit").toCharArray()
+    val explicitPath = props.getProperty("project_manager.serverKeystorePath")?.takeIf { it.isNotBlank() }
+    val keystoreBytes = when {
+        explicitPath != null -> File(explicitPath).takeIf(File::exists)?.readBytes()
+        else -> classLoader?.getResourceAsStream("ssl/server-keystore.p12")?.use { it.readBytes() }
+    } ?: error("Keystore not found; set project_manager.serverKeystorePath or bundle ssl/server-keystore.p12")
+
+    val keyStore = KeyStore.getInstance(KeyStore.getDefaultType())
+    ByteArrayInputStream(keystoreBytes).use { keyStore.load(it, password) }
+    val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+    tmf.init(keyStore)
+    return tmf.trustManagers.filterIsInstance<X509TrustManager>().first()
+}
+
+private fun httpClient(trustManager: X509TrustManager) = io.ktor.client.HttpClient(io.ktor.client.engine.cio.CIO) {
+    engine {
+        https { this.trustManager = trustManager }
+    }
     install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
 }

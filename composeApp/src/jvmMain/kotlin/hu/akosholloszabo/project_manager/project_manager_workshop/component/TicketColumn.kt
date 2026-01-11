@@ -49,7 +49,7 @@ fun TicketColumn(
         ) {
             if (columnState.cards.isEmpty()) {
                 Text(
-                    text("tickets.empty.column"),
+                    text("tickets.no.items"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

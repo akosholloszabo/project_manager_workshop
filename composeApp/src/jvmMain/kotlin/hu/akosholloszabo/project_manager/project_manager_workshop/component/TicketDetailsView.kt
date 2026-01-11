@@ -26,13 +26,13 @@ fun TicketDetailsView(
             style = MaterialTheme.typography.headlineSmall
         )
         Text(
-            text = projectName,
+            text = text("ticket.project.header").format(projectName),
             style = MaterialTheme.typography.titleMedium
         )
         Text(
             text = (selectedTicket.status?.displayName
                 ?: text("tickets.status.missing"))
-                .let { text("tickets.details.status").format(it) },
+                .let { text("ticket.status.header").format(it) },
             style = MaterialTheme.typography.bodyMedium
         )
         SelectionContainer(

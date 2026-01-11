@@ -33,9 +33,9 @@ fun TicketEditorFields(
     var projectDropdownExpanded by rememberSaveable { mutableStateOf(false) }
     var statusDropdownExpanded by rememberSaveable { mutableStateOf(false) }
 
-    val projectsLabel = text("tickets.editor.projects")
-    val statusLabel = text("tickets.editor.status")
-    val projectNullText = text("tickets.editor.no.project")
+    val projectsLabel = text("tickets.field.projects")
+    val statusLabel = text("tickets.field.status")
+    val projectNullText = text("tickets.no.items")
     val statusNullText = text("tickets.status.missing")
 
     Column(
@@ -45,7 +45,7 @@ fun TicketEditorFields(
         TextField(
             value = title.state,
             onValueChange = title.event,
-            label = { Text(text("tickets.editor.title")) },
+            label = { Text(text("tickets.field.title")) },
             modifier = Modifier.fillMaxWidth()
         )
         ReadOnlyDropdownField(
@@ -66,7 +66,7 @@ fun TicketEditorFields(
         }
         ReadOnlyDropdownField(
             value = status.state?.displayName ?: statusNullText,
-            label = text("tickets.editor.status"),
+            label = text("tickets.field.status"),
             expanded = statusDropdownExpanded,
             onExpandedChange = { statusDropdownExpanded = it }
         ) {
@@ -86,7 +86,7 @@ fun TicketEditorFields(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(220.dp),
-            label = { Text(text("tickets.editor.details")) },
+            label = { Text(text("tickets.field.details")) },
             maxLines = Int.MAX_VALUE
         )
     }

@@ -23,9 +23,10 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.Work
 import java.util.*
 
 fun main() = application {
+    val classLoader = Thread.currentThread().contextClassLoader
     val props = Properties().apply {
-        javaClass.getResourceAsStream("/koinEncrypted.properties")?.use { load(it) }
-        javaClass.getResourceAsStream("/strings.properties")?.use { load(it) }
+        classLoader?.getResourceAsStream("koinEncrypted.properties")?.use { load(it) }
+        classLoader?.getResourceAsStream("strings.properties")?.use { load(it) }
     }
     val strings = Strings(props.entries.associate { (k, v) -> k.toString() to v.toString() })
     Texts.init(strings)
