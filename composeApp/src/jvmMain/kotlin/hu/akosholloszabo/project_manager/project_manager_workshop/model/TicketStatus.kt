@@ -1,10 +1,10 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.model
 
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Texts
 import kotlinx.serialization.Serializable
-import org.koin.core.component.KoinComponent
 
 @Serializable
-enum class TicketStatus : KoinComponent {
+enum class TicketStatus {
     Backlog,
     ReadyForRefinement,
     InRefinement,
@@ -16,7 +16,7 @@ enum class TicketStatus : KoinComponent {
     Rejected;
 
     val displayName: String
-        get() = getKoin().getProperty("ticket.status.${name}", name)
+        get() = Texts.get("ticket.status.${name}") ?: name
 
 
     companion object {

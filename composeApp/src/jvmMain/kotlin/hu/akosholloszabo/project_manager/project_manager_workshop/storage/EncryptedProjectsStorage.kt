@@ -3,19 +3,19 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
-import org.koin.core.component.KoinComponent
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
 import java.io.File
 import java.util.UUID.randomUUID
 import javax.crypto.SecretKey
 
 class EncryptedProjectsStorage(
     val storageCipher: StorageCipher,
-    fileStorageHelper: FileStorageHelper
-) : LocalProjectsStorage(fileStorageHelper), KoinComponent {
-    private val encryptionKeyRequiredText: String = getKoin().getTextOrException("storage.session.encryption.required")
-    private val newProjectText: String = getKoin().getTextOrException("projects.new")
-    private val decryptFailureText: String = getKoin().getTextOrException("storage.encrypted.decrypt_error")
+    fileStorageHelper: FileStorageHelper,
+    private val strings: Strings
+) : LocalProjectsStorage(fileStorageHelper, strings) {
+    private val encryptionKeyRequiredText: String = strings.require("storage.session.encryption.required")
+    private val newProjectText: String = strings.require("projects.new")
+    private val decryptFailureText: String = strings.require("storage.encrypted.decrypt_error")
 
     override fun loadProjects(session: StorageSession?): List<Persisted<Project>> {
         require(session != null) { sessionRequiredText }

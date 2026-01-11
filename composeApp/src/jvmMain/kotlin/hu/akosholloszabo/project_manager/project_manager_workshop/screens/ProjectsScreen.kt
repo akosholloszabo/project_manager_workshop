@@ -34,11 +34,10 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoP
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.CrudActionLabels
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.text
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.koin.compose.getKoin
 import kotlin.io.path.Path
 
 @Composable
@@ -94,7 +93,7 @@ fun ProjectsScreenContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.padding(16.dp)) {
-        Text(getKoin().getTextOrException("projects.title"), style = MaterialTheme.typography.titleLarge)
+        Text(text("projects.title"), style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
 
         TwoPaneLayout(
@@ -118,7 +117,7 @@ fun ProjectsScreenContent(
                     verticalSpacing = 12.dp,
                     header = {
                         DetailHeader(
-                            title = selectedProject?.value?.name ?: getKoin().getTextOrException("projects.title"),
+                            title = selectedProject?.value?.name ?: text("projects.title"),
                             actions = {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -132,10 +131,10 @@ fun ProjectsScreenContent(
                                         onSave = onSaveProject,
                                         onDelete = onDeleteProject,
                                         labels = CrudActionLabels(
-                                            newLabel = getKoin().getTextOrException("projects.new"),
-                                            editLabel = getKoin().getTextOrException("crud.edit"),
-                                            saveLabel = getKoin().getTextOrException("crud.save"),
-                                            deleteLabel = getKoin().getTextOrException("crud.delete")
+                                            newLabel = text("projects.new"),
+                                            editLabel = text("crud.edit"),
+                                            saveLabel = text("crud.save"),
+                                            deleteLabel = text("crud.delete")
                                         )
                                     )
                                 }
@@ -148,14 +147,14 @@ fun ProjectsScreenContent(
                             TextField(
                                 value = name.state,
                                 onValueChange = name.event,
-                                label = { Text(getKoin().getTextOrException("projects.field.name")) },
+                                label = { Text(text("projects.field.name")) },
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Spacer(Modifier.height(8.dp))
                             TextField(
                                 value = description.state,
                                 onValueChange = description.event,
-                                label = { Text(getKoin().getTextOrException("projects.field.description")) },
+                                label = { Text(text("projects.field.description")) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(120.dp),
@@ -165,7 +164,7 @@ fun ProjectsScreenContent(
                             TextField(
                                 value = details.state,
                                 onValueChange = details.event,
-                                label = { Text(getKoin().getTextOrException("projects.field.details")) },
+                                label = { Text(text("projects.field.details")) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(220.dp),
@@ -189,15 +188,13 @@ fun ProjectsScreenContent(
                                         .verticalScroll(rememberScrollState())
                                 ) {
                                     Markdown(
-                                        project.value.details.ifBlank {
-                                            getKoin().getTextOrException("projects.empty.details")
-                                        }
+                                        project.value.details.ifBlank { text("projects.empty.details") }
                                     )
                                 }
                             }
                         } ?: EmptyDetailHint(
-                            message = getKoin().getTextOrException("projects.empty.message"),
-                            description = getKoin().getTextOrException("projects.empty.description")
+                            message = text("projects.empty.message"),
+                            description = text("projects.empty.description")
                         )
                     }
                 )

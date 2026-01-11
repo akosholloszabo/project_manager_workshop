@@ -4,11 +4,12 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persiste
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSpec
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
 import kotlinx.serialization.json.Json
 import java.io.File
 
-abstract class LocalProjectsStorage(val fileStorageHelper: FileStorageHelper) : ProjectsStorage {
+abstract class LocalProjectsStorage(val fileStorageHelper: FileStorageHelper, private val strings: Strings) :
+    ProjectsStorage {
 
     protected val storageSpec = StorageSpec(
         folderName = "projects",
@@ -17,8 +18,8 @@ abstract class LocalProjectsStorage(val fileStorageHelper: FileStorageHelper) : 
         detailExtension = ".md"
     )
 
-    protected val sessionRequiredText by lazy { getKoin().getTextOrException("storage.session.required") }
-    protected val folderAccessErrorText by lazy { getKoin().getTextOrException("storage.folder.access_error") }
+    protected val sessionRequiredText by lazy { strings.require("storage.session.required") }
+    protected val folderAccessErrorText by lazy { strings.require("storage.folder.access_error") }
 
     protected val json: Json = fileStorageHelper.defaultJson
 
@@ -61,4 +62,8 @@ abstract class LocalProjectsStorage(val fileStorageHelper: FileStorageHelper) : 
             Persisted(file, normalized)
         }
     }
+
+    // Convenience
+    protected val Strings.projectsNew: String
+        get() = require("projects.new")
 }

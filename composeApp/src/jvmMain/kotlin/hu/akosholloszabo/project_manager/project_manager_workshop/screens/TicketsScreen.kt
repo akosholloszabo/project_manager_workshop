@@ -29,11 +29,10 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketCardState
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketColumnState
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.text
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.koin.compose.getKoin
 import java.io.File
 
 
@@ -109,13 +108,10 @@ fun TicketsScreenContent(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text(
-                    getKoin().getTextOrException("tickets.title"),
-                    style = MaterialTheme.typography.titleLarge
-                )
+                Text(text("tickets.title"), style = MaterialTheme.typography.titleLarge)
             }
             Button(onClick = onCreateTicket) {
-                Text(getKoin().getTextOrException("tickets.new"))
+                Text(text("tickets.new"))
             }
         }
 

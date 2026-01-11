@@ -18,9 +18,8 @@ import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
-import org.koin.compose.getKoin
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.text
 
 @Composable
 fun TicketDetailsPanel(
@@ -46,7 +45,7 @@ fun TicketDetailsPanel(
         verticalSpacing = 12.dp,
         header = {
             DetailHeader(
-                title = getKoin().getTextOrException("tickets.details.title"),
+                title = text("tickets.details.title"),
                 actions = {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -63,7 +62,7 @@ fun TicketDetailsPanel(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(onClick = onBack) {
-                            Text(getKoin().getTextOrException("tickets.back"))
+                            Text(text("tickets.back"))
                         }
                     }
                 }
@@ -83,7 +82,7 @@ fun TicketDetailsPanel(
             TicketDetailsView(
                 selectedTicket = selectedTicket.value,
                 projectName = projectNamesById[selectedTicket.value.projectId]
-                    ?: getKoin().getTextOrException("tickets.editor.no.project")
+                    ?: text("tickets.editor.no.project")
             )
         }
     )

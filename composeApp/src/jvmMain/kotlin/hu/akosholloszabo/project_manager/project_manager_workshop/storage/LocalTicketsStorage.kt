@@ -6,11 +6,13 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageS
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketMetadata
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
 import kotlinx.serialization.json.Json
 import java.io.File
 
 abstract class LocalTicketsStorage(
-    val fileStorageHelper: FileStorageHelper
+    val fileStorageHelper: FileStorageHelper,
+    private val strings: Strings
 ) : TicketsStorage {
 
     protected val storageSpec = StorageSpec(
@@ -65,4 +67,8 @@ abstract class LocalTicketsStorage(
             Persisted(file, normalized)
         }
     }
+
+    // Convenience for subclasses
+    protected val Strings.ticketsNew: String
+        get() = require("tickets.new")
 }

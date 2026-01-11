@@ -5,12 +5,13 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageS
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketMetadata
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
 import java.io.File
 import java.util.UUID.randomUUID
 
-class PlainTicketsStorage(fileStorageHelper: FileStorageHelper) : LocalTicketsStorage(fileStorageHelper) {
-    private val newTicketText by lazy { getKoin().getTextOrException("ticket.default.title") }
+class PlainTicketsStorage(fileStorageHelper: FileStorageHelper, strings: Strings) :
+    LocalTicketsStorage(fileStorageHelper, strings) {
+    private val newTicketText by lazy { strings.require("ticket.default.title") }
     override fun loadTickets(session: StorageSession?): List<Persisted<Ticket>> {
         return withTicketsDirectory(session) { folder ->
             fileStorageHelper.listStorageFiles(folder, storageSpec)
@@ -46,10 +47,10 @@ class PlainTicketsStorage(fileStorageHelper: FileStorageHelper) : LocalTicketsSt
         if (session == null) return false
         return safe {
             val metadata = TicketMetadata(
-                ticket.id,
-                ticket.title,
-                ticket.projectId,
-                ticket.status?.name
+                id = ticket.id,
+                title = ticket.title,
+                projectId = ticket.projectId,
+                status = ticket.status?.name
             )
             file.writeText(json.encodeToString(metadata))
             writeDetails(file, details)

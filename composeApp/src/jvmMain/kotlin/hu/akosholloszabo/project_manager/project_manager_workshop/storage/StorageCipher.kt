@@ -1,7 +1,6 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
-import org.koin.core.component.KoinComponent
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -11,13 +10,13 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-class StorageCipher : KoinComponent {
+class StorageCipher(private val strings: Strings) {
     private val secureRandom: SecureRandom = SecureRandom()
-    private val encryptionAlgorithm: String = getKoin().getTextOrException("cipher.encryption_algorithm")
-    private val messageDigestAlgorithm: String = getKoin().getTextOrException("cipher.message_digest_algorithm")
-    private val keyAlgorithm: String = getKoin().getTextOrException("cipher.key_algorithm")
-    private val keySpeed: String = getKoin().getTextOrException("cipher.key_speed")
-    private val ivSize: Int = getKoin().getTextOrException("cipher.iv_size").toInt()
+    private val encryptionAlgorithm: String = strings.require("cipher.encryption_algorithm")
+    private val messageDigestAlgorithm: String = strings.require("cipher.message_digest_algorithm")
+    private val keyAlgorithm: String = strings.require("cipher.key_algorithm")
+    private val keySpeed: String = strings.require("cipher.key_speed")
+    private val ivSize: Int = strings.require("cipher.iv_size").toInt()
 
     fun deriveKey(password: String): SecretKey {
         val digest = MessageDigest.getInstance(messageDigestAlgorithm)
@@ -48,4 +47,3 @@ class StorageCipher : KoinComponent {
         return runCatching { decrypt(cipherText, key) }.getOrNull()
     }
 }
-

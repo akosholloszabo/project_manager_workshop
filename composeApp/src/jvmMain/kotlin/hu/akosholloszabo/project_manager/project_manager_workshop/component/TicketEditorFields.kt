@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
@@ -16,9 +17,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
-import org.koin.compose.getKoin
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.text
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,6 +33,11 @@ fun TicketEditorFields(
     var projectDropdownExpanded by rememberSaveable { mutableStateOf(false) }
     var statusDropdownExpanded by rememberSaveable { mutableStateOf(false) }
 
+    val projectsLabel = text("tickets.editor.projects")
+    val statusLabel = text("tickets.editor.status")
+    val projectNullText = text("tickets.editor.no.project")
+    val statusNullText = text("tickets.status.missing")
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().fillMaxHeight()
@@ -40,12 +45,12 @@ fun TicketEditorFields(
         TextField(
             value = title.state,
             onValueChange = title.event,
-            label = { Text(getKoin().getTextOrException("tickets.field.title")) },
+            label = { Text(text("tickets.editor.title")) },
             modifier = Modifier.fillMaxWidth()
         )
         ReadOnlyDropdownField(
-            value = projects.toMap()[projectId.state] ?: getKoin().getTextOrException("tickets.editor.no.project"),
-            label = getKoin().getTextOrException("tickets.field.project"),
+            value = projects.toMap()[projectId.state] ?: projectNullText,
+            label = text("tickets.field.project"),
             expanded = projectDropdownExpanded,
             onExpandedChange = { projectDropdownExpanded = it }
         ) {
@@ -60,8 +65,8 @@ fun TicketEditorFields(
             }
         }
         ReadOnlyDropdownField(
-            value = status.state?.displayName ?: getKoin().getTextOrException("tickets.status.missing"),
-            label = getKoin().getTextOrException("tickets.field.status"),
+            value = status.state?.displayName ?: statusNullText,
+            label = text("tickets.editor.status"),
             expanded = statusDropdownExpanded,
             onExpandedChange = { statusDropdownExpanded = it }
         ) {
@@ -78,10 +83,10 @@ fun TicketEditorFields(
         TextField(
             value = details.state,
             onValueChange = details.event,
-            label = { Text(getKoin().getTextOrException("tickets.field.details")) },
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(),
+                .height(220.dp),
+            label = { Text(text("tickets.editor.details")) },
             maxLines = Int.MAX_VALUE
         )
     }

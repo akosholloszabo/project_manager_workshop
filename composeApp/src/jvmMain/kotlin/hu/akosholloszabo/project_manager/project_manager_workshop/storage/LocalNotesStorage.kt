@@ -4,11 +4,11 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSpec
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
 import java.io.File
 import java.util.*
 
-abstract class LocalNotesStorage : NotesStorage {
+abstract class LocalNotesStorage(private val strings: Strings) : NotesStorage {
     abstract val fileStorageHelper: FileStorageHelper
 
     protected val storageSpec = StorageSpec(
@@ -17,8 +17,8 @@ abstract class LocalNotesStorage : NotesStorage {
         fallbackName = "note"
     )
 
-    private val newNoteText by lazy { getKoin().getTextOrException("notes.default.title") }
-    private val untitledText by lazy { getKoin().getTextOrException("notes.default.untitled") }
+    private val newNoteText by lazy { strings.require("notes.default.title") }
+    private val untitledText by lazy { strings.require("notes.default.untitled") }
 
     protected inline fun <T> withNotesDirectory(session: StorageSession?, action: (File) -> T): T? {
         val folder = session?.let { fileStorageHelper.ensureStorageDirectory(it.folderPath, storageSpec) }
