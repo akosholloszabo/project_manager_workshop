@@ -1,6 +1,6 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.db
 
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
+import hu.akosholloszabo.project_manager.project_manager_workshop.entity.TicketStatus
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Column
 

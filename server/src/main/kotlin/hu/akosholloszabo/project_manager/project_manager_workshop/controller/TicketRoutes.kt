@@ -1,6 +1,6 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.controller
 
-import hu.akosholloszabo.project_manager.project_manager_workshop.repository.TicketPayload
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketPayload
 import hu.akosholloszabo.project_manager.project_manager_workshop.service.TicketService
 import io.ktor.http.*
 import io.ktor.server.request.*

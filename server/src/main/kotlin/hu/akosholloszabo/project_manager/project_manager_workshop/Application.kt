@@ -5,7 +5,6 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.controller.not
 import hu.akosholloszabo.project_manager.project_manager_workshop.controller.projectRoutes
 import hu.akosholloszabo.project_manager.project_manager_workshop.controller.ticketRoutes
 import hu.akosholloszabo.project_manager.project_manager_workshop.db.DatabaseFactory
-import hu.akosholloszabo.project_manager.project_manager_workshop.di.serverModule
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.config.*

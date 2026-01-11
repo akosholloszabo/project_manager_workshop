@@ -1,4 +1,4 @@
-package hu.akosholloszabo.project_manager.project_manager_workshop.model
+package hu.akosholloszabo.project_manager.project_manager_workshop.entity
 
 import kotlinx.serialization.Serializable
 

@@ -1,6 +1,6 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.controller
 
-import hu.akosholloszabo.project_manager.project_manager_workshop.repository.NotePayload
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.NotePayload
 import hu.akosholloszabo.project_manager.project_manager_workshop.service.NoteService
 import io.ktor.http.*
 import io.ktor.server.request.*

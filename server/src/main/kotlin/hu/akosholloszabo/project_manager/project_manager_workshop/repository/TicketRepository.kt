@@ -1,21 +1,61 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.repository
 
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
-import kotlinx.serialization.Serializable
+import hu.akosholloszabo.project_manager.project_manager_workshop.db.DatabaseFactory.dbQuery
+import hu.akosholloszabo.project_manager.project_manager_workshop.db.TicketsTable
+import hu.akosholloszabo.project_manager.project_manager_workshop.entity.Ticket
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketPayload
+import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insertAndGetId
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.update
 
-interface TicketRepository {
-    suspend fun getAll(): List<Ticket>
-    suspend fun getById(id: Int): Ticket?
-    suspend fun create(payload: TicketPayload): Ticket
-    suspend fun update(id: Int, payload: TicketPayload): Boolean
-    suspend fun delete(id: Int): Boolean
+
+class TicketRepository {
+    private fun ResultRow.toTicket(): Ticket = Ticket(
+        id = this[TicketsTable.id].value,
+        title = this[TicketsTable.title],
+        projectId = this[TicketsTable.projectId],
+        status = this[TicketsTable.status],
+        details = this[TicketsTable.details]
+    )
+
+    suspend fun getAll(): List<Ticket> = dbQuery {
+        TicketsTable.selectAll().map { it.toTicket() }
+    }
+
+    suspend fun getById(id: Int): Ticket? = dbQuery {
+        TicketsTable.select { TicketsTable.id eq id }
+            .map { it.toTicket() }
+            .singleOrNull()
+    }
+
+    suspend fun create(payload: TicketPayload): Ticket = dbQuery {
+        val insertedId = TicketsTable.insertAndGetId {
+            it[title] = payload.title
+            it[projectId] = payload.projectId
+            it[status] = payload.status
+            it[details] = payload.details
+        }.value
+
+        TicketsTable.select { TicketsTable.id eq insertedId }
+            .map { it.toTicket() }
+            .single()
+    }
+
+    suspend fun update(id: Int, payload: TicketPayload): Boolean = dbQuery {
+        TicketsTable.update({ TicketsTable.id eq id }) {
+            it[title] = payload.title
+            it[projectId] = payload.projectId
+            it[status] = payload.status
+            it[details] = payload.details
+        } > 0
+    }
+
+    suspend fun delete(id: Int): Boolean = dbQuery {
+        TicketsTable.deleteWhere { TicketsTable.id eq id } > 0
+    }
 }
 
-@Serializable
-data class TicketPayload(
-    val title: String,
-    val projectId: Int,
-    val status: TicketStatus = TicketStatus.default,
-    val details: String = ""
-)
