@@ -32,11 +32,11 @@ class EncryptedTicketsStorage(
         return withEncryptedTicketsDirectory(session) { current, folder ->
             val key = current.encryptionKey ?: return@withEncryptedTicketsDirectory null
             val file = fileStorageHelper.createTimestampedFile(folder, title, storageSpec)
-            val defaultTitle = title?.takeIf { it.isNotBlank() } ?: getKoin().getTextOrException("ticket.new")
+            val defaultTitle = title.takeIf { it.isNotBlank() } ?: getKoin().getTextOrException("tickets.new")
             val ticket = Ticket(
                 id = randomUUID().hashCode(),
                 title = defaultTitle,
-                projectId = projectId ?: 0,
+                projectId = projectId,
                 status = status,
                 details = details
             )

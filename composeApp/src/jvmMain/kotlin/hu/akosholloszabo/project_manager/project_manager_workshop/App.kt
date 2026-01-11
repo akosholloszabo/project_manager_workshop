@@ -57,7 +57,7 @@ fun App() {
                             Text(getKoin().getTextOrException("app.title"), modifier = Modifier.padding(0.dp))
                             workingFolder?.let {
                                 Text(
-                                    format(getKoin().getTextOrException("working.folder.summary"), it),
+                                    getKoin().getTextOrException("working.folder.summary").format(it),
                                     modifier = Modifier.padding(0.dp)
                                 )
                             }
