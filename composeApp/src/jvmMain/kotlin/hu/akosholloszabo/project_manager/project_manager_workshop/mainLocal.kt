@@ -20,7 +20,6 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.WorkingFolderViewModel
-import java.io.InputStream
 import java.util.*
 
 fun main() = application {

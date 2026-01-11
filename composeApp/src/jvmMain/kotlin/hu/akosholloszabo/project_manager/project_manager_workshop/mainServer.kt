@@ -26,9 +26,9 @@ import kotlinx.serialization.json.Json
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.security.KeyStore
+import java.util.*
 import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
-import java.util.*
 
 fun main() = application {
     val classLoader = Thread.currentThread().contextClassLoader

@@ -33,11 +33,6 @@ fun TicketEditorFields(
     var projectDropdownExpanded by rememberSaveable { mutableStateOf(false) }
     var statusDropdownExpanded by rememberSaveable { mutableStateOf(false) }
 
-    val projectsLabel = text("tickets.field.projects")
-    val statusLabel = text("tickets.field.status")
-    val projectNullText = text("tickets.no.items")
-    val statusNullText = text("tickets.status.missing")
-
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().fillMaxHeight()
@@ -49,7 +44,7 @@ fun TicketEditorFields(
             modifier = Modifier.fillMaxWidth()
         )
         ReadOnlyDropdownField(
-            value = projects.toMap()[projectId.state] ?: projectNullText,
+            value = projects.toMap()[projectId.state] ?: text("tickets.editor.no.project"),
             label = text("tickets.field.project"),
             expanded = projectDropdownExpanded,
             onExpandedChange = { projectDropdownExpanded = it }
@@ -65,7 +60,7 @@ fun TicketEditorFields(
             }
         }
         ReadOnlyDropdownField(
-            value = status.state?.displayName ?: statusNullText,
+            value = status.state?.displayName ?: text("tickets.status.missing"),
             label = text("tickets.field.status"),
             expanded = statusDropdownExpanded,
             onExpandedChange = { statusDropdownExpanded = it }
@@ -85,7 +80,7 @@ fun TicketEditorFields(
             onValueChange = details.event,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp),
+                .fillMaxHeight(),
             label = { Text(text("tickets.field.details")) },
             maxLines = Int.MAX_VALUE
         )
