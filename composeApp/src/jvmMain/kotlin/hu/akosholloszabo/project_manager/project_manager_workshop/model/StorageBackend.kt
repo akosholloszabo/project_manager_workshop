@@ -1,4 +1,4 @@
-package hu.akosholloszabo.project_manager.project_manager_workshop.di
+package hu.akosholloszabo.project_manager.project_manager_workshop.model
 
 /**
  * Determines whether the client should use local storage or the server API.
@@ -9,7 +9,7 @@ enum class StorageBackend {
     SERVER;
 
     companion object {
-        private val lookup = values().associateBy { it.name }
+        private val lookup = entries.associateBy { it.name }
 
         fun fromPropertyValue(value: String?): StorageBackend =
             value

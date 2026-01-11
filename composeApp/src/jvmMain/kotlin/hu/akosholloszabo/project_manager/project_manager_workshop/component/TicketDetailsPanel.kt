@@ -15,16 +15,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import hu.akosholloszabo.project_manager.project_manager_workshop.StateAndEvent
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
-
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
+import org.koin.compose.getKoin
 
 @Composable
 fun TicketDetailsPanel(
     selectedTicket: Persisted<Ticket>,
-    projects: List<Pair<Int, String>>,
+    projects: Map<Int, String>,
     isEditing: StateAndEvent<Boolean>,
     title: StateAndEvent<String>,
     projectId: StateAndEvent<Int>,
@@ -37,7 +38,6 @@ fun TicketDetailsPanel(
     modifier: Modifier = Modifier
 ) {
     val projectNamesById = projects.toMap()
-    val displayProjectName = projectNamesById[selectedTicket.value.projectId] ?: "No project"
 
     DetailEditorPane(
         modifier = modifier
@@ -46,7 +46,7 @@ fun TicketDetailsPanel(
         verticalSpacing = 12.dp,
         header = {
             DetailHeader(
-                title = "Ticket details",
+                title = getKoin().getTextOrException("tickets.details.title"),
                 actions = {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -63,7 +63,7 @@ fun TicketDetailsPanel(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(onClick = onBack) {
-                            Text("Back")
+                            Text(getKoin().getTextOrException("tickets.back"))
                         }
                     }
                 }
@@ -82,7 +82,8 @@ fun TicketDetailsPanel(
         viewContent = {
             TicketDetailsView(
                 selectedTicket = selectedTicket.value,
-                projectName = displayProjectName
+                projectName = projectNamesById[selectedTicket.value.projectId]
+                    ?: getKoin().getTextOrException("tickets.editor.no.project")
             )
         }
     )

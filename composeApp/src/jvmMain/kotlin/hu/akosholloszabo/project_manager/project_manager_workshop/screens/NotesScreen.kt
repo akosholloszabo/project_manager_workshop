@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mikepenz.markdown.m3.Markdown
 import hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme
-import hu.akosholloszabo.project_manager.project_manager_workshop.StateAndEvent
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.CrudActionBar
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.DetailEditorPane
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.DetailHeader
@@ -32,11 +31,11 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoP
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.CrudActionLabels
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.NotesViewModel
-import hu.akosholloszabo.project_manager.project_manager_workshop.strings.UiStrings
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.getKoin
-import org.koin.compose.koinInject
 import java.io.File
 
 @Composable
@@ -84,7 +83,7 @@ fun NotesScreenContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
-        Text(getKoin().getProperty("notes.title", ""), style = MaterialTheme.typography.titleLarge)
+        Text(getKoin().getTextOrException("notes.title"), style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val masterWeight = if (maxWidth < 640.dp) 0.55f else 0.33f
@@ -116,7 +115,7 @@ fun NotesScreenContent(
                         header = {
                             DetailHeader(
                                 title = selectedNote?.value?.title ?: getKoin()
-                                    .getProperty("notes.empty.message", ""),
+                                    .getTextOrException("notes.empty.message"),
                                 actions = {
                                     CrudActionBar(
                                         hasSelection = selectedNote != null,
@@ -126,10 +125,10 @@ fun NotesScreenContent(
                                         onSave = onSaveNote,
                                         onDelete = onDeleteNote,
                                         labels = CrudActionLabels(
-                                            newLabel = getKoin().getProperty("notes.new", ""),
-                                            editLabel = getKoin().getProperty("crud.edit", ""),
-                                            saveLabel = getKoin().getProperty("crud.save", ""),
-                                            deleteLabel = getKoin().getProperty("crud.delete", "")
+                                            newLabel = getKoin().getTextOrException("notes.new"),
+                                            editLabel = getKoin().getTextOrException("crud.edit"),
+                                            saveLabel = getKoin().getTextOrException("crud.save"),
+                                            deleteLabel = getKoin().getTextOrException("crud.delete")
                                         )
                                     )
                                 }
@@ -151,8 +150,8 @@ fun NotesScreenContent(
                                     Markdown(note.value.content)
                                 }
                             } ?: EmptyDetailHint(
-                                message = getKoin().getProperty("notes.empty.message", ""),
-                                description = getKoin().getProperty("notes.empty.description", "")
+                                message = getKoin().getTextOrException("notes.empty.message"),
+                                description = getKoin().getTextOrException("notes.empty.description")
                             )
                         }
                     )

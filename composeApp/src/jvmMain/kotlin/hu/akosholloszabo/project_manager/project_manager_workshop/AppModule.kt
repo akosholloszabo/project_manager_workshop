@@ -1,5 +1,6 @@
-package hu.akosholloszabo.project_manager.project_manager_workshop.di
+package hu.akosholloszabo.project_manager.project_manager_workshop
 
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageBackend
 import hu.akosholloszabo.project_manager.project_manager_workshop.network.ApiConfig
 import hu.akosholloszabo.project_manager.project_manager_workshop.network.NoteServerClient
 import hu.akosholloszabo.project_manager.project_manager_workshop.network.ProjectServerClient
@@ -22,7 +23,6 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.store.PlainWor
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.ProjectStore
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.TicketStore
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.WorkingFolderStore
-import hu.akosholloszabo.project_manager.project_manager_workshop.strings.UiStrings
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.NotesViewModel
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
@@ -32,7 +32,7 @@ import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
-import org.koin.core.qualifier.named
+import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 import java.io.ByteArrayInputStream
 import java.security.KeyStore
@@ -40,17 +40,11 @@ import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
 
 val appModule = module {
-    single<StorageBackend> {
-        StorageBackend.fromPropertyValue(getProperty("storage.backend"))
-    }
-    single<ByteArray>(named("keyStoreBytes")) {
+    single { StorageBackend.fromPropertyValue(getProperty("storage.backend")) }
+    single<X509TrustManager> {
         val loader = Thread.currentThread().contextClassLoader
-        loader.getResourceAsStream("ssl/server-keystore.p12")?.use { it.readBytes() }
+        val keyStoreBytes: ByteArray = loader.getResourceAsStream("ssl/server-keystore.p12")?.use { it.readBytes() }
             ?: error("Keystore not found; ensure ssl/server-keystore.p12 is bundled or configure project_manager.serverKeystorePath")
-    }
-
-    single<KeyStore> {
-        val keyStoreBytes: ByteArray = get(named("keyStoreBytes"))
         val keyStore: KeyStore = KeyStore.getInstance(KeyStore.getDefaultType())
         ByteArrayInputStream(keyStoreBytes).use {
             keyStore.load(
@@ -58,13 +52,9 @@ val appModule = module {
                 getProperty<String>("project_manager.serverKeystorePassword").toCharArray()
             )
         }
-        keyStore
-    }
-
-    single<X509TrustManager> {
         val trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
-        trustManagerFactory.init(get<KeyStore>())
-        trustManagerFactory.trustManagers.first { it is X509TrustManager } as X509TrustManager
+        trustManagerFactory.init(keyStore)
+        trustManagerFactory.trustManagers.filterIsInstance<X509TrustManager>().first()
     }
     single {
         ApiConfig(
@@ -84,14 +74,9 @@ val appModule = module {
             }
         }
     }
-    single { NoteServerClient(get(), get()) }
-    single { ProjectServerClient(get(), get()) }
-    single { TicketServerClient(get(), get()) }
-
-    single<UiStrings> {
-        UiStrings()
-    }
-
+    singleOf(::NoteServerClient)
+    singleOf(::ProjectServerClient)
+    singleOf(::TicketServerClient)
     factory<NotesStorage> {
         when (get<StorageBackend>()) {
             StorageBackend.SERVER -> ServerNotesStorage(get())
@@ -121,26 +106,12 @@ val appModule = module {
         }
     }
 
-    single { TicketStore(get(), get(), get()) }
-    single { ProjectStore(get(), get()) }
-    single { NoteStore(get(), get()) }
+    singleOf(::TicketStore)
+    singleOf(::ProjectStore)
+    singleOf(::NoteStore)
 
-    factory { WorkingFolderViewModel(get()) }
-    factory {
-        TicketsViewModel(
-            ticketStore = get(),
-            projectsStorage = get(),
-            workingFolderStore = get()
-        )
-    }
-    factory {
-        ProjectsViewModel(
-            projectStore = get()
-        )
-    }
-    factory {
-        NotesViewModel(
-            noteStore = get()
-        )
-    }
+    singleOf(::WorkingFolderViewModel)
+    singleOf(::TicketsViewModel)
+    singleOf(::ProjectsViewModel)
+    singleOf(::NotesViewModel)
 }

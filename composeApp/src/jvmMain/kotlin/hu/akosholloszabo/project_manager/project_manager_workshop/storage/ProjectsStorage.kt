@@ -7,7 +7,13 @@ import java.io.File
 
 interface ProjectsStorage {
     fun loadProjects(session: StorageSession?): List<Persisted<Project>>
-    fun createProject(session: StorageSession?, name: String? = null, description: String = ""): Persisted<Project>?
+    fun createProject(
+        session: StorageSession?,
+        name: String,
+        description: String,
+        details: String
+    ): Persisted<Project>
+
     fun saveProject(session: StorageSession?, project: Project, file: File, details: String): Boolean
     fun deleteProject(session: StorageSession?, file: File): Boolean
 }

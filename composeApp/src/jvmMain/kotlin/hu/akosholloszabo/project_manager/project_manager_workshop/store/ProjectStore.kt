@@ -44,13 +44,11 @@ class ProjectStore(
         _projects.emit(loaded)
     }
 
-    suspend fun createProject(name: String? = null, description: String = ""): Persisted<Project>? {
+    suspend fun createProject(name: String, description: String, details: String): Persisted<Project> {
         val created = withContext(Dispatchers.IO) {
-            projectsStorage.createProject(workingFolderStore.session.value, name, description)
+            projectsStorage.createProject(workingFolderStore.session.value, name, description, details)
         }
-        if (created != null) {
-            refreshProjects()
-        }
+        refreshProjects()
         return created
     }
 

@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mikepenz.markdown.m3.Markdown
 import hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme
-import hu.akosholloszabo.project_manager.project_manager_workshop.StateAndEvent
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.CrudActionBar
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.DetailEditorPane
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.DetailHeader
@@ -35,9 +34,11 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoP
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.CrudActionLabels
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import java.lang.System.getProperty
+import org.koin.compose.getKoin
 import kotlin.io.path.Path
 
 @Composable
@@ -93,7 +94,7 @@ fun ProjectsScreenContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.padding(16.dp)) {
-        Text(getProperty("projects.title"), style = MaterialTheme.typography.titleLarge)
+        Text(getKoin().getTextOrException("projects.title"), style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
 
         TwoPaneLayout(
@@ -117,7 +118,7 @@ fun ProjectsScreenContent(
                     verticalSpacing = 12.dp,
                     header = {
                         DetailHeader(
-                            title = selectedProject?.value?.name ?: getProperty("projects.title"),
+                            title = selectedProject?.value?.name ?: getKoin().getTextOrException("projects.title"),
                             actions = {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -131,10 +132,10 @@ fun ProjectsScreenContent(
                                         onSave = onSaveProject,
                                         onDelete = onDeleteProject,
                                         labels = CrudActionLabels(
-                                            newLabel = getProperty("projects.new"),
-                                            editLabel = getProperty("crud.edit"),
-                                            saveLabel = getProperty("crud.save"),
-                                            deleteLabel = getProperty("crud.delete")
+                                            newLabel = getKoin().getTextOrException("projects.new"),
+                                            editLabel = getKoin().getTextOrException("crud.edit"),
+                                            saveLabel = getKoin().getTextOrException("crud.save"),
+                                            deleteLabel = getKoin().getTextOrException("crud.delete")
                                         )
                                     )
                                 }
@@ -147,14 +148,14 @@ fun ProjectsScreenContent(
                             TextField(
                                 value = name.state,
                                 onValueChange = name.event,
-                                label = { Text(getProperty("projects.field.name")) },
+                                label = { Text(getKoin().getTextOrException("projects.field.name")) },
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Spacer(Modifier.height(8.dp))
                             TextField(
                                 value = description.state,
                                 onValueChange = description.event,
-                                label = { Text(getProperty("projects.field.description")) },
+                                label = { Text(getKoin().getTextOrException("projects.field.description")) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(120.dp),
@@ -164,7 +165,7 @@ fun ProjectsScreenContent(
                             TextField(
                                 value = details.state,
                                 onValueChange = details.event,
-                                label = { Text(getProperty("projects.field.details")) },
+                                label = { Text(getKoin().getTextOrException("projects.field.details")) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(220.dp),
@@ -188,13 +189,15 @@ fun ProjectsScreenContent(
                                         .verticalScroll(rememberScrollState())
                                 ) {
                                     Markdown(
-                                        project.value.details.ifBlank { getProperty("projects.empty.details") }
+                                        project.value.details.ifBlank {
+                                            getKoin().getTextOrException("projects.empty.details")
+                                        }
                                     )
                                 }
                             }
                         } ?: EmptyDetailHint(
-                            message = getProperty("projects.empty.message"),
-                            description = getProperty("projects.empty.description")
+                            message = getKoin().getTextOrException("projects.empty.message"),
+                            description = getKoin().getTextOrException("projects.empty.description")
                         )
                     }
                 )

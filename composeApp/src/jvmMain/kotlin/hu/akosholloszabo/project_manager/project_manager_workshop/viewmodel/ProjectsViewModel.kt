@@ -56,7 +56,11 @@ class ProjectsViewModel(
 
     fun createProject() {
         scope.launch {
-            projectStore.createProject()?.let { created ->
+            projectStore.createProject(
+                name = "",
+                description = "",
+                details = ""
+            ).let { created ->
                 _selectedProjectPath.tryEmit(created.file.canonicalPath)
                 _editName.tryEmit(created.value.name)
                 _editDescription.tryEmit(created.value.description)

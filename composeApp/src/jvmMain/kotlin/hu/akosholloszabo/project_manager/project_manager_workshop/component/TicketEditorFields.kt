@@ -15,14 +15,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import hu.akosholloszabo.project_manager.project_manager_workshop.StateAndEvent
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
+import org.koin.compose.getKoin
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TicketEditorFields(
-    projects: List<Pair<Int, String>>,
+    projects: Map<Int, String>,
     title: StateAndEvent<String>,
     projectId: StateAndEvent<Int>,
     status: StateAndEvent<TicketStatus>,
@@ -38,34 +40,34 @@ fun TicketEditorFields(
         TextField(
             value = title.state,
             onValueChange = title.event,
-            label = { Text("Ticket title") },
+            label = { Text(getKoin().getTextOrException("tickets.field.title")) },
             modifier = Modifier.fillMaxWidth()
         )
         ReadOnlyDropdownField(
-            value = projects.toMap()[projectId.state] ?: "No project",
-            label = "Project",
+            value = projects.toMap()[projectId.state] ?: getKoin().getTextOrException("tickets.editor.no.project"),
+            label = getKoin().getTextOrException("tickets.field.project"),
             expanded = projectDropdownExpanded,
             onExpandedChange = { projectDropdownExpanded = it }
         ) {
             projects.forEach { projectEntry ->
                 DropdownMenuItem(
-                    text = { Text(projectEntry.second) },
+                    text = { Text(projectEntry.value) },
                     onClick = {
-                        projectId.event(projectEntry.first)
+                        projectId.event(projectEntry.key)
                         projectDropdownExpanded = false
                     }
                 )
             }
         }
         ReadOnlyDropdownField(
-            value = status.state.name,
-            label = "Status",
+            value = status.state.displayName,
+            label = getKoin().getTextOrException("tickets.field.status"),
             expanded = statusDropdownExpanded,
             onExpandedChange = { statusDropdownExpanded = it }
         ) {
             TicketStatus.entries.forEach { entry ->
                 DropdownMenuItem(
-                    text = { Text(entry.name) },
+                    text = { Text(entry.displayName) },
                     onClick = {
                         status.event(entry)
                         statusDropdownExpanded = false
@@ -76,7 +78,7 @@ fun TicketEditorFields(
         TextField(
             value = details.state,
             onValueChange = details.event,
-            label = { Text("Details (Markdown)") },
+            label = { Text(getKoin().getTextOrException("tickets.field.details")) },
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(),

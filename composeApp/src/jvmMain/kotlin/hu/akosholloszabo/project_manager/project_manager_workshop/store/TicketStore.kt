@@ -1,7 +1,7 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.store
 
-import hu.akosholloszabo.project_manager.project_manager_workshop.di.StorageBackend
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageBackend
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.TicketsStorage

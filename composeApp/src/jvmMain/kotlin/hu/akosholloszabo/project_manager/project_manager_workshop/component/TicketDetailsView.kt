@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.m3.Markdown
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
+import org.koin.compose.getKoin
 
 @Composable
 fun TicketDetailsView(
@@ -22,12 +24,12 @@ fun TicketDetailsView(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(selectedTicket.title, style = MaterialTheme.typography.titleLarge)
         Text(
-            "Status: ${selectedTicket.status.name}",
-            style = MaterialTheme.typography.bodyMedium
+            getKoin().getTextOrException("ticket.status.header")
+                .format(selectedTicket.status.displayName), style = MaterialTheme.typography.bodyMedium
         )
         Text(
-            "Project: $projectName",
-            style = MaterialTheme.typography.bodyMedium
+            getKoin().getTextOrException("ticket.project.header")
+                .format(projectName), style = MaterialTheme.typography.bodyMedium
         )
         SelectionContainer(
             modifier = Modifier
@@ -35,7 +37,9 @@ fun TicketDetailsView(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
         ) {
-            Markdown(selectedTicket.details.ifBlank { "*No details yet.*" })
+            Markdown(selectedTicket.details.ifBlank {
+                getKoin().getTextOrException("tickets.details.empty")
+            })
         }
     }
 }

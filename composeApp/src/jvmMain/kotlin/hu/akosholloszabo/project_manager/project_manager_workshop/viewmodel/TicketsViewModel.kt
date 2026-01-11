@@ -40,14 +40,14 @@ class TicketsViewModel(
     val editStatus: StateFlow<TicketStatus> = _editStatus.asStateFlow()
     val editDetails: StateFlow<String> = _editDetails.asStateFlow()
 
-    private val _projects = MutableStateFlow<List<Pair<Int, String>>>(emptyList())
+    private val _projects = MutableStateFlow<Map<Int, String>>(emptyMap())
 
     private val _columns = combine(
         ticketStore.tickets,
         _projects,
         _selectedTicketPath
     ) { tickets, projects, selectedPath ->
-        val projectNames = projects.associate { it.first to it.second }
+        val projectNames = projects
         buildColumns(tickets, projectNames, selectedPath)
     }.stateIn(scope, SharingStarted.Eagerly, emptyList())
     val columns: StateFlow<List<TicketColumnState>> = _columns
@@ -60,7 +60,7 @@ class TicketsViewModel(
     }.stateIn(scope, SharingStarted.Eagerly, null)
     val selectedTicket: StateFlow<Persisted<Ticket>?> = _selectedTicket
 
-    val projects: StateFlow<List<Pair<Int, String>>> = _projects.asStateFlow()
+    val projects: StateFlow<Map<Int, String>> = _projects.asStateFlow()
 
     init {
         scope.launch {
@@ -144,7 +144,7 @@ class TicketsViewModel(
     private suspend fun loadProjects() = withContext(Dispatchers.IO) {
         val loaded = projectsStorage
             .loadProjects(workingFolderStore.session.value)
-            .map { it.value.id to it.value.name }
+            .associate { it.value.id to it.value.name }
         _projects.tryEmit(loaded)
     }
 

@@ -24,16 +24,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
-import hu.akosholloszabo.project_manager.project_manager_workshop.di.StorageBackend
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageBackend
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.NotesScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.ProjectsScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.TicketsScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.WorkingFolderScreen
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.NotesViewModel
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.WorkingFolderViewModel
-import hu.akosholloszabo.project_manager.project_manager_workshop.strings.UiStrings
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.getKoin
 import org.koin.compose.koinInject
@@ -54,9 +54,12 @@ fun App() {
                 CenterAlignedTopAppBar(
                     title = {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(getKoin().getProperty("app.title", ""), modifier = Modifier.padding(0.dp))
+                            Text(getKoin().getTextOrException("app.title"), modifier = Modifier.padding(0.dp))
                             workingFolder?.let {
-                                Text(format(getKoin().getProperty("working.folder.summary", ""), it), modifier = Modifier.padding(0.dp))
+                                Text(
+                                    format(getKoin().getTextOrException("working.folder.summary"), it),
+                                    modifier = Modifier.padding(0.dp)
+                                )
                             }
                         }
                     },
@@ -84,13 +87,13 @@ fun App() {
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Button(onClick = { currentScreen = Screen.Notes }) {
-                                    Text(getKoin().getProperty("app.tab.notes", ""))
+                                    Text(getKoin().getTextOrException("app.tab.notes"))
                                 }
                                 Button(onClick = { currentScreen = Screen.Projects }) {
-                                    Text(getKoin().getProperty("app.tab.projects", ""))
+                                    Text(getKoin().getTextOrException("app.tab.projects"))
                                 }
                                 Button(onClick = { currentScreen = Screen.Tickets }) {
-                                    Text(getKoin().getProperty("app.tab.tickets", ""))
+                                    Text(getKoin().getTextOrException("app.tab.tickets"))
                                 }
                             }
 

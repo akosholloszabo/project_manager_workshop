@@ -7,6 +7,7 @@ import java.io.File
 
 class EncryptedProjectsStorage : BaseProjectsStorage() {
     override fun loadProjects(session: StorageSession?): List<Persisted<Project>> {
+        require(session != null) { "Session cannot be null!" }
         return withEncryptedProjectsDirectory(session) { current, folder ->
             val key = current.encryptionKey ?: return@withEncryptedProjectsDirectory emptyList()
             FileStorageHelper.listStorageFiles(folder, storageSpec)
@@ -14,14 +15,21 @@ class EncryptedProjectsStorage : BaseProjectsStorage() {
         } ?: emptyList()
     }
 
-    override fun createProject(session: StorageSession?, name: String?, description: String): Persisted<Project>? {
+    override fun createProject(
+        session: StorageSession?,
+        name: String,
+        description: String,
+        details: String
+    ): Persisted<Project> {
+        require(session != null) { "Session cannot be null!" }
         return withEncryptedProjectsDirectory(session) { current, folder ->
-            val key = current.encryptionKey ?: return@withEncryptedProjectsDirectory null
+            require(current.encryptionKey != null) { "Session cannot be null!" }
+            val key = current.encryptionKey
             val file = FileStorageHelper.createTimestampedFile(folder, name, storageSpec)
-            val defaultName = name?.takeIf { it.isNotBlank() } ?: "New project"
+            val defaultName = name.takeIf { it.isNotBlank() } ?: "New project"
             val project = Project(EntityIdGenerator.newId(), defaultName, description)
             safe {
-                saveProject(session, project, file, "")
+                saveProject(session, project, file, details)
                 projectFromFileEncrypted(file, key)
             }
         }
@@ -33,7 +41,7 @@ class EncryptedProjectsStorage : BaseProjectsStorage() {
             file.writeText(StorageCipher.encrypt(json.encodeToString(project), key))
             writeDetailsEncrypted(file, key, details)
             true
-        } ?: false
+        }
     }
 
     override fun deleteProject(session: StorageSession?, file: File): Boolean {

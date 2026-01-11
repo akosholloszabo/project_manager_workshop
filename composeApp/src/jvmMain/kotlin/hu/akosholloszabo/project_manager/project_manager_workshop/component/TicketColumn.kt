@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketColumnState
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
+import org.koin.compose.getKoin
 
 @Composable
 fun TicketColumn(
@@ -37,7 +39,7 @@ fun TicketColumn(
             )
             .padding(12.dp)
     ) {
-        Text(columnState.status.name, style = MaterialTheme.typography.titleMedium)
+        Text(columnState.status.displayName, style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Column(
             modifier = Modifier
@@ -48,7 +50,7 @@ fun TicketColumn(
         ) {
             if (columnState.cards.isEmpty()) {
                 Text(
-                    "No tickets yet",
+                    getKoin().getTextOrException("tickets.no.items"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

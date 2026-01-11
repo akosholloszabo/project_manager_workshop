@@ -13,9 +13,14 @@ class ServerProjectsStorage(private val client: ProjectServerClient) : ProjectsS
         client.getAll().map(::persistProject)
     }
 
-    override fun createProject(session: StorageSession?, name: String?, description: String): Persisted<Project>? {
+    override fun createProject(
+        session: StorageSession?,
+        name: String,
+        description: String,
+        details: String
+    ): Persisted<Project> {
         val payload = ProjectPayload(
-            name = name?.takeIf { it.isNotBlank() } ?: "New project",
+            name = name.takeIf { it.isNotBlank() } ?: "New project",
             description = description,
             details = ""
         )

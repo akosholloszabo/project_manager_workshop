@@ -9,17 +9,22 @@ class PlainProjectsStorage : BaseProjectsStorage() {
     override fun loadProjects(session: StorageSession?): List<Persisted<Project>> {
         return withProjectsDirectory(session) { folder ->
             FileStorageHelper.listStorageFiles(folder, storageSpec)
-                .mapNotNull(::projectFromFile)
-        } ?: emptyList()
+                .map(::projectFromFile)
+        }
     }
 
-    override fun createProject(session: StorageSession?, name: String?, description: String): Persisted<Project>? {
+    override fun createProject(
+        session: StorageSession?,
+        name: String,
+        description: String,
+        details: String
+    ): Persisted<Project> {
         return withProjectsDirectory(session) { folder ->
             val file = FileStorageHelper.createTimestampedFile(folder, name, storageSpec)
-            val defaultName = name?.takeIf { it.isNotBlank() } ?: "New project"
+            val defaultName = name.takeIf { it.isNotBlank() } ?: "New project"
             val project = Project(EntityIdGenerator.newId(), defaultName, description)
             safe {
-                saveProject(session, project, file, "")
+                saveProject(session, project, file, details)
                 projectFromFile(file)
             }
         }

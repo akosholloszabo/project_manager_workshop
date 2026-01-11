@@ -17,20 +17,21 @@ abstract class BaseProjectsStorage : ProjectsStorage {
 
     protected val json: Json = FileStorageHelper.defaultJson
 
-    protected inline fun <T> withProjectsDirectory(session: StorageSession?, action: (File) -> T): T? {
-        val folder = session?.let { FileStorageHelper.ensureStorageDirectory(it.folderPath, storageSpec) }
-            ?: return null
+    protected inline fun <T> withProjectsDirectory(session: StorageSession?, action: (File) -> T): T {
+        require(session != null) { "Session cannot be null" }
+        val folder = session.let { FileStorageHelper.ensureStorageDirectory(it.folderPath, storageSpec) }
+        require(folder != null) { "Session cannot be null" }
         return action(folder)
     }
 
     protected inline fun <T> withEncryptedProjectsDirectory(
-        session: StorageSession?,
+        session: StorageSession,
         action: (StorageSession, File) -> T
-    ): T? {
-        val current = session ?: return null
+    ): T {
+        val current = session
         val folder = File(current.folderPath, storageSpec.folderName)
             .takeIf { it.exists() || it.mkdirs() }
-            ?: return null
+            ?: throw Exception("Could not access storage folder!")
         return action(current, folder)
     }
 
@@ -42,7 +43,6 @@ abstract class BaseProjectsStorage : ProjectsStorage {
     }
 
     protected fun writeDetails(file: File, details: String) {
-        val extension = storageSpec.detailExtension ?: return
         FileStorageHelper.writeDetails(file, storageSpec, details)
     }
 
@@ -60,9 +60,9 @@ abstract class BaseProjectsStorage : ProjectsStorage {
         detailFile.writeText(StorageCipher.encrypt(details, key))
     }
 
-    protected inline fun <T> safe(block: () -> T): T? = runCatching(block).getOrNull()
+    protected inline fun <T> safe(block: () -> T): T = run(block)
 
-    protected fun projectFromFile(file: File): Persisted<Project>? {
+    protected fun projectFromFile(file: File): Persisted<Project> {
         return safe {
             val content = file.readText()
             val parsed = json.decodeFromString<Project>(content)
@@ -71,10 +71,10 @@ abstract class BaseProjectsStorage : ProjectsStorage {
         }
     }
 
-    protected fun projectFromFileEncrypted(file: File, key: SecretKey): Persisted<Project>? {
+    protected fun projectFromFileEncrypted(file: File, key: SecretKey): Persisted<Project> {
         return safe {
             val encrypted = file.readText()
-            val payload = StorageCipher.tryDecrypt(encrypted, key) ?: return null
+            val payload = StorageCipher.tryDecrypt(encrypted, key) ?: throw Exception("Could not decrypt!")
             val parsed = json.decodeFromString<Project>(payload)
             val normalized = parsed.copy(details = readDetailsEncrypted(file, key))
             Persisted(file, normalized)

@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme
-import hu.akosholloszabo.project_manager.project_manager_workshop.StateAndEvent
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TicketBoard
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TicketDetailsPanel
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoPaneLayout
@@ -30,8 +29,11 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketCardState
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketColumnState
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.getKoin
 import java.io.File
 
 
@@ -87,7 +89,7 @@ fun TicketsScreen(ticketsViewModel: TicketsViewModel) {
 fun TicketsScreenContent(
     columns: List<TicketColumnState>,
     selectedTicket: Persisted<Ticket>?,
-    projects: List<Pair<Int, String>>,
+    projects: Map<Int, String>,
     isEditing: StateAndEvent<Boolean>,
     title: StateAndEvent<String>,
     projectId: StateAndEvent<Int>,
@@ -107,10 +109,13 @@ fun TicketsScreenContent(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text("Tickets", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    getKoin().getTextOrException("tickets.title"),
+                    style = MaterialTheme.typography.titleLarge
+                )
             }
             Button(onClick = onCreateTicket) {
-                Text("New ticket")
+                Text(getKoin().getTextOrException("tickets.new"))
             }
         }
 
@@ -179,7 +184,7 @@ private fun TicketsScreenPreviewContent(darkTheme: Boolean) {
         )
     }
 
-    val previewProjects = listOf(1 to "Preview project")
+    val previewProjects = mapOf(1 to "Preview project")
     val previewIsEditing = StateAndEvent(state = true)
     val previewTitleState = StateAndEvent(state = previewTicket.value.title)
     val previewProjectState = StateAndEvent(state = previewTicket.value.projectId)
