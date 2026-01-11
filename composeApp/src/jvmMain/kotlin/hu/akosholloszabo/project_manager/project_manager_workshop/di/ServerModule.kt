@@ -1,10 +1,11 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.di
 
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageBackend
 import hu.akosholloszabo.project_manager.project_manager_workshop.network.ApiConfig
 import hu.akosholloszabo.project_manager.project_manager_workshop.network.NoteServerClient
 import hu.akosholloszabo.project_manager.project_manager_workshop.network.ProjectServerClient
 import hu.akosholloszabo.project_manager.project_manager_workshop.network.TicketServerClient
+import hu.akosholloszabo.project_manager.project_manager_workshop.store.WorkingFolderStore
+import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.WorkingFolderViewModel
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*

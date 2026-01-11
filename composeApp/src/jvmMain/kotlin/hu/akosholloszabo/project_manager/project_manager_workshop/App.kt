@@ -17,6 +17,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -30,14 +31,10 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.screens.Projec
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.TicketsScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.WorkingFolderScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getTextOrException
-import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.NotesViewModel
-import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
-import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.WorkingFolderViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.getKoin
 import org.koin.compose.koinInject
-import java.text.MessageFormat.format
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,8 +42,12 @@ fun App() {
     var currentScreen by rememberSaveable { mutableStateOf<Screen>(Screen.Notes) }
     val storageBackend: StorageBackend = koinInject()
     val needsWorkingFolder = storageBackend != StorageBackend.SERVER
-    val workingFolderViewModel: WorkingFolderViewModel = koinInject()
-    val workingFolder by workingFolderViewModel.selectedFolder.collectAsStateWithLifecycle()
+    val workingFolderViewModel = if (needsWorkingFolder) koinInject<WorkingFolderViewModel>() else null
+    val workingFolder by if (needsWorkingFolder) {
+        workingFolderViewModel!!.selectedFolder.collectAsStateWithLifecycle()
+    } else {
+        remember { mutableStateOf(null) }
+    }
 
     AppTheme {
         Scaffold(
@@ -55,11 +56,13 @@ fun App() {
                     title = {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(getKoin().getTextOrException("app.title"), modifier = Modifier.padding(0.dp))
-                            workingFolder?.let {
-                                Text(
-                                    getKoin().getTextOrException("working.folder.summary").format(it),
-                                    modifier = Modifier.padding(0.dp)
-                                )
+                            if (needsWorkingFolder) {
+                                workingFolder?.let {
+                                    Text(
+                                        getKoin().getTextOrException("working.folder.summary").format(it),
+                                        modifier = Modifier.padding(0.dp)
+                                    )
+                                }
                             }
                         }
                     },
@@ -75,7 +78,7 @@ fun App() {
                 ) {
                     if (needsWorkingFolder && workingFolder == null) {
                         WorkingFolderScreen(
-                            workingFolderViewModel = workingFolderViewModel,
+                            workingFolderViewModel = workingFolderViewModel!!,
                             onContinue = { currentScreen = Screen.Notes },
                         )
                     } else {
@@ -101,20 +104,9 @@ fun App() {
 
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                                 when (currentScreen) {
-                                    is Screen.Notes -> {
-                                        val notesViewModel: NotesViewModel = koinInject()
-                                        NotesScreen(notesViewModel = notesViewModel)
-                                    }
-
-                                    is Screen.Projects -> {
-                                        val projectsViewModel: ProjectsViewModel = koinInject()
-                                        ProjectsScreen(projectsViewModel = projectsViewModel)
-                                    }
-
-                                    is Screen.Tickets -> {
-                                        val ticketsViewModel: TicketsViewModel = koinInject()
-                                        TicketsScreen(ticketsViewModel = ticketsViewModel)
-                                    }
+                                    is Screen.Notes -> NotesScreen(notesViewModel = koinInject())
+                                    is Screen.Projects -> ProjectsScreen(projectsViewModel = koinInject())
+                                    is Screen.Tickets -> TicketsScreen(ticketsViewModel = koinInject())
                                 }
                             }
                         }

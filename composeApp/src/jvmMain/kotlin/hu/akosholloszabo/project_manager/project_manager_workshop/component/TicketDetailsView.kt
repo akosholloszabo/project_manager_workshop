@@ -25,7 +25,8 @@ fun TicketDetailsView(
         Text(selectedTicket.title, style = MaterialTheme.typography.titleLarge)
         Text(
             getKoin().getTextOrException("ticket.status.header")
-                .format(selectedTicket.status?.displayName ?: getKoin().getTextOrException("tickets.status.missing")), style = MaterialTheme.typography.bodyMedium
+                .format(selectedTicket.status?.displayName ?: getKoin().getTextOrException("tickets.status.missing")),
+            style = MaterialTheme.typography.bodyMedium
         )
         Text(
             getKoin().getTextOrException("ticket.project.header")

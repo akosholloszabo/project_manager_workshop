@@ -47,11 +47,12 @@ val appModule = module {
         }
     }
 
-    singleOf(::TicketStore)
-    singleOf(::ProjectStore)
-    singleOf(::NoteStore)
+    single { TicketStore(getOrNull(), get(), get()) }
+    single { ProjectStore(getOrNull(), get()) }
+    single { NoteStore(getOrNull(), get()) }
 
-    singleOf(::TicketsViewModel)
+
+    single { TicketsViewModel(get(), get(), getOrNull()) }
     singleOf(::ProjectsViewModel)
     singleOf(::NotesViewModel)
 }

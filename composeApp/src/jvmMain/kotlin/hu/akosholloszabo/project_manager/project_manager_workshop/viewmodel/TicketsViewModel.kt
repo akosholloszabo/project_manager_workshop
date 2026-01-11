@@ -23,7 +23,7 @@ import kotlinx.coroutines.withContext
 class TicketsViewModel(
     private val ticketStore: TicketStore,
     private val projectsStorage: ProjectsStorage,
-    private val workingFolderStore: WorkingFolderStore,
+    private val workingFolderStore: WorkingFolderStore?,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -143,7 +143,7 @@ class TicketsViewModel(
 
     private suspend fun loadProjects() = withContext(Dispatchers.IO) {
         val loaded = projectsStorage
-            .loadProjects(workingFolderStore.session.value)
+            .loadProjects(workingFolderStore?.session?.value)
             .associate { it.value.id to it.value.name }
         _projects.tryEmit(loaded)
     }
