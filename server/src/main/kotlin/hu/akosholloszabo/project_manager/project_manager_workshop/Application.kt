@@ -1,6 +1,5 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop
 
-import com.typesafe.config.ConfigFactory
 import hu.akosholloszabo.project_manager.project_manager_workshop.controller.noteRoutes
 import hu.akosholloszabo.project_manager.project_manager_workshop.controller.projectRoutes
 import hu.akosholloszabo.project_manager.project_manager_workshop.controller.ticketRoutes
@@ -14,23 +13,12 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.service.Ticket
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.config.*
-import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.calllogging.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.routing.*
 
-fun main() {
-    val runtimeConfig = HoconApplicationConfig(ConfigFactory.load())
-
-    embeddedServer(
-        Netty,
-        applicationEnvironment {
-            config = runtimeConfig
-        },
-        module = Application::module
-    ).start(wait = true)
-}
+fun main(args: Array<String>): Unit = EngineMain.main(args)
 
 
 fun Application.module(config: ApplicationConfig = environment.config) {
