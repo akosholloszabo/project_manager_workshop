@@ -76,16 +76,7 @@
 
 # Embedded YouTube Video
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
----
-
-# Code Snippet
-
-```python
-def hello_world():
-    print("Hello, world!")
-```
+<iframe width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ---
 
@@ -258,20 +249,7 @@ Term 2
 | long text wraps | centered value | 456 |
 
 ## Inline Code
-Use `git status` to inspect your working tree. Inline code uses single backticks.
-
-## Fenced Code Blocks
-```kotlin
-// Kotlin example
-fun main() {
-  println("Hello from Kotlin")
-}
-```
-
-```python
-# Python example
-print("Hello from Python")
-```
+Use `git status` to inspect your working tree. Inline code uses single backticks.
 
 Include language hint for syntax highlighting when available.
 

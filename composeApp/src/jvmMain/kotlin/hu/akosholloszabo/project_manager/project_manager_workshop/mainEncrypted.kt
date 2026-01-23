@@ -35,11 +35,11 @@ fun main() = application {
     val fileStorageHelper = FileStorageHelper()
     val storageCipher = StorageCipher(strings)
 
-    val workingFolderStore = EncryptedWorkingFolderStore(storageCipher)
     val notesStorage = EncryptedNotesStorage(storageCipher, fileStorageHelper, strings)
     val projectsStorage = EncryptedProjectsStorage(storageCipher, fileStorageHelper, strings)
     val ticketsStorage = EncryptedTicketsStorage(storageCipher, fileStorageHelper, strings)
 
+    val workingFolderStore = EncryptedWorkingFolderStore(storageCipher)
     val noteStore = NoteStore(workingFolderStore, notesStorage)
     val projectStore = ProjectStore(workingFolderStore, projectsStorage)
     val ticketStore = TicketStore(workingFolderStore, ticketsStorage, storageBackend)

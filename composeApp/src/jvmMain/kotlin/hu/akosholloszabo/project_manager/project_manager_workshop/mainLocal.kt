@@ -35,11 +35,11 @@ fun main() = application {
     val storageBackend = StorageBackend.LOCAL
     val fileStorageHelper = FileStorageHelper()
 
-    val workingFolderStore = PlainWorkingFolderStore()
     val notesStorage = PlainNotesStorage(fileStorageHelper, strings)
     val projectsStorage = PlainProjectsStorage(fileStorageHelper, strings)
     val ticketsStorage = PlainTicketsStorage(fileStorageHelper, strings)
 
+    val workingFolderStore = PlainWorkingFolderStore()
     val noteStore = NoteStore(workingFolderStore, notesStorage)
     val projectStore = ProjectStore(workingFolderStore, projectsStorage)
     val ticketStore = TicketStore(workingFolderStore, ticketsStorage, storageBackend)
