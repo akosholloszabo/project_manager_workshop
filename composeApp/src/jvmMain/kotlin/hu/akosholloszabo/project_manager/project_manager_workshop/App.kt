@@ -25,43 +25,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
+import hu.akosholloszabo.project_manager.project_manager_workshop.di.localModule
+import hu.akosholloszabo.project_manager.project_manager_workshop.di.mainModule
+import hu.akosholloszabo.project_manager.project_manager_workshop.di.plainLocalModule
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageBackend
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
-import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.NotesScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.ProjectsScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.TicketsScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.WorkingFolderScreen
-import hu.akosholloszabo.project_manager.project_manager_workshop.storage.NotesStorage
-import hu.akosholloszabo.project_manager.project_manager_workshop.storage.ProjectsStorage
-import hu.akosholloszabo.project_manager.project_manager_workshop.storage.TicketsStorage
-import hu.akosholloszabo.project_manager.project_manager_workshop.store.NoteStore
-import hu.akosholloszabo.project_manager.project_manager_workshop.store.ProjectStore
-import hu.akosholloszabo.project_manager.project_manager_workshop.store.TicketStore
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.text
-import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.NotesViewModel
-import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
-import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.WorkingFolderViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.KoinApplicationPreview
+import org.koin.compose.koinInject
+import org.koin.fileProperties
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun App(
-    storageBackend: StorageBackend,
-    workingFolderViewModel: WorkingFolderViewModel?,
-    notesViewModel: NotesViewModel,
-    projectsViewModel: ProjectsViewModel,
-    ticketsViewModel: TicketsViewModel,
-) {
+fun App() {
     var currentScreen by rememberSaveable { mutableStateOf<Screen>(Screen.Notes) }
-    val needsWorkingFolder = storageBackend != StorageBackend.SERVER
+    val needsWorkingFolder = koinInject<StorageBackend>() != StorageBackend.SERVER
     val workingFolder by if (needsWorkingFolder) {
-        workingFolderViewModel!!.selectedFolder.collectAsStateWithLifecycle()
+        koinInject<WorkingFolderViewModel>().selectedFolder.collectAsStateWithLifecycle()
     } else {
         remember { mutableStateOf(null) }
     }
@@ -72,11 +57,11 @@ fun App(
                 CenterAlignedTopAppBar(
                     title = {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text("app.title"), modifier = Modifier.padding(0.dp))
+                            Text(getText("app.title"), modifier = Modifier.padding(0.dp))
                             if (needsWorkingFolder) {
                                 workingFolder?.let {
                                     Text(
-                                        text("working.folder.summary").format(it),
+                                        getText("working.folder.summary").format(it),
                                         modifier = Modifier.padding(0.dp)
                                     )
                                 }
@@ -95,7 +80,7 @@ fun App(
                 ) {
                     if (needsWorkingFolder && workingFolder == null) {
                         WorkingFolderScreen(
-                            workingFolderViewModel = workingFolderViewModel!!,
+                            workingFolderViewModel = koinInject<WorkingFolderViewModel>(),
                             onContinue = { currentScreen = Screen.Notes },
                         )
                     } else {
@@ -107,13 +92,13 @@ fun App(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Button(onClick = { currentScreen = Screen.Notes }) {
-                                    Text(text("app.tab.notes"))
+                                    Text(getText("app.tab.notes"))
                                 }
                                 Button(onClick = { currentScreen = Screen.Projects }) {
-                                    Text(text("app.tab.projects"))
+                                    Text(getText("app.tab.projects"))
                                 }
                                 Button(onClick = { currentScreen = Screen.Tickets }) {
-                                    Text(text("app.tab.tickets"))
+                                    Text(getText("app.tab.tickets"))
                                 }
                             }
 
@@ -121,9 +106,9 @@ fun App(
 
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                                 when (currentScreen) {
-                                    is Screen.Notes -> NotesScreen(notesViewModel)
-                                    is Screen.Projects -> ProjectsScreen(projectsViewModel)
-                                    is Screen.Tickets -> TicketsScreen(ticketsViewModel)
+                                    is Screen.Notes -> NotesScreen(koinInject())
+                                    is Screen.Projects -> ProjectsScreen(koinInject())
+                                    is Screen.Tickets -> TicketsScreen(koinInject())
                                 }
                             }
                         }
@@ -137,117 +122,11 @@ fun App(
 @Preview(showBackground = true, widthDp = 360, heightDp = 640)
 @Composable
 fun AppPreview() {
-    App(
-        storageBackend = StorageBackend.LOCAL,
-        workingFolderViewModel = null,
-        notesViewModel = NotesViewModel(
-            NoteStore(
-                null,
-                object : NotesStorage {
-                    override fun loadNotes(session: StorageSession?) =
-                        emptyList<Persisted<Note>>()
-
-                    override fun createNote(
-                        session: StorageSession?,
-                        title: String?,
-                        content: String
-                    ) = null
-
-                    override fun saveNoteContent(
-                        session: StorageSession?,
-                        file: java.io.File,
-                        content: String
-                    ) = false
-
-                    override fun deleteNote(
-                        session: StorageSession?,
-                        file: java.io.File
-                    ) = false
-                })
-
-        ),
-        projectsViewModel =
-            ProjectsViewModel(
-                ProjectStore(
-                    null,
-                    object : ProjectsStorage {
-                        override fun loadProjects(session: StorageSession?) =
-                            emptyList<Persisted<Project>>()
-
-                        override fun createProject(
-                            session: StorageSession?,
-                            name: String,
-                            description: String,
-                            details: String
-                        ) = throw UnsupportedOperationException()
-
-                        override fun saveProject(
-                            session: StorageSession?,
-                            project: Project,
-                            file: java.io.File,
-                            details: String
-                        ) = false
-
-                        override fun deleteProject(
-                            session: StorageSession?,
-                            file: java.io.File
-                        ) = false
-                    })
-            ),
-        ticketsViewModel =
-            TicketsViewModel(
-                TicketStore(
-                    null,
-                    object : TicketsStorage {
-                        override fun loadTickets(session: StorageSession?) =
-                            emptyList<Persisted<Ticket>>()
-
-                        override fun createTicket(
-                            session: StorageSession?,
-                            title: String,
-                            projectId: Int,
-                            status: TicketStatus,
-                            details: String
-                        ) = null
-
-                        override fun saveTicket(
-                            session: StorageSession?,
-                            ticket: Ticket,
-                            file: java.io.File,
-                            details: String
-                        ) = false
-
-                        override fun deleteTicket(
-                            session: StorageSession?,
-                            file: java.io.File
-                        ) = false
-                    },
-                    StorageBackend.LOCAL
-                ),
-                object : ProjectsStorage {
-                    override fun loadProjects(session: StorageSession?) =
-                        emptyList<Persisted<Project>>()
-
-                    override fun createProject(
-                        session: StorageSession?,
-                        name: String,
-                        description: String,
-                        details: String
-                    ) = throw UnsupportedOperationException()
-
-                    override fun saveProject(
-                        session: StorageSession?,
-                        project: Project,
-                        file: java.io.File,
-                        details: String
-                    ) = false
-
-                    override fun deleteProject(
-                        session: StorageSession?,
-                        file: java.io.File
-                    ) = false
-                },
-                null
-            ),
-    )
+    KoinApplicationPreview(application = {
+        fileProperties("/koinLocal.properties")
+        fileProperties("/strings.properties")
+        modules(mainModule, localModule, plainLocalModule)
+    }) {
+        App()
+    }
 }

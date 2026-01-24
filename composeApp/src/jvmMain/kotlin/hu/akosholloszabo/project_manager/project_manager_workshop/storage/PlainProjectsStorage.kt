@@ -3,13 +3,12 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import java.io.File
 import java.util.UUID.randomUUID
 
-class PlainProjectsStorage(fileStorageHelper: FileStorageHelper, strings: Strings) :
-    LocalProjectsStorage(fileStorageHelper, strings) {
-    private val newProjectText by lazy { strings.require("project.default.name") }
+class PlainProjectsStorage(fileStorageHelper: FileStorageHelper) :
+    LocalProjectsStorage(fileStorageHelper) {
     override fun loadProjects(session: StorageSession?): List<Persisted<Project>> {
         return withProjectsDirectory(session) { folder ->
             fileStorageHelper.listStorageFiles(folder, storageSpec)
@@ -25,7 +24,7 @@ class PlainProjectsStorage(fileStorageHelper: FileStorageHelper, strings: String
     ): Persisted<Project> {
         return withProjectsDirectory(session) { folder ->
             val file = fileStorageHelper.createTimestampedFile(folder, name, storageSpec)
-            val defaultName = name.takeIf { it.isNotBlank() } ?: newProjectText
+            val defaultName = name.takeIf { it.isNotBlank() } ?: getText("project.default.name")
             val project = Project(randomUUID().hashCode(), defaultName, description)
             safe {
                 saveProject(session, project, file, details)

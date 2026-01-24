@@ -5,13 +5,13 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageS
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketMetadata
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import java.io.File
 import java.util.UUID.randomUUID
 
-class PlainTicketsStorage(fileStorageHelper: FileStorageHelper, strings: Strings) :
-    LocalTicketsStorage(fileStorageHelper, strings) {
-    private val newTicketText by lazy { strings.require("ticket.default.title") }
+class PlainTicketsStorage(fileStorageHelper: FileStorageHelper) :
+    LocalTicketsStorage(fileStorageHelper) {
+    private val newTicketText = getText("ticket.default.title")
     override fun loadTickets(session: StorageSession?): List<Persisted<Ticket>> {
         return withTicketsDirectory(session) { folder ->
             fileStorageHelper.listStorageFiles(folder, storageSpec)

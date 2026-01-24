@@ -28,13 +28,18 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.component.Empt
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SelectableList
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoPaneLayout
+import hu.akosholloszabo.project_manager.project_manager_workshop.di.localModule
+import hu.akosholloszabo.project_manager.project_manager_workshop.di.mainModule
+import hu.akosholloszabo.project_manager.project_manager_workshop.di.plainLocalModule
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.CrudActionLabels
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.text
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.NotesViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.KoinApplicationPreview
+import org.koin.fileProperties
 import java.io.File
 
 @Composable
@@ -82,7 +87,7 @@ fun NotesScreenContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
-        Text(text("notes.title"), style = MaterialTheme.typography.titleLarge)
+        Text(getText("notes.title"), style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val masterWeight = if (maxWidth < 640.dp) 0.55f else 0.33f
@@ -113,7 +118,7 @@ fun NotesScreenContent(
                         verticalSpacing = 8.dp,
                         header = {
                             DetailHeader(
-                                title = selectedNote?.value?.title ?: text("notes.empty.message"),
+                                title = selectedNote?.value?.title ?: getText("notes.empty.message"),
                                 actions = {
                                     CrudActionBar(
                                         hasSelection = selectedNote != null,
@@ -123,10 +128,10 @@ fun NotesScreenContent(
                                         onSave = onSaveNote,
                                         onDelete = onDeleteNote,
                                         labels = CrudActionLabels(
-                                            newLabel = text("notes.new"),
-                                            editLabel = text("crud.edit"),
-                                            saveLabel = text("crud.save"),
-                                            deleteLabel = text("crud.delete")
+                                            newLabel = getText("notes.new"),
+                                            editLabel = getText("crud.edit"),
+                                            saveLabel = getText("crud.save"),
+                                            deleteLabel = getText("crud.delete")
                                         )
                                     )
                                 }
@@ -148,8 +153,8 @@ fun NotesScreenContent(
                                     Markdown(note.value.content)
                                 }
                             } ?: EmptyDetailHint(
-                                message = text("notes.empty.message"),
-                                description = text("notes.empty.description")
+                                message = getText("notes.empty.message"),
+                                description = getText("notes.empty.description")
                             )
                         }
                     )
@@ -164,25 +169,32 @@ fun NotesScreenContent(
 fun NotesScreenPreviewLight() {
     val firstNote = previewPersistedNote("first-note.md", 1, "First note", "# Preview\nThis is the first note.")
     val secondNote = previewPersistedNote("second-note.md", 2, "Second note", "Second entry markdown content.")
-    AppTheme(darkTheme = false) {
-        Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-            NotesScreenContent(
-                notes = listOf(firstNote, secondNote),
-                selectedNotePath = firstNote.file.absolutePath,
-                selectedNote = firstNote,
-                editableContent = StateAndEvent(
-                    state = firstNote.value.content,
-                    event = {}
-                ),
-                isEditing = StateAndEvent(
-                    state = true,
-                    event = {}
-                ),
-                onCreateNote = {},
-                onSaveNote = {},
-                onDeleteNote = {},
-                onSelectNote = {},
-            )
+
+    KoinApplicationPreview(application = {
+        fileProperties("/koinLocal.properties")
+        fileProperties("/strings.properties")
+        modules(mainModule, localModule, plainLocalModule)
+    }) {
+        AppTheme(darkTheme = false) {
+            Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
+                NotesScreenContent(
+                    notes = listOf(firstNote, secondNote),
+                    selectedNotePath = firstNote.file.absolutePath,
+                    selectedNote = firstNote,
+                    editableContent = StateAndEvent(
+                        state = firstNote.value.content,
+                        event = {}
+                    ),
+                    isEditing = StateAndEvent(
+                        state = true,
+                        event = {}
+                    ),
+                    onCreateNote = {},
+                    onSaveNote = {},
+                    onDeleteNote = {},
+                    onSelectNote = {},
+                )
+            }
         }
     }
 }
@@ -193,25 +205,31 @@ fun NotesScreenPreviewDark() {
     val firstNote = previewPersistedNote("first-note.md", 1, "First note", "# Preview\nThis is the first note.")
     val secondNote = previewPersistedNote("second-note.md", 2, "Second note", "Second entry markdown content.")
 
-    AppTheme(darkTheme = true) {
-        Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-            NotesScreenContent(
-                notes = listOf(firstNote, secondNote),
-                selectedNotePath = firstNote.file.absolutePath,
-                selectedNote = firstNote,
-                editableContent = StateAndEvent(
-                    state = firstNote.value.content,
-                    event = {}
-                ),
-                isEditing = StateAndEvent(
-                    state = true,
-                    event = {}
-                ),
-                onCreateNote = {},
-                onSaveNote = {},
-                onDeleteNote = {},
-                onSelectNote = {},
-            )
+    KoinApplicationPreview(application = {
+        fileProperties("/koinLocal.properties")
+        fileProperties("/strings.properties")
+        modules(mainModule, localModule, plainLocalModule)
+    }) {
+        AppTheme(darkTheme = true) {
+            Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
+                NotesScreenContent(
+                    notes = listOf(firstNote, secondNote),
+                    selectedNotePath = firstNote.file.absolutePath,
+                    selectedNote = firstNote,
+                    editableContent = StateAndEvent(
+                        state = firstNote.value.content,
+                        event = {}
+                    ),
+                    isEditing = StateAndEvent(
+                        state = true,
+                        event = {}
+                    ),
+                    onCreateNote = {},
+                    onSaveNote = {},
+                    onDeleteNote = {},
+                    onSelectNote = {},
+                )
+            }
         }
     }
 }

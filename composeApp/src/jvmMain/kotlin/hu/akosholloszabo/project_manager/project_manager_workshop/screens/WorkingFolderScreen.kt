@@ -29,7 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.akosholloszabo.project_manager.project_manager_workshop.FileChooser
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.text
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.WorkingFolderViewModel
 import kotlinx.coroutines.launch
 
@@ -57,7 +57,7 @@ fun WorkingFolderScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text("working.folder.title"),
+            getText("working.folder.title"),
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center
         )
@@ -68,8 +68,8 @@ fun WorkingFolderScreen(
             value = pendingFolder ?: "",
             onValueChange = { pendingFolder = it },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(text("working.folder.label")) },
-            placeholder = { Text(text("working.folder.placeholder")) },
+            label = { Text(getText("working.folder.label")) },
+            placeholder = { Text(getText("working.folder.placeholder")) },
             singleLine = true
         )
 
@@ -80,8 +80,8 @@ fun WorkingFolderScreen(
                 value = password,
                 onValueChange = { password = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text(text("working.folder.password.label")) },
-                placeholder = { Text(text("working.folder.password.placeholder")) },
+                label = { Text(getText("working.folder.password.label")) },
+                placeholder = { Text(getText("working.folder.password.placeholder")) },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
@@ -95,7 +95,7 @@ fun WorkingFolderScreen(
                 FileChooser.chooseDirectory()?.let { pendingFolder = it }
             }
         }) {
-            Text(text("button.choose.folder"))
+            Text(getText("button.choose.folder"))
         }
 
         Spacer(Modifier.height(8.dp))
@@ -108,14 +108,14 @@ fun WorkingFolderScreen(
                     onContinue()
                 }
             }, enabled = canContinue) {
-                Text(text("button.continue"))
+                Text(getText("button.continue"))
             }
             TextButton(onClick = {
                 pendingFolder = null
                 password = ""
                 workingFolderViewModel.clearSelection()
             }) {
-                Text(text("button.clear"))
+                Text(getText("button.clear"))
             }
         }
     }

@@ -4,11 +4,11 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persiste
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSpec
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import kotlinx.serialization.json.Json
 import java.io.File
 
-abstract class LocalProjectsStorage(val fileStorageHelper: FileStorageHelper, private val strings: Strings) :
+abstract class LocalProjectsStorage(val fileStorageHelper: FileStorageHelper) :
     ProjectsStorage {
 
     protected val storageSpec = StorageSpec(
@@ -18,15 +18,12 @@ abstract class LocalProjectsStorage(val fileStorageHelper: FileStorageHelper, pr
         detailExtension = ".md"
     )
 
-    protected val sessionRequiredText by lazy { strings.require("storage.session.required") }
-    protected val folderAccessErrorText by lazy { strings.require("storage.folder.access_error") }
-
     protected val json: Json = fileStorageHelper.defaultJson
 
     protected inline fun <T> withProjectsDirectory(session: StorageSession?, action: (File) -> T): T {
-        require(session != null) { sessionRequiredText }
+        require(session != null) { getText("storage.session.required") }
         val folder = session.let { fileStorageHelper.ensureStorageDirectory(it.folderPath, storageSpec) }
-        require(folder != null) { folderAccessErrorText }
+        require(folder != null) { getText("storage.folder.access_error") }
         return action(folder)
     }
 
@@ -37,7 +34,7 @@ abstract class LocalProjectsStorage(val fileStorageHelper: FileStorageHelper, pr
         val current = session
         val folder = File(current.folderPath, storageSpec.folderName)
             .takeIf { it.exists() || it.mkdirs() }
-            ?: throw Exception(folderAccessErrorText)
+            ?: throw Exception(getText("storage.folder.access_error"))
         return action(current, folder)
     }
 
@@ -62,8 +59,4 @@ abstract class LocalProjectsStorage(val fileStorageHelper: FileStorageHelper, pr
             Persisted(file, normalized)
         }
     }
-
-    // Convenience
-    protected val Strings.projectsNew: String
-        get() = require("projects.new")
 }

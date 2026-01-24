@@ -3,7 +3,8 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
+
 import java.io.File
 import java.util.UUID.randomUUID
 import javax.crypto.SecretKey
@@ -11,14 +12,10 @@ import javax.crypto.SecretKey
 class EncryptedProjectsStorage(
     val storageCipher: StorageCipher,
     fileStorageHelper: FileStorageHelper,
-    private val strings: Strings
-) : LocalProjectsStorage(fileStorageHelper, strings) {
-    private val encryptionKeyRequiredText: String = strings.require("storage.session.encryption.required")
-    private val newProjectText: String = strings.require("projects.new")
-    private val decryptFailureText: String = strings.require("storage.encrypted.decrypt_error")
+) : LocalProjectsStorage(fileStorageHelper) {
 
     override fun loadProjects(session: StorageSession?): List<Persisted<Project>> {
-        require(session != null) { sessionRequiredText }
+        require(session != null) { getText("storage.session.required") }
         return withEncryptedProjectsDirectory(session) { current, folder ->
             val key = current.encryptionKey ?: return@withEncryptedProjectsDirectory emptyList()
             fileStorageHelper.listStorageFiles(folder, storageSpec)
@@ -32,12 +29,12 @@ class EncryptedProjectsStorage(
         description: String,
         details: String
     ): Persisted<Project> {
-        require(session != null) { sessionRequiredText }
+        require(session != null) { getText("storage.session.required") }
         return withEncryptedProjectsDirectory(session) { current, folder ->
-            require(current.encryptionKey != null) { encryptionKeyRequiredText }
+            require(current.encryptionKey != null) { getText("storage.session.encryption.required") }
             val key = current.encryptionKey
             val file = fileStorageHelper.createTimestampedFile(folder, name, storageSpec)
-            val defaultName = name.takeIf { it.isNotBlank() } ?: newProjectText
+            val defaultName = name.takeIf { it.isNotBlank() } ?: getText("projects.new")
             val project = Project(randomUUID().hashCode(), defaultName, description)
             safe {
                 saveProject(session, project, file, details)
@@ -81,7 +78,8 @@ class EncryptedProjectsStorage(
     private fun projectFromFileEncrypted(file: File, key: SecretKey): Persisted<Project> {
         return safe {
             val encrypted = file.readText()
-            val payload = storageCipher.tryDecrypt(encrypted, key) ?: throw Exception(decryptFailureText)
+            val payload =
+                storageCipher.tryDecrypt(encrypted, key) ?: throw Exception(getText("storage.encrypted.decrypt_error"))
             val parsed = json.decodeFromString<Project>(payload)
             val normalized = parsed.copy(details = readDetailsEncrypted(file, key))
             Persisted(file, normalized)

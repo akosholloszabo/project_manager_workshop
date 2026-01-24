@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.CrudActionLabels
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.text
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 
 @Composable
 fun CrudActionBar(
@@ -19,10 +19,10 @@ fun CrudActionBar(
     onSave: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
     labels: CrudActionLabels = CrudActionLabels(
-        newLabel = text("crud.new"),
-        editLabel = text("crud.edit"),
-        saveLabel = text("crud.save"),
-        deleteLabel = text("crud.delete")
+        newLabel = getText("crud.new"),
+        editLabel = getText("crud.edit"),
+        saveLabel = getText("crud.save"),
+        deleteLabel = getText("crud.delete")
     ),
     modifier: Modifier = Modifier
 ) {

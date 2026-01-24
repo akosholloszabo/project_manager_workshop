@@ -24,15 +24,20 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TicketBoard
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TicketDetailsPanel
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoPaneLayout
+import hu.akosholloszabo.project_manager.project_manager_workshop.di.localModule
+import hu.akosholloszabo.project_manager.project_manager_workshop.di.mainModule
+import hu.akosholloszabo.project_manager.project_manager_workshop.di.plainLocalModule
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketCardState
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketColumnState
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.text
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.KoinApplicationPreview
+import org.koin.fileProperties
 import java.io.File
 
 
@@ -108,10 +113,10 @@ fun TicketsScreenContent(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text(text("tickets.title"), style = MaterialTheme.typography.titleLarge)
+                Text(getText("tickets.title"), style = MaterialTheme.typography.titleLarge)
             }
             Button(onClick = onCreateTicket) {
-                Text(text("tickets.new"))
+                Text(getText("tickets.new"))
             }
         }
 
@@ -187,24 +192,30 @@ private fun TicketsScreenPreviewContent(darkTheme: Boolean) {
     val previewStatusState = StateAndEvent(state = previewTicket.value.status)
     val previewDetailsState = StateAndEvent(state = previewTicket.value.details)
 
-    AppTheme(darkTheme = darkTheme) {
-        Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-            TicketsScreenContent(
-                columns = previewColumns,
-                selectedTicket = previewTicket,
-                projects = previewProjects,
-                isEditing = previewIsEditing,
-                title = previewTitleState,
-                projectId = previewProjectState,
-                status = previewStatusState,
-                details = previewDetailsState,
-                onTicketSelected = {},
-                onCreateTicket = {},
-                onEdit = {},
-                onSave = {},
-                onDelete = {},
-                onBack = {}
-            )
+    KoinApplicationPreview(application = {
+        fileProperties("/koinLocal.properties")
+        fileProperties("/strings.properties")
+        modules(mainModule, localModule, plainLocalModule)
+    }) {
+        AppTheme(darkTheme = darkTheme) {
+            Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
+                TicketsScreenContent(
+                    columns = previewColumns,
+                    selectedTicket = previewTicket,
+                    projects = previewProjects,
+                    isEditing = previewIsEditing,
+                    title = previewTitleState,
+                    projectId = previewProjectState,
+                    status = previewStatusState,
+                    details = previewDetailsState,
+                    onTicketSelected = {},
+                    onCreateTicket = {},
+                    onEdit = {},
+                    onSave = {},
+                    onDelete = {},
+                    onBack = {}
+                )
+            }
         }
     }
 }

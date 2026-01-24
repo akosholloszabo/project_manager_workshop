@@ -31,13 +31,18 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.component.Empt
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SelectableList
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoPaneLayout
+import hu.akosholloszabo.project_manager.project_manager_workshop.di.localModule
+import hu.akosholloszabo.project_manager.project_manager_workshop.di.mainModule
+import hu.akosholloszabo.project_manager.project_manager_workshop.di.plainLocalModule
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.CrudActionLabels
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.text
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.KoinApplicationPreview
+import org.koin.fileProperties
 import kotlin.io.path.Path
 
 @Composable
@@ -93,7 +98,7 @@ fun ProjectsScreenContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.padding(16.dp)) {
-        Text(text("projects.title"), style = MaterialTheme.typography.titleLarge)
+        Text(getText("projects.title"), style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
 
         TwoPaneLayout(
@@ -117,7 +122,7 @@ fun ProjectsScreenContent(
                     verticalSpacing = 12.dp,
                     header = {
                         DetailHeader(
-                            title = selectedProject?.value?.name ?: text("projects.title"),
+                            title = selectedProject?.value?.name ?: getText("projects.title"),
                             actions = {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -131,10 +136,10 @@ fun ProjectsScreenContent(
                                         onSave = onSaveProject,
                                         onDelete = onDeleteProject,
                                         labels = CrudActionLabels(
-                                            newLabel = text("projects.new"),
-                                            editLabel = text("crud.edit"),
-                                            saveLabel = text("crud.save"),
-                                            deleteLabel = text("crud.delete")
+                                            newLabel = getText("projects.new"),
+                                            editLabel = getText("crud.edit"),
+                                            saveLabel = getText("crud.save"),
+                                            deleteLabel = getText("crud.delete")
                                         )
                                     )
                                 }
@@ -147,14 +152,14 @@ fun ProjectsScreenContent(
                             TextField(
                                 value = name.state,
                                 onValueChange = name.event,
-                                label = { Text(text("projects.field.name")) },
+                                label = { Text(getText("projects.field.name")) },
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Spacer(Modifier.height(8.dp))
                             TextField(
                                 value = description.state,
                                 onValueChange = description.event,
-                                label = { Text(text("projects.field.description")) },
+                                label = { Text(getText("projects.field.description")) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(120.dp),
@@ -164,7 +169,7 @@ fun ProjectsScreenContent(
                             TextField(
                                 value = details.state,
                                 onValueChange = details.event,
-                                label = { Text(text("projects.field.details")) },
+                                label = { Text(getText("projects.field.details")) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(220.dp),
@@ -188,13 +193,13 @@ fun ProjectsScreenContent(
                                         .verticalScroll(rememberScrollState())
                                 ) {
                                     Markdown(
-                                        project.value.details.ifBlank { text("projects.empty.details") }
+                                        project.value.details.ifBlank { getText("projects.empty.details") }
                                     )
                                 }
                             }
                         } ?: EmptyDetailHint(
-                            message = text("projects.empty.message"),
-                            description = text("projects.empty.description")
+                            message = getText("projects.empty.message"),
+                            description = getText("projects.empty.description")
                         )
                     }
                 )
@@ -221,21 +226,27 @@ fun ProjectsScreenPreviewLight() {
         details = "# Status\nMore preview content"
     )
 
-    AppTheme(darkTheme = false) {
-        Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-            ProjectsScreenContent(
-                projects = listOf(firstProject, secondProject),
-                selectedProjectPath = firstProject.file.absolutePath,
-                selectedProject = firstProject,
-                isEditing = StateAndEvent(state = true, event = {}),
-                name = StateAndEvent(state = firstProject.value.name, event = {}),
-                description = StateAndEvent(state = firstProject.value.description, event = {}),
-                details = StateAndEvent(state = firstProject.value.details, event = {}),
-                onCreateProject = {},
-                onSaveProject = {},
-                onDeleteProject = {},
-                onSelectProject = {},
-            )
+    KoinApplicationPreview(application = {
+        fileProperties("/koinLocal.properties")
+        fileProperties("/strings.properties")
+        modules(mainModule, localModule, plainLocalModule)
+    }) {
+        AppTheme(darkTheme = false) {
+            Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
+                ProjectsScreenContent(
+                    projects = listOf(firstProject, secondProject),
+                    selectedProjectPath = firstProject.file.absolutePath,
+                    selectedProject = firstProject,
+                    isEditing = StateAndEvent(state = true, event = {}),
+                    name = StateAndEvent(state = firstProject.value.name, event = {}),
+                    description = StateAndEvent(state = firstProject.value.description, event = {}),
+                    details = StateAndEvent(state = firstProject.value.details, event = {}),
+                    onCreateProject = {},
+                    onSaveProject = {},
+                    onDeleteProject = {},
+                    onSelectProject = {},
+                )
+            }
         }
     }
 }
@@ -258,21 +269,27 @@ fun ProjectsScreenPreviewDark() {
         details = "# Status\nMore preview content"
     )
 
-    AppTheme(darkTheme = true) {
-        Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-            ProjectsScreenContent(
-                projects = listOf(firstProject, secondProject),
-                selectedProjectPath = firstProject.file.absolutePath,
-                selectedProject = firstProject,
-                isEditing = StateAndEvent(state = true, event = {}),
-                name = StateAndEvent(state = firstProject.value.name, event = {}),
-                description = StateAndEvent(state = firstProject.value.description, event = {}),
-                details = StateAndEvent(state = firstProject.value.details, event = {}),
-                onCreateProject = {},
-                onSaveProject = {},
-                onDeleteProject = {},
-                onSelectProject = {},
-            )
+    KoinApplicationPreview(application = {
+        fileProperties("/koinLocal.properties")
+        fileProperties("/strings.properties")
+        modules(mainModule, localModule, plainLocalModule)
+    }) {
+        AppTheme(darkTheme = true) {
+            Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
+                ProjectsScreenContent(
+                    projects = listOf(firstProject, secondProject),
+                    selectedProjectPath = firstProject.file.absolutePath,
+                    selectedProject = firstProject,
+                    isEditing = StateAndEvent(state = true, event = {}),
+                    name = StateAndEvent(state = firstProject.value.name, event = {}),
+                    description = StateAndEvent(state = firstProject.value.description, event = {}),
+                    details = StateAndEvent(state = firstProject.value.details, event = {}),
+                    onCreateProject = {},
+                    onSaveProject = {},
+                    onDeleteProject = {},
+                    onSelectProject = {},
+                )
+            }
         }
     }
 }

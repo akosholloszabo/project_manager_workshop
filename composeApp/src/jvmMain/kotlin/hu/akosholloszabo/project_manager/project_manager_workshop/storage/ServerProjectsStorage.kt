@@ -5,11 +5,11 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.ProjectPayload
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.network.ProjectServerClient
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
-class ServerProjectsStorage(private val client: ProjectServerClient, private val strings: Strings) : ProjectsStorage {
+class ServerProjectsStorage(private val client: ProjectServerClient) : ProjectsStorage {
     override fun loadProjects(session: StorageSession?): List<Persisted<Project>> = runBlocking {
         client.getAll().map(::persistProject)
     }
@@ -21,7 +21,7 @@ class ServerProjectsStorage(private val client: ProjectServerClient, private val
         details: String
     ): Persisted<Project> {
         val payload = ProjectPayload(
-            name = name.takeIf { it.isNotBlank() } ?: strings.require("projects.new"),
+            name = name.takeIf { it.isNotBlank() } ?: getText("projects.new"),
             description = description,
             details = ""
         )

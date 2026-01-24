@@ -3,15 +3,13 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
 import java.io.File
 import javax.crypto.SecretKey
 
 class EncryptedNotesStorage(
     val storageCipher: StorageCipher,
-    override val fileStorageHelper: FileStorageHelper,
-    strings: Strings
-) : LocalNotesStorage(strings), NotesStorage {
+    override val fileStorageHelper: FileStorageHelper
+) : LocalNotesStorage(), NotesStorage {
     override fun loadNotes(session: StorageSession?): List<Persisted<Note>> = withNotesDirectory(session) { folder ->
         val key = session?.encryptionKey ?: return@withNotesDirectory emptyList()
         fileStorageHelper.listStorageFiles(folder, storageSpec())

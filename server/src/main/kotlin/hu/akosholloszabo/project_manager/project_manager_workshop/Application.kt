@@ -17,6 +17,8 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.calllogging.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.routing.*
+import org.koin.ktor.ext.get
+import org.koin.ktor.plugin.Koin
 
 fun main(args: Array<String>): Unit = EngineMain.main(args)
 
@@ -26,18 +28,15 @@ fun Application.module(config: ApplicationConfig = environment.config) {
         json()
     }
     install(CallLogging)
+    install(Koin){
+        modules(mainModule)
+    }
     DatabaseFactory.init(config)
 
-    val projectRepository = ProjectRepository()
-    val projectService = ProjectService(projectRepository)
-    val noteRepository = NoteRepository()
-    val noteService = NoteService(noteRepository)
-    val ticketRepository = TicketRepository()
-    val ticketService = TicketService(ticketRepository)
 
     routing {
-        projectRoutes(projectService)
-        noteRoutes(noteService)
-        ticketRoutes(ticketService)
+        projectRoutes(get())
+        noteRoutes(get())
+        ticketRoutes(get())
     }
 }

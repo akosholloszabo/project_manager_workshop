@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketColumnState
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.text
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 
 @Composable
 fun TicketColumn(
@@ -49,7 +49,7 @@ fun TicketColumn(
         ) {
             if (columnState.cards.isEmpty()) {
                 Text(
-                    text("tickets.no.items"),
+                    getText("tickets.no.items"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

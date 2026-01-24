@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
@@ -17,8 +16,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.text
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,12 +39,12 @@ fun TicketEditorFields(
         TextField(
             value = title.state,
             onValueChange = title.event,
-            label = { Text(text("tickets.field.title")) },
+            label = { Text(getText("tickets.field.title")) },
             modifier = Modifier.fillMaxWidth()
         )
         ReadOnlyDropdownField(
-            value = projects.toMap()[projectId.state] ?: text("tickets.editor.no.project"),
-            label = text("tickets.field.project"),
+            value = projects.toMap()[projectId.state] ?: getText("tickets.editor.no.project"),
+            label = getText("tickets.field.project"),
             expanded = projectDropdownExpanded,
             onExpandedChange = { projectDropdownExpanded = it }
         ) {
@@ -60,8 +59,8 @@ fun TicketEditorFields(
             }
         }
         ReadOnlyDropdownField(
-            value = status.state?.displayName ?: text("tickets.status.missing"),
-            label = text("tickets.field.status"),
+            value = status.state?.displayName ?: getText("tickets.status.missing"),
+            label = getText("tickets.field.status"),
             expanded = statusDropdownExpanded,
             onExpandedChange = { statusDropdownExpanded = it }
         ) {
@@ -81,7 +80,7 @@ fun TicketEditorFields(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(),
-            label = { Text(text("tickets.field.details")) },
+            label = { Text(getText("tickets.field.details")) },
             maxLines = Int.MAX_VALUE
         )
     }

@@ -4,9 +4,10 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persiste
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
+import org.koin.core.component.KoinComponent
 import java.io.File
 
-interface TicketsStorage {
+interface TicketsStorage : KoinComponent {
     fun loadTickets(session: StorageSession?): List<Persisted<Ticket>>
     fun createTicket(
         session: StorageSession?,

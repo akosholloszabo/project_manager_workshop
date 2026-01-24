@@ -22,6 +22,8 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -44,7 +46,7 @@ kotlin {
             val mikpezVersion = "0.38.1"
             // Core library
             implementation("com.mikepenz:multiplatform-markdown-renderer:${mikpezVersion}")
-// OR for Material 3 themed apps
+            // OR for Material 3 themed apps
             implementation("com.mikepenz:multiplatform-markdown-renderer-m3:${mikpezVersion}")
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.ktor.clientCore)

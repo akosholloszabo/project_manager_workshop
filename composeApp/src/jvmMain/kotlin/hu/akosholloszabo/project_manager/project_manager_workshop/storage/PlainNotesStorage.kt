@@ -3,11 +3,10 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
 import java.io.File
 
-class PlainNotesStorage(override val fileStorageHelper: FileStorageHelper, strings: Strings) :
-    LocalNotesStorage(strings), NotesStorage {
+class PlainNotesStorage(override val fileStorageHelper: FileStorageHelper) :
+    LocalNotesStorage(), NotesStorage {
     override fun loadNotes(session: StorageSession?): List<Persisted<Note>> = withNotesDirectory(session) { folder ->
         fileStorageHelper.listStorageFiles(folder, storageSpec())
             .mapNotNull(::noteFromFile)

@@ -4,11 +4,11 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSpec
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import java.io.File
 import java.util.*
 
-abstract class LocalNotesStorage(private val strings: Strings) : NotesStorage {
+abstract class LocalNotesStorage() : NotesStorage {
     abstract val fileStorageHelper: FileStorageHelper
 
     protected val storageSpec = StorageSpec(
@@ -16,9 +16,6 @@ abstract class LocalNotesStorage(private val strings: Strings) : NotesStorage {
         primaryExtension = ".md",
         fallbackName = "note"
     )
-
-    private val newNoteText by lazy { strings.require("notes.default.title") }
-    private val untitledText by lazy { strings.require("notes.default.untitled") }
 
     protected inline fun <T> withNotesDirectory(session: StorageSession?, action: (File) -> T): T? {
         val folder = session?.let { fileStorageHelper.ensureStorageDirectory(it.folderPath, storageSpec) }
@@ -31,7 +28,8 @@ abstract class LocalNotesStorage(private val strings: Strings) : NotesStorage {
         return file.canonicalPath.startsWith(canonicalRoot)
     }
 
-    protected fun defaultTitle(title: String?): String = title?.takeIf { it.isNotBlank() } ?: newNoteText
+    protected fun defaultTitle(title: String?): String =
+        title?.takeIf { it.isNotBlank() } ?: getText("notes.default.title")
 
     protected fun defaultContent(title: String?): String = "# ${defaultTitle(title)}\n\n"
 
@@ -55,7 +53,7 @@ abstract class LocalNotesStorage(private val strings: Strings) : NotesStorage {
             ?.removePrefix("#")
             ?.trim()
             ?.takeUnless { it.isBlank() }
-        val resolvedFallback = fallback.takeUnless { it.isBlank() } ?: untitledText
+        val resolvedFallback = fallback.takeUnless { it.isBlank() } ?: getText("notes.default.untitled")
         return firstLineTitle ?: resolvedFallback
     }
 
@@ -69,7 +67,7 @@ abstract class LocalNotesStorage(private val strings: Strings) : NotesStorage {
             .trim()
             .takeUnless { it.isBlank() }
         return fallback?.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.US) else it.toString() }
-            ?: untitledText
+            ?: getText("notes.default.untitled")
     }
 
     protected fun extractId(content: String): Int? {

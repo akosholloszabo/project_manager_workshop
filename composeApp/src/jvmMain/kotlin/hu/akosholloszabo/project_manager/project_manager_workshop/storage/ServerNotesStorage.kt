@@ -5,11 +5,11 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.NotePayl
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.network.NoteServerClient
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
-class ServerNotesStorage(private val client: NoteServerClient, private val strings: Strings) : NotesStorage {
+class ServerNotesStorage(private val client: NoteServerClient) : NotesStorage {
 
     private fun deriveTitle(content: String, fallback: String): String {
         val firstLineTitle = content.lineSequence()
@@ -22,7 +22,7 @@ class ServerNotesStorage(private val client: NoteServerClient, private val strin
     }
 
     private fun defaultTitle(title: String?): String =
-        title?.takeIf { it.isNotBlank() } ?: strings.require("notes.default.title")
+        title?.takeIf { it.isNotBlank() } ?: getText("notes.default.title")
 
     private fun defaultContent(title: String?): String = "# ${defaultTitle(title)}\n\n"
 

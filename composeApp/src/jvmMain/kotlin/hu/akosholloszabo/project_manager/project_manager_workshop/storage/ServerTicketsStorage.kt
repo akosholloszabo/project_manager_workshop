@@ -6,12 +6,11 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketPayload
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import hu.akosholloszabo.project_manager.project_manager_workshop.network.TicketServerClient
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Strings
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
-class ServerTicketsStorage(private val client: TicketServerClient, private val strings: Strings) : TicketsStorage {
-    private val newTicketText by lazy { strings.require("ticket.default.title") }
+class ServerTicketsStorage(private val client: TicketServerClient) : TicketsStorage {
     override fun loadTickets(session: StorageSession?): List<Persisted<Ticket>> = runBlocking {
         client.getAll().map(::persistTicket)
     }
@@ -23,7 +22,7 @@ class ServerTicketsStorage(private val client: TicketServerClient, private val s
         status: TicketStatus,
         details: String
     ): Persisted<Ticket> {
-        val resolvedTitle = title.takeIf { it.isNotBlank() } ?: newTicketText
+        val resolvedTitle = title.takeIf { it.isNotBlank() } ?: getText("ticket.default.title")
         val payload = TicketPayload(
             title = resolvedTitle,
             projectId = projectId,
