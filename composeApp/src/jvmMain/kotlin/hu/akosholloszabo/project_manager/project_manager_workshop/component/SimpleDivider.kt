@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
+//TODO DIVEDER
 fun SimpleDivider(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier

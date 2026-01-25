@@ -11,22 +11,24 @@ import androidx.compose.ui.Modifier
 
 @Composable
 fun DetailHeader(
+    modifier: Modifier = Modifier,
     title: String,
     subtitle: String? = null,
-    modifier: Modifier = Modifier,
     actions: @Composable () -> Unit = {}
 ) {
     Row(
+        // TODO If you get a modifier from outside, you should not override its width
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
-            Text(title, style = MaterialTheme.typography.titleLarge)
+            Text(text = title, style = MaterialTheme.typography.titleLarge)
             subtitle?.let {
-                Text(it, style = MaterialTheme.typography.bodyMedium)
+                Text(text = it, style = MaterialTheme.typography.bodyMedium)
             }
         }
         actions()
     }
 }
 
+// TODO Preview

@@ -24,20 +24,24 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Koin
 
 @Composable
 fun TicketColumn(
+    modifier: Modifier = Modifier,
     columnState: TicketColumnState,
-    onTicketSelected: (Persisted<Ticket>) -> Unit,
-    modifier: Modifier = Modifier
+    onTicketSelected: (Persisted<Ticket>) -> Unit
 ) {
     Column(
+        // TODO If you get a modifier from outside, you should not override
         modifier = modifier
             .width(260.dp)
             .fillMaxHeight()
             .background(
                 MaterialTheme.colorScheme.surfaceVariant,
+                // TODO Integer goes to resources
                 RoundedCornerShape(12.dp)
             )
+            // TODO Integer goes to resources
             .padding(12.dp)
     ) {
+        // TODO If one parameter has named argument, all should have
         Text(columnState.status.displayName, style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Column(
@@ -45,6 +49,7 @@ fun TicketColumn(
                 .weight(1f)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState()),
+            
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             if (columnState.cards.isEmpty()) {
@@ -64,3 +69,5 @@ fun TicketColumn(
         }
     }
 }
+
+// TODO Preview

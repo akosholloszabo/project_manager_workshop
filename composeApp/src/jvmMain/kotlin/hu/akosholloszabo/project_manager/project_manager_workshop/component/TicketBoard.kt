@@ -14,13 +14,15 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketCo
 
 @Composable
 fun TicketBoard(
+    modifier: Modifier = Modifier,
     columns: List<TicketColumnState>,
-    onTicketSelected: (Persisted<Ticket>) -> Unit,
-    modifier: Modifier = Modifier
+    onTicketSelected: (Persisted<Ticket>) -> Unit
 ) {
     val boardScrollState = rememberScrollState()
     Row(
+        // TODO If you get a modifier from outside, you should not override
         modifier = modifier.horizontalScroll(boardScrollState),
+        // TODO Integer goes to resources
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         columns.forEach { column ->
@@ -34,4 +36,4 @@ fun TicketBoard(
     }
 }
 
-
+// TODO Preview

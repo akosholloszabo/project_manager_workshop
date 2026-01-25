@@ -11,15 +11,17 @@ import androidx.compose.ui.Modifier
 
 @Composable
 fun EmptyDetailHint(
-    message: String,
     modifier: Modifier = Modifier,
+    message: String,
     description: String? = null
 ) {
     Column(
+        // TODO If you get a modifier from outside, you should not override its size
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // TODO If one parameter has named argument, all should have
         Text(message, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
         description?.let {
             Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onBackground)
@@ -27,3 +29,4 @@ fun EmptyDetailHint(
     }
 }
 
+// TODO Preview

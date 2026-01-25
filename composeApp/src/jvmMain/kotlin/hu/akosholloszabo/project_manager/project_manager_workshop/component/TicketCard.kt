@@ -18,35 +18,44 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketCa
 
 @Composable
 fun TicketCard(
+    modifier: Modifier = Modifier,
     cardState: TicketCardState,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onClick: () -> Unit
 ) {
     val ticket = cardState.persisted.value
     Card(
         colors = CardDefaults.cardColors(
             containerColor = if (cardState.isSelected) {
+                // TODO Integer goes to resources
                 MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
             } else {
                 MaterialTheme.colorScheme.surface
             }
         ),
+        // TODO If you get a modifier from outside, you should not override
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
+        // TODO Integer goes to resources
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
+                // If one parameter has named argument, all should have
                 ticket.title,
                 style = MaterialTheme.typography.titleMedium,
+                // TODO Integer goes to resources
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
+            // TODO Integer goes to resources
             Spacer(modifier = Modifier.height(4.dp))
             Text(
+                // If one parameter has named argument, all should have
                 cardState.projectName,
                 style = MaterialTheme.typography.bodySmall
             )
         }
     }
 }
+
+// TODO Preview

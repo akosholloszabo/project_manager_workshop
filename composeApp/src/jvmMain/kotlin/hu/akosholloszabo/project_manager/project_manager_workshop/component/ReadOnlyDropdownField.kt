@@ -14,17 +14,18 @@ import androidx.compose.ui.Modifier
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReadOnlyDropdownField(
+    modifier: Modifier = Modifier,
     value: String,
     label: String,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
     dropdownContent: @Composable ColumnScope.() -> Unit
 ) {
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { onExpandedChange(!expanded) }
     ) {
+        // TODO If you get a modifier from outside, you should not override its width
         val anchorModifier = modifier
             .fillMaxWidth()
             .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
@@ -46,3 +47,4 @@ fun ReadOnlyDropdownField(
     }
 }
 
+// TODO Preview

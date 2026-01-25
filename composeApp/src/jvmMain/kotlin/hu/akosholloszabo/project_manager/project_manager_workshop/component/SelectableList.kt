@@ -16,23 +16,30 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun <T> SelectableList(
+    modifier: Modifier = Modifier,
     items: List<T>,
     selectedKey: String?,
-    modifier: Modifier = Modifier,
     keyOf: (T) -> String,
     onItemClick: (T) -> Unit,
     itemContent: @Composable (T, Boolean) -> Unit
 ) {
+    //TODO Integer goes to resources
     LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // TODO If one parameter has named argument, all should have
         items(items, key = { keyOf(it) }) { entry ->
             val isSelected = keyOf(entry) == selectedKey
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else Color.Transparent
+                        if (isSelected)
+                            // TODO Integer goes to resources
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                        else
+                            Color.Transparent
                     )
                     .clickable { onItemClick(entry) }
+                    // TODO Integer goes to resources
                     .padding(8.dp)
             ) {
                 itemContent(entry, isSelected)
@@ -41,3 +48,4 @@ fun <T> SelectableList(
     }
 }
 
+// TODO Preview

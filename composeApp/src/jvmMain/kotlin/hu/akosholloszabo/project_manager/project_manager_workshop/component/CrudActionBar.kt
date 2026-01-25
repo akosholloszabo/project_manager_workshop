@@ -12,25 +12,28 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Koin
 
 @Composable
 fun CrudActionBar(
+    modifier: Modifier = Modifier,
     hasSelection: Boolean,
     isEditing: Boolean,
     onNew: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
     onSave: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
+    // TODO Get labels from a higher level
     labels: CrudActionLabels = CrudActionLabels(
         newLabel = getText("crud.new"),
         editLabel = getText("crud.edit"),
         saveLabel = getText("crud.save"),
         deleteLabel = getText("crud.delete")
-    ),
-    modifier: Modifier = Modifier
+    )
 ) {
     Row(
         modifier = modifier,
+        // TODO Integer goes to resources
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         onNew?.let { Button(onClick = it) { Text(labels.newLabel) } }
+        // TODO Write it with takeIf
         if (hasSelection) {
             if (isEditing) {
                 onSave?.let { Button(onClick = it) { Text(labels.saveLabel) } }
@@ -41,3 +44,5 @@ fun CrudActionBar(
         }
     }
 }
+
+//TODO Preview

@@ -10,14 +10,19 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun DetailEditorPane(
     modifier: Modifier = Modifier,
+    // TODO Integer goes to resources
     verticalSpacing: Dp = 8.dp,
     header: @Composable () -> Unit = {},
     isEditing: Boolean,
     editContent: @Composable () -> Unit,
     viewContent: @Composable () -> Unit
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(verticalSpacing)) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(verticalSpacing)
+    ) {
         header()
+
         if (isEditing) {
             editContent()
         } else {
@@ -26,3 +31,4 @@ fun DetailEditorPane(
     }
 }
 
+//TODO Preview
