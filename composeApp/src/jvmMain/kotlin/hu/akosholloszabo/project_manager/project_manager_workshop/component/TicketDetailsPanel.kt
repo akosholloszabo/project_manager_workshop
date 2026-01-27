@@ -23,6 +23,7 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.Stat
 
 @Composable
 fun TicketDetailsPanel(
+    modifier: Modifier = Modifier,
     selectedTicket: Persisted<Ticket>,
     projects: Map<Int, String>,
     isEditing: StateAndEvent<Boolean>,
@@ -33,15 +34,16 @@ fun TicketDetailsPanel(
     onEdit: () -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    onBack: () -> Unit
 ) {
     val projectNamesById = projects.toMap()
 
     DetailEditorPane(
+        // TODO If you get a modifier from outside, you should not override
         modifier = modifier
             .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
             .padding(16.dp),
+        // TODO Integer goes to resources
         verticalSpacing = 12.dp,
         header = {
             DetailHeader(
@@ -60,6 +62,7 @@ fun TicketDetailsPanel(
                             onSave = if (isEditing.state) onSave else null,
                             onDelete = onDelete,
                         )
+                        // TODO Integer goes to resources
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(onClick = onBack) {
                             Text(getText("tickets.back"))
@@ -87,3 +90,5 @@ fun TicketDetailsPanel(
         }
     )
 }
+
+// TODO Preview

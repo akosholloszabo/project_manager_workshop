@@ -43,13 +43,15 @@ fun TicketColumn(
     ) {
         // TODO If one parameter has named argument, all should have
         Text(columnState.status.displayName, style = MaterialTheme.typography.titleMedium)
+
+        // TODO Integer goes to resources
         Spacer(modifier = Modifier.height(8.dp))
         Column(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState()),
-            
+            // TODO Integer goes to resources
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             if (columnState.cards.isEmpty()) {

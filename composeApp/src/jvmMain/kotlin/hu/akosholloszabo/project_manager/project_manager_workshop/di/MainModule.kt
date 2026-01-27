@@ -16,7 +16,7 @@ val mainModule = module {
     single { NoteStore(getOrNull(), get()) }
     single { ProjectStore(getOrNull(), get()) }
     single { TicketStore(getOrNull(), get(), get()) }
-
+    // TODO viewModel ??
     singleOf(::NotesViewModel)
     singleOf(::ProjectsViewModel)
     single { TicketsViewModel(get(), get(), getOrNull()) }

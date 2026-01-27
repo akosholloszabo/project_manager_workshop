@@ -10,6 +10,7 @@ import java.util.UUID.randomUUID
 class PlainProjectsStorage(fileStorageHelper: FileStorageHelper) :
     LocalProjectsStorage(fileStorageHelper) {
     override fun loadProjects(session: StorageSession?): List<Persisted<Project>> {
+        // TODO {} replace with =
         return withProjectsDirectory(session) { folder ->
             fileStorageHelper.listStorageFiles(folder, storageSpec)
                 .map(::projectFromFile)
@@ -22,6 +23,7 @@ class PlainProjectsStorage(fileStorageHelper: FileStorageHelper) :
         description: String,
         details: String
     ): Persisted<Project> {
+        // TODO {} replace with =
         return withProjectsDirectory(session) { folder ->
             val file = fileStorageHelper.createTimestampedFile(folder, name, storageSpec)
             val defaultName = name.takeIf { it.isNotBlank() } ?: getText("project.default.name")
@@ -43,6 +45,7 @@ class PlainProjectsStorage(fileStorageHelper: FileStorageHelper) :
     }
 
     override fun deleteProject(session: StorageSession?, file: File): Boolean {
+        // TODO {} replace with =
         return session?.let {
             safe {
                 fileStorageHelper.deleteDetails(file, storageSpec)

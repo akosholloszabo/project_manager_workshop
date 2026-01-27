@@ -9,9 +9,9 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketSt
 import kotlinx.serialization.json.Json
 import java.io.File
 
+// TODO shouldn't the parameter be private
 abstract class LocalTicketsStorage(
-    val fileStorageHelper: FileStorageHelper,
-
+    val fileStorageHelper: FileStorageHelper
     ) : TicketsStorage {
 
     protected val storageSpec = StorageSpec(
@@ -50,9 +50,11 @@ abstract class LocalTicketsStorage(
         fileStorageHelper.writeDetails(file, storageSpec, details)
     }
 
+    // TODO I did not see something like this, could be ok but is it needed?
     protected inline fun <T> safe(block: () -> T): T? = runCatching(block).getOrNull()
 
     protected fun ticketFromFile(file: File): Persisted<Ticket>? {
+        // TODO {} replace with =
         return safe {
             val content = file.readText()
             val parsed = json.decodeFromString<TicketMetadata>(content)

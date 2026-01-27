@@ -16,12 +16,16 @@ import kotlinx.coroutines.launch
 
 class NotesViewModel(
     private val noteStore: NoteStore
-) {
+) { //TODO Why is this not extends form a ViewModel()
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val _selectedNotePath = MutableStateFlow<String?>(null)
     val selectedNotePath: StateFlow<String?> = _selectedNotePath.asStateFlow()
+
+    //TODO should this be private
     val isEditing = MutableStateFlow(false)
+
+    // TODO should this be private
     val editableContent = MutableStateFlow("")
 
     val notes = noteStore.notes
@@ -37,8 +41,11 @@ class NotesViewModel(
     init {
         scope.launch {
             noteStore.notes.collect { currentNotes ->
+                // TODO you should check the non "_" version
                 val nextPath = currentNotes.determineSelection(_selectedNotePath.value)
+                // TODO you should check the non "_" version
                 if (nextPath != _selectedNotePath.value) {
+                    // TODO If one parameter is named, all should be named
                     updateSelection(nextPath, currentNotes, refreshContent = !isEditing.value)
                 }
             }
@@ -47,6 +54,7 @@ class NotesViewModel(
 
     fun refresh() = noteStore.refreshNotes()
 
+    // TODO what is this?
     fun createNote() = scope.launch {
         noteStore.createNote()?.let { created ->
             _selectedNotePath.tryEmit(created.file.canonicalPath)
@@ -71,8 +79,10 @@ class NotesViewModel(
     }
 
     fun selectNote(path: String) = scope.launch {
+        // TODO you should check the non "_" version
         if (_selectedNotePath.value == path) return@launch
         if (!saveIfEditing()) return@launch
+        // TODO If one parameter is named, all should be named
         updateSelection(path, notes.value, refreshContent = true)
     }
 
@@ -87,6 +97,7 @@ class NotesViewModel(
     }
 
     private fun updateSelection(
+        // TODO should it be nullable
         path: String?,
         notes: List<Persisted<Note>>,
         refreshContent: Boolean
@@ -104,6 +115,7 @@ class NotesViewModel(
         )
     }
 
+    //TODO this two should be in an extension file
     private fun List<Persisted<Note>>.findByPath(path: String?): Persisted<Note>? =
         path?.let { requested ->
             firstOrNull { it.file.canonicalPath == requested }

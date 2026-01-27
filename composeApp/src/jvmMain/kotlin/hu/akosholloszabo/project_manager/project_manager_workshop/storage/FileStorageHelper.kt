@@ -10,6 +10,7 @@ import java.util.Locale.US
 class FileStorageHelper {
     val defaultJson = Json { encodeDefaults = true; prettyPrint = true }
 
+    // TODO move to resource
     private val timestampFormatter = ofPattern("yyyyMMdd-HHmmss", US)
 
     fun getSidecarFile(primaryFile: File, extension: String): File {
@@ -26,6 +27,7 @@ class FileStorageHelper {
         return sidecar
     }
 
+    // TODO {} replace =
     private fun normalizeExtension(extension: String): String {
         return extension.trimStart('.')
     }
@@ -35,6 +37,7 @@ class FileStorageHelper {
         return ".$normalized"
     }
 
+    // TODO {} replace =
     fun ensureStorageDirectory(root: String?, spec: StorageSpec): File? {
         return root?.let { File(it, spec.folderName) }
             ?.takeIf { it.exists() || it.mkdirs() }
@@ -43,11 +46,13 @@ class FileStorageHelper {
     fun listStorageFiles(folder: File, spec: StorageSpec): List<File> {
         val normalizedExtension = normalizeExtension(spec.primaryExtension)
         return folder.listFiles { file ->
+            // TODO If one parameter is named, the other should be named too
             file.isFile && file.extension.equals(normalizedExtension, ignoreCase = true)
         }?.sortedByDescending { it.lastModified() } ?: emptyList()
     }
 
     private fun sanitizeName(rawName: String?, fallback: String): String {
+        // TODO this fallback string is strange
         val resolved = rawName ?: fallback
         return resolved.trim().ifEmpty { fallback }
             .replace(Regex("[^A-Za-z0-9 _-]"), "")

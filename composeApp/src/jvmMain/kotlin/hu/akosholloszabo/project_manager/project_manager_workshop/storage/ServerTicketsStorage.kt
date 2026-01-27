@@ -35,6 +35,7 @@ class ServerTicketsStorage(private val client: TicketServerClient) : TicketsStor
     }
 
     override fun saveTicket(session: StorageSession?, ticket: Ticket, file: File, details: String): Boolean {
+        // TODO {} replace with =
         return runBlocking {
             val payload = TicketPayload(
                 title = ticket.title,
@@ -55,6 +56,7 @@ class ServerTicketsStorage(private val client: TicketServerClient) : TicketsStor
 
     private fun persistTicket(ticket: Ticket): Persisted<Ticket> = Persisted(ticketFile(ticket.id), ticket)
 
+    // TODO why is this needed
     private fun ticketFile(id: Int): File = File("server-ticket-$id.json")
 
     private fun extractId(file: File): Int? = file.nameWithoutExtension

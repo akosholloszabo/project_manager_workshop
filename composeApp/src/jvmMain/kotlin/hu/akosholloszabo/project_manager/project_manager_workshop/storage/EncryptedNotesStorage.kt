@@ -17,6 +17,7 @@ class EncryptedNotesStorage(
     } ?: emptyList()
 
     override fun createNote(session: StorageSession?, title: String?, content: String): Persisted<Note>? {
+        // TODO takeIf
         val key = session?.encryptionKey ?: return null
         return withNotesDirectory(session) { folder ->
             val file = fileStorageHelper.createTimestampedFile(folder, title, storageSpec())
@@ -29,6 +30,7 @@ class EncryptedNotesStorage(
     }
 
     override fun saveNoteContent(session: StorageSession?, file: File, content: String): Boolean {
+        // TODO takeIf
         val key = session?.encryptionKey ?: return false
         return session.takeIf { ensureSessionFolder(it, file) }?.let {
             safe {
@@ -39,6 +41,7 @@ class EncryptedNotesStorage(
     }
 
     override fun deleteNote(session: StorageSession?, file: File): Boolean {
+        // TODO {} replace with =
         return session?.takeIf { ensureSessionFolder(session, file) }?.let {
             safe { file.delete() }
         } ?: false
@@ -46,6 +49,7 @@ class EncryptedNotesStorage(
 
 
     private fun noteFromFileEncrypted(file: File, key: SecretKey): Persisted<Note>? {
+        // TODO {} replace with =
         return safe {
             val encryptedContent = file.readText()
             val content = storageCipher.tryDecrypt(encryptedContent, key) ?: return null

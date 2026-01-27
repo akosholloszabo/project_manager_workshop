@@ -31,6 +31,7 @@ abstract class LocalProjectsStorage(val fileStorageHelper: FileStorageHelper) :
         session: StorageSession,
         action: (StorageSession, File) -> T
     ): T {
+        // TODO why is this here
         val current = session
         val folder = File(current.folderPath, storageSpec.folderName)
             .takeIf { it.exists() || it.mkdirs() }
@@ -52,6 +53,7 @@ abstract class LocalProjectsStorage(val fileStorageHelper: FileStorageHelper) :
     protected inline fun <T> safe(block: () -> T): T = run(block)
 
     protected fun projectFromFile(file: File): Persisted<Project> {
+        // TODO {} replace with =
         return safe {
             val content = file.readText()
             val parsed = json.decodeFromString<Project>(content)

@@ -40,7 +40,7 @@ fun TicketCard(
         // TODO Integer goes to resources
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                // If one parameter has named argument, all should have
+                // TODO If one parameter has named argument, all should have
                 ticket.title,
                 style = MaterialTheme.typography.titleMedium,
                 // TODO Integer goes to resources
@@ -50,7 +50,7 @@ fun TicketCard(
             // TODO Integer goes to resources
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                // If one parameter has named argument, all should have
+                // TODO If one parameter has named argument, all should have
                 cardState.projectName,
                 style = MaterialTheme.typography.bodySmall
             )

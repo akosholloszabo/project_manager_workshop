@@ -13,6 +13,7 @@ class PlainTicketsStorage(fileStorageHelper: FileStorageHelper) :
     LocalTicketsStorage(fileStorageHelper) {
     private val newTicketText = getText("ticket.default.title")
     override fun loadTickets(session: StorageSession?): List<Persisted<Ticket>> {
+        // TODO {} replace with =
         return withTicketsDirectory(session) { folder ->
             fileStorageHelper.listStorageFiles(folder, storageSpec)
                 .mapNotNull(::ticketFromFile)
@@ -26,6 +27,7 @@ class PlainTicketsStorage(fileStorageHelper: FileStorageHelper) :
         status: TicketStatus,
         details: String
     ): Persisted<Ticket>? {
+        // TODO {} replace with =
         return withTicketsDirectory(session) { folder ->
             val file = fileStorageHelper.createTimestampedFile(folder, title, storageSpec)
             val defaultTitle = title.takeIf { it.isNotBlank() } ?: newTicketText
@@ -59,6 +61,7 @@ class PlainTicketsStorage(fileStorageHelper: FileStorageHelper) :
     }
 
     override fun deleteTicket(session: StorageSession?, file: File): Boolean {
+        // TODO {} replace with =
         return session?.let {
             safe {
                 fileStorageHelper.deleteDetails(file, storageSpec)

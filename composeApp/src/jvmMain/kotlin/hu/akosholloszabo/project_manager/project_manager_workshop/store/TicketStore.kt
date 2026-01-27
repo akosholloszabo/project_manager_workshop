@@ -41,11 +41,13 @@ class TicketStore(
         }
     }
 
+    // TODO why three refresh functions needed
     fun refresh() {
         refreshTickets()
     }
 
     fun createTicket(): Persisted<Ticket>? {
+        // TODO why new variable
         val session = sessionValue
         if (requiresSession() && session == null) return null
         val created = ticketsStorage.createTicket(
@@ -58,6 +60,7 @@ class TicketStore(
     }
 
     fun saveTicket(persisted: Persisted<Ticket>, draft: Ticket): Boolean {
+        // TODO why new variable
         val session = sessionValue
         if (requiresSession() && session == null) return false
         val success = ticketsStorage.saveTicket(session, draft, persisted.file, draft.details)
@@ -68,6 +71,7 @@ class TicketStore(
     }
 
     fun deleteTicket(persisted: Persisted<Ticket>): Boolean {
+        // TODO why new variable
         val session = sessionValue
         if (requiresSession() && session == null) return false
         val success = ticketsStorage.deleteTicket(session, persisted.file)

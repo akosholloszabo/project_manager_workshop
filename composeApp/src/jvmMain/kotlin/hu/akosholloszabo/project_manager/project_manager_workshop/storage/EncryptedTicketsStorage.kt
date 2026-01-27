@@ -15,6 +15,7 @@ class EncryptedTicketsStorage(
     fileStorageHelper: FileStorageHelper,
 ) : LocalTicketsStorage(fileStorageHelper) {
     override fun loadTickets(session: StorageSession?): List<Persisted<Ticket>> {
+        // TODO {} replace with =
         return withEncryptedTicketsDirectory(session) { current, folder ->
             val key = current.encryptionKey ?: return@withEncryptedTicketsDirectory emptyList()
             fileStorageHelper.listStorageFiles(folder, storageSpec)
@@ -29,6 +30,7 @@ class EncryptedTicketsStorage(
         status: TicketStatus,
         details: String
     ): Persisted<Ticket>? {
+        // TODO {} replace with =
         return withEncryptedTicketsDirectory(session) { current, folder ->
             val key = current.encryptionKey ?: return@withEncryptedTicketsDirectory null
             val file = fileStorageHelper.createTimestampedFile(folder, title, storageSpec)
@@ -48,6 +50,7 @@ class EncryptedTicketsStorage(
     }
 
     override fun saveTicket(session: StorageSession?, ticket: Ticket, file: File, details: String): Boolean {
+        // TODO takeIf/takeUnless
         val key = session?.encryptionKey ?: return false
         return safe {
             val metadata = TicketMetadata(
@@ -63,6 +66,7 @@ class EncryptedTicketsStorage(
     }
 
     override fun deleteTicket(session: StorageSession?, file: File): Boolean {
+        // TODO {} replace with return
         return session?.let {
             safe {
                 fileStorageHelper.deleteDetails(file, storageSpec)
@@ -72,6 +76,7 @@ class EncryptedTicketsStorage(
     }
 
     private fun ticketFromFileEncrypted(file: File, key: SecretKey): Persisted<Ticket>? {
+        // TODO {} replace with return
         return safe {
             val encrypted = file.readText()
             val content = storageCipher.tryDecrypt(encrypted, key) ?: return null

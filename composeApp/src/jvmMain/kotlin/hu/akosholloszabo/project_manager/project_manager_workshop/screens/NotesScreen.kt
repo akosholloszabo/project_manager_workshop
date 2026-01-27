@@ -43,11 +43,13 @@ import org.koin.fileProperties
 import java.io.File
 
 @Composable
+// TODO you can inject ViewModel directly here
 fun NotesScreen(notesViewModel: NotesViewModel) {
+    // TODO first the variables
     LaunchedEffect(notesViewModel) {
         notesViewModel.refresh()
     }
-
+    // TODO we usually use val viewmodel = koinViewModel<NotesViewModel>()
     val selectedNotePath by notesViewModel.selectedNotePath.collectAsStateWithLifecycle()
     val isEditing by notesViewModel.isEditing.collectAsStateWithLifecycle()
     val editableContent by notesViewModel.editableContent.collectAsStateWithLifecycle()
@@ -58,10 +60,12 @@ fun NotesScreen(notesViewModel: NotesViewModel) {
         selectedNotePath = selectedNotePath,
         isEditing = StateAndEvent(
             state = isEditing,
+            // TODO Screen should not know about the flow, only call functions on the ViewModel
             event = { notesViewModel.isEditing.tryEmit(it) }
         ),
         editableContent = StateAndEvent(
             state = editableContent,
+            // TODO Screen should not know about the flow, only call functions on the ViewModel
             event = { notesViewModel.editableContent.tryEmit(it) }
         ),
         selectedNote = selectedNote,
@@ -75,6 +79,7 @@ fun NotesScreen(notesViewModel: NotesViewModel) {
 
 @Composable
 fun NotesScreenContent(
+    modifier: Modifier = Modifier,
     selectedNotePath: String?,
     isEditing: StateAndEvent<Boolean>,
     editableContent: StateAndEvent<String>,
@@ -83,13 +88,16 @@ fun NotesScreenContent(
     onCreateNote: () -> Unit,
     onSaveNote: () -> Unit,
     onDeleteNote: () -> Unit,
-    onSelectNote: (String) -> Unit,
-    modifier: Modifier = Modifier
+    onSelectNote: (String) -> Unit
 ) {
+    //TODO if this is a full screen you should consider using Scaffold
+
+    // TODO if modifier is passed from outside, do not override it
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         Text(getText("notes.title"), style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            // TODO should it be variable?
             val masterWeight = if (maxWidth < 640.dp) 0.55f else 0.33f
             TwoPaneLayout(
                 modifier = Modifier.fillMaxSize(),
@@ -105,16 +113,19 @@ fun NotesScreenContent(
                         }
                     ) { note, _ ->
                         Text(
+                            // TODO if one parameter has named argument, all should have
                             note.value.title,
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onBackground
                         )
+                        // TODO Integer goes to resources
                         SimpleDivider(modifier = Modifier.padding(top = 8.dp))
                     }
                 },
                 detail = {
                     DetailEditorPane(
                         modifier = Modifier.fillMaxSize(),
+                        // TODO Integer goes to resources
                         verticalSpacing = 8.dp,
                         header = {
                             DetailHeader(

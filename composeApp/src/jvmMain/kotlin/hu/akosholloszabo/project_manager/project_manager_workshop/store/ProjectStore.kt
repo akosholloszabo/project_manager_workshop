@@ -38,6 +38,7 @@ class ProjectStore(
         }
     }
 
+    // TODO why is these two functions both needed
     fun refreshProjects() {
         scope.launch {
             refreshProjectsInternal(sessionValue)

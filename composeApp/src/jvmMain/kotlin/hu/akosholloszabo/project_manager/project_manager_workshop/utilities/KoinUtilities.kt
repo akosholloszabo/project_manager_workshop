@@ -12,6 +12,7 @@ object KoinUtilities {
     fun KoinComponent.getText(key: String): String =
         getKoin().getText(key)
 
+    // TODO that's not nice
     @Composable
     fun getText(key: String): String =
         getKoin().getText(key)

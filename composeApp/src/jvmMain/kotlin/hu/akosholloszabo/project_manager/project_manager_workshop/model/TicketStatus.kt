@@ -7,6 +7,7 @@ import org.koin.core.component.KoinComponent
 
 @Serializable
 enum class TicketStatus : KoinComponent {
+    //TODO capitalize names
     Backlog,
     ReadyForRefinement,
     InRefinement,

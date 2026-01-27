@@ -36,6 +36,7 @@ class NoteStore(
         }
     }
 
+    // TODO why is these two functions both needed
     fun refreshNotes() {
         scope.launch {
             refreshNotesInternal(workingFolderStore?.session?.value)

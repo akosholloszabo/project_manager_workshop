@@ -44,6 +44,7 @@ class EncryptedProjectsStorage(
     }
 
     override fun saveProject(session: StorageSession?, project: Project, file: File, details: String): Boolean {
+        // TODO takeIf/takeUnless
         val key = session?.encryptionKey ?: return false
         return safe {
             file.writeText(storageCipher.encrypt(json.encodeToString(project), key))
@@ -53,6 +54,7 @@ class EncryptedProjectsStorage(
     }
 
     override fun deleteProject(session: StorageSession?, file: File): Boolean {
+        // TODO {} replace with =
         return session?.let {
             safe {
                 fileStorageHelper.deleteDetails(file, storageSpec)
@@ -76,6 +78,7 @@ class EncryptedProjectsStorage(
     }
 
     private fun projectFromFileEncrypted(file: File, key: SecretKey): Persisted<Project> {
+        // TODO {} replace with =
         return safe {
             val encrypted = file.readText()
             val payload =

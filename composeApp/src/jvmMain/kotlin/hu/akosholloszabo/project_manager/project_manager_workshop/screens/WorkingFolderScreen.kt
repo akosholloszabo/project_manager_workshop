@@ -38,6 +38,7 @@ fun WorkingFolderScreen(
     workingFolderViewModel: WorkingFolderViewModel,
     onContinue: () -> Unit,
 ) {
+    // TODO viewModel could be here
     val selectedFolder by workingFolderViewModel.selectedFolder.collectAsStateWithLifecycle()
     var pendingFolder by rememberSaveable { mutableStateOf(selectedFolder) }
     var password by rememberSaveable { mutableStateOf("") }
@@ -49,6 +50,8 @@ fun WorkingFolderScreen(
 
     val canContinue = pendingFolder != null && (password.isNotBlank() || !workingFolderViewModel.requiresPassword)
 
+    // TODO This is not in a content
+    // TODO if it is a full screen, consider using Scaffold
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -56,6 +59,7 @@ fun WorkingFolderScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // TODO if you have one parameter with named argument, all should have
         Text(
             getText("working.folder.title"),
             style = MaterialTheme.typography.headlineSmall,
@@ -65,6 +69,7 @@ fun WorkingFolderScreen(
         Spacer(Modifier.height(16.dp))
 
         OutlinedTextField(
+            // TODO orEmpty
             value = pendingFolder ?: "",
             onValueChange = { pendingFolder = it },
             modifier = Modifier.fillMaxWidth(),
@@ -72,7 +77,7 @@ fun WorkingFolderScreen(
             placeholder = { Text(getText("working.folder.placeholder")) },
             singleLine = true
         )
-
+        // TODO Integer goes to resources
         Spacer(Modifier.height(16.dp))
 
         if (workingFolderViewModel.requiresPassword) {
@@ -86,7 +91,7 @@ fun WorkingFolderScreen(
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
-
+            // TODO Integer goes to resources
             Spacer(Modifier.height(16.dp))
         }
 
@@ -97,9 +102,9 @@ fun WorkingFolderScreen(
         }) {
             Text(getText("button.choose.folder"))
         }
-
+        // TODO Integer goes to resources
         Spacer(Modifier.height(8.dp))
-
+        // TODO Integer goes to resources
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = {
                 pendingFolder?.let {
@@ -120,3 +125,5 @@ fun WorkingFolderScreen(
         }
     }
 }
+
+// TODO Preview

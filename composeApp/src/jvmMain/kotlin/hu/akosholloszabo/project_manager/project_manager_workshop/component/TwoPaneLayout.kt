@@ -19,11 +19,16 @@ fun TwoPaneLayout(
     master: @Composable ColumnScope.() -> Unit,
     detail: (@Composable ColumnScope.() -> Unit)? = null,
     modifier: Modifier = Modifier,
+    //TODO Integer goes to resources
     masterWeight: Float = 0.35f,
+    //TODO Integer goes to resources
     detailWeight: Float = 1f,
+    //TODO Integer goes to resources
     gap: Dp = 16.dp,
+    //TODO Integer goes to resources
     detailPadding: Dp = 0.dp
 ) {
+    // TODO If you get a modifier from outside, you should not override
     Row(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -33,6 +38,7 @@ fun TwoPaneLayout(
         ) {
             master()
         }
+        // TODO takeIf or takeUnless could be used
         if (detail != null) {
             Spacer(Modifier.width(gap))
             Column(
@@ -47,3 +53,5 @@ fun TwoPaneLayout(
         }
     }
 }
+
+// TODO Preview

@@ -47,10 +47,11 @@ import kotlin.io.path.Path
 
 @Composable
 fun ProjectsScreen(projectsViewModel: ProjectsViewModel) {
+    //TODO First the variables should be defined
     LaunchedEffect(projectsViewModel) {
         projectsViewModel.refresh()
     }
-
+    // TODO viewModel could be here
     val selectedProjectPath by projectsViewModel.selectedProjectPath.collectAsStateWithLifecycle()
     val isEditing by projectsViewModel.isEditing.collectAsStateWithLifecycle()
     val editName by projectsViewModel.editName.collectAsStateWithLifecycle()
@@ -58,6 +59,7 @@ fun ProjectsScreen(projectsViewModel: ProjectsViewModel) {
     val editDetails by projectsViewModel.editDetails.collectAsStateWithLifecycle()
     val selectedProject by projectsViewModel.selectedProject.collectAsStateWithLifecycle()
     val projects by projectsViewModel.projects.collectAsStateWithLifecycle()
+    // TODO These shouldn't be variables
     val isEditingState = StateAndEvent(
         state = isEditing,
         event = { shouldEdit -> if (shouldEdit) projectsViewModel.startEditing() }
@@ -84,6 +86,7 @@ fun ProjectsScreen(projectsViewModel: ProjectsViewModel) {
 
 @Composable
 fun ProjectsScreenContent(
+    modifier: Modifier = Modifier,
     selectedProjectPath: String?,
     projects: List<Persisted<Project>>,
     selectedProject: Persisted<Project>?,
@@ -94,15 +97,19 @@ fun ProjectsScreenContent(
     onSelectProject: (String) -> Unit,
     name: StateAndEvent<String>,
     description: StateAndEvent<String>,
-    details: StateAndEvent<String>,
-    modifier: Modifier = Modifier
+    details: StateAndEvent<String>
 ) {
+    //TODO if this is a full screen you should consider using Scaffold
+
+    // TODO Integer goes to resources
     Column(modifier = modifier.padding(16.dp)) {
         Text(getText("projects.title"), style = MaterialTheme.typography.titleLarge)
+        // TODO Integer goes to resources
         Spacer(Modifier.height(8.dp))
 
         TwoPaneLayout(
             modifier = Modifier.fillMaxSize(),
+            // TODO Integer goes to resources
             masterWeight = 0.33f,
             master = {
                 SelectableList(
@@ -112,13 +119,16 @@ fun ProjectsScreenContent(
                     keyOf = { it.file.canonicalPath },
                     onItemClick = { entry -> onSelectProject(entry.file.canonicalPath) }
                 ) { project, _ ->
+                    // TODO If one parameter has named argument, all should have
                     Text(project.value.name, style = MaterialTheme.typography.titleMedium)
+                    // TODO Divider
                     SimpleDivider(modifier = Modifier.padding(top = 8.dp))
                 }
             },
             detail = {
                 DetailEditorPane(
                     modifier = Modifier.fillMaxSize(),
+                    // TODO Integer goes to resources
                     verticalSpacing = 12.dp,
                     header = {
                         DetailHeader(
@@ -155,6 +165,7 @@ fun ProjectsScreenContent(
                                 label = { Text(getText("projects.field.name")) },
                                 modifier = Modifier.fillMaxWidth()
                             )
+                            // TODO Integer goes to resources
                             Spacer(Modifier.height(8.dp))
                             TextField(
                                 value = description.state,
@@ -162,6 +173,7 @@ fun ProjectsScreenContent(
                                 label = { Text(getText("projects.field.description")) },
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    // TODO Integer goes to resources
                                     .height(120.dp),
                                 maxLines = Int.MAX_VALUE
                             )
@@ -172,6 +184,7 @@ fun ProjectsScreenContent(
                                 label = { Text(getText("projects.field.details")) },
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    // TODO Integer goes to resources
                                     .height(220.dp),
                                 maxLines = Int.MAX_VALUE
                             )
@@ -180,12 +193,17 @@ fun ProjectsScreenContent(
                     viewContent = {
                         selectedProject?.let { project ->
                             Column(modifier = Modifier.fillMaxSize()) {
+                                // TODO If you have one named argument, all should have
                                 Text(project.value.name, style = MaterialTheme.typography.titleLarge)
+                                // TODO Integer goes to resources
                                 Spacer(Modifier.height(8.dp))
+                                // TODO If one parameter has named argument, all should have
+                                // TODO Maybe use padding?
                                 Text(
                                     project.value.description,
                                     style = MaterialTheme.typography.bodyMedium
                                 )
+                                // TODO Integer goes to resources
                                 Spacer(Modifier.height(12.dp))
                                 SelectionContainer(
                                     modifier = Modifier

@@ -33,6 +33,7 @@ fun TicketEditorFields(
     var statusDropdownExpanded by rememberSaveable { mutableStateOf(false) }
 
     Column(
+        // TODO Integer goes to resources
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().fillMaxHeight()
     ) {
@@ -43,6 +44,7 @@ fun TicketEditorFields(
             modifier = Modifier.fillMaxWidth()
         )
         ReadOnlyDropdownField(
+            // TODO projects is a MAP
             value = projects.toMap()[projectId.state] ?: getText("tickets.editor.no.project"),
             label = getText("tickets.field.project"),
             expanded = projectDropdownExpanded,
@@ -63,7 +65,9 @@ fun TicketEditorFields(
             label = getText("tickets.field.status"),
             expanded = statusDropdownExpanded,
             onExpandedChange = { statusDropdownExpanded = it }
-        ) {
+        )
+        // TODO Not bad but rather write down the function parameter
+        {
             TicketStatus.entries.forEach { entry ->
                 DropdownMenuItem(
                     text = { Text(entry.displayName) },
@@ -77,6 +81,7 @@ fun TicketEditorFields(
         TextField(
             value = details.state,
             onValueChange = details.event,
+            // TODO fillMaxSize()
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(),
@@ -85,3 +90,5 @@ fun TicketEditorFields(
         )
     }
 }
+
+// TODO Preview

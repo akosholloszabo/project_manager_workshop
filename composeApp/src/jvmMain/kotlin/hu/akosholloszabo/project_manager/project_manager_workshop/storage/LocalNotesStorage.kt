@@ -36,6 +36,7 @@ abstract class LocalNotesStorage() : NotesStorage {
     protected inline fun <T> safe(block: () -> T): T? = runCatching(block).getOrNull()
 
     protected fun noteFromFile(file: File): Persisted<Note>? {
+        // TODO {} replace with =
         return safe {
             val content = file.readText()
             val parsedTitle = deriveTitle(file, content)
@@ -45,6 +46,7 @@ abstract class LocalNotesStorage() : NotesStorage {
         }
     }
 
+    // TODO If the variable is protected to then why is this here
     protected fun storageSpec() = storageSpec
 
     protected fun deriveTitle(content: String, fallback: String): String {
@@ -58,6 +60,7 @@ abstract class LocalNotesStorage() : NotesStorage {
     }
 
     protected fun deriveTitle(file: File, content: String): String {
+        // TODO {} replace with =
         return deriveTitle(content, fallbackTitle(file))
     }
 

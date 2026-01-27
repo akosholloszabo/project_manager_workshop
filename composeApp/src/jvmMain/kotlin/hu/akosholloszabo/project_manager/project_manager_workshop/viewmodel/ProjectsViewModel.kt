@@ -17,10 +17,13 @@ import kotlinx.coroutines.launch
 class ProjectsViewModel(
     private val projectStore: ProjectStore
 ) {
+    //TODO Why is this not extends form a ViewModel()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val _selectedProjectPath = MutableStateFlow<String?>(null)
     val selectedProjectPath: StateFlow<String?> = _selectedProjectPath.asStateFlow()
+
+    // TODO should be private
     val isEditing = MutableStateFlow(false)
 
     private val _editName = MutableStateFlow("")
@@ -43,7 +46,9 @@ class ProjectsViewModel(
         scope.launch {
             projectStore.projects.collect { projects ->
                 val nextPath = determineSelection(projects)
+                // TODO you should check the non "_" version
                 if (nextPath != _selectedProjectPath.value) {
+                    // TODO If one parameter is named, all should be named
                     setSelectedProjectPathInternal(nextPath, projects, refreshBuffer = !isEditing.value)
                 }
             }
@@ -54,6 +59,7 @@ class ProjectsViewModel(
         projectStore.refreshProjects()
     }
 
+    // TODO What is this?
     fun createProject() {
         scope.launch {
             projectStore.createProject(
@@ -100,8 +106,10 @@ class ProjectsViewModel(
 
     fun selectProject(path: String) {
         scope.launch {
+            // TODO you should check the non "_" version
             if (_selectedProjectPath.value == path) return@launch
             if (!saveIfEditing()) return@launch
+            // TODO If one parameter is named, all should be named
             setSelectedProjectPathInternal(path, projectStore.projects.value, refreshBuffer = true)
         }
     }
@@ -121,12 +129,14 @@ class ProjectsViewModel(
     private suspend fun persistCurrentProject(): Boolean {
         val current = currentSelectedProject() ?: return false
         val trimmedName = _editName.value.trim().ifEmpty { current.value.name }
+        // TODO you should check the non "_" version
         val updatedProject = current.value.copy(
             name = trimmedName,
             description = _editDescription.value,
             details = _editDetails.value
         )
         val updatedPersisted = current.copy(value = updatedProject)
+        // TODO you should check the non "_" version
         val success = projectStore.saveProject(updatedPersisted, _editDetails.value)
         if (success) {
             _editName.tryEmit(updatedProject.name)
@@ -143,11 +153,13 @@ class ProjectsViewModel(
     }
 
     private fun currentSelectedProject(): Persisted<Project>? {
+        // TODO you should check the non "_" version
         val path = _selectedProjectPath.value ?: return null
         return projectStore.projects.value.firstOrNull { it.file.canonicalPath == path }
     }
 
     private fun determineSelection(projects: List<Persisted<Project>>): String? {
+        // TODO you should check the non "_" version
         val current = _selectedProjectPath.value
         return when {
             current != null && projects.any { it.file.canonicalPath == current } -> current
@@ -157,6 +169,7 @@ class ProjectsViewModel(
     }
 
     private fun setSelectedProjectPathInternal(
+        // TODO Should this be nullable
         path: String?,
         projects: List<Persisted<Project>>,
         refreshBuffer: Boolean
@@ -178,6 +191,7 @@ class ProjectsViewModel(
         }
     }
 
+    // TODO this can be in an extension file
     private fun List<Persisted<Project>>.findByPath(path: String?): Persisted<Project>? =
         path?.let { requested ->
             firstOrNull { it.file.canonicalPath == requested }

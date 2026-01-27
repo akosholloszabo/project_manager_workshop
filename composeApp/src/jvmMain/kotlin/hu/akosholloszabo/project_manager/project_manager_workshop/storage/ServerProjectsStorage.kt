@@ -48,6 +48,7 @@ class ServerProjectsStorage(private val client: ProjectServerClient) : ProjectsS
 
     private fun persistProject(project: Project): Persisted<Project> = Persisted(projectFile(project.id), project)
 
+    // TODO Why is this needed?
     private fun projectFile(id: Int): File = File("server-project-$id.json")
 
     private fun extractId(file: File): Int? = file.nameWithoutExtension

@@ -44,9 +44,11 @@ import java.io.File
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TicketsScreen(ticketsViewModel: TicketsViewModel) {
+    //TODO First the variables should be defined
     LaunchedEffect(ticketsViewModel) {
         ticketsViewModel.refresh()
     }
+    // TODO viewModel could be here
     val columns by ticketsViewModel.columns.collectAsStateWithLifecycle()
     val selectedTicket by ticketsViewModel.selectedTicket.collectAsStateWithLifecycle()
     val projects by ticketsViewModel.projects.collectAsStateWithLifecycle()
@@ -56,6 +58,7 @@ fun TicketsScreen(ticketsViewModel: TicketsViewModel) {
     val status by ticketsViewModel.editStatus.collectAsStateWithLifecycle()
     val details by ticketsViewModel.editDetails.collectAsStateWithLifecycle()
 
+    // TODO These shouldn't be variables
     val isEditingState =
         StateAndEvent(state = isEditing) { shouldEdit -> if (shouldEdit) ticketsViewModel.startEditing() }
     val titleState = StateAndEvent(state = title, event = {
@@ -91,6 +94,7 @@ fun TicketsScreen(ticketsViewModel: TicketsViewModel) {
 
 @Composable
 fun TicketsScreenContent(
+    modifier: Modifier = Modifier,
     columns: List<TicketColumnState>,
     selectedTicket: Persisted<Ticket>?,
     projects: Map<Int, String>,
@@ -104,15 +108,19 @@ fun TicketsScreenContent(
     onEdit: () -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    onBack: () -> Unit
 ) {
+    // TODO if this is a full screen you should consider using Scaffold
+
+    // TODO Integer goes to resources
+    // TODO if you get a modifier from outside, you should not override
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
+                // TODO if you have one named argument, all should have
                 Text(getText("tickets.title"), style = MaterialTheme.typography.titleLarge)
             }
             Button(onClick = onCreateTicket) {

@@ -24,16 +24,24 @@ class TicketsViewModel(
     private val ticketStore: TicketStore,
     private val projectsStorage: ProjectsStorage,
     private val workingFolderStore: WorkingFolderStore?,
-) {
+) { // TODO not extending form ViewModel()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    // TODO please pair the variables
     private val _selectedTicketPath = MutableStateFlow<String?>(null)
     private val _isEditing = MutableStateFlow(false)
     val isEditing: StateFlow<Boolean> = _isEditing.asStateFlow()
 
+    // TODO should be private
     val _editTitle = MutableStateFlow("")
+
+    // TODO should be private
     val _editProjectId = MutableStateFlow(0)
+
+    // TODO should be private
     val _editStatus = MutableStateFlow<TicketStatus?>(null)
+
+    // TODO should be private
     val _editDetails = MutableStateFlow("")
     val editTitle: StateFlow<String> = _editTitle.asStateFlow()
     val editProjectId: StateFlow<Int> = _editProjectId.asStateFlow()
@@ -63,6 +71,7 @@ class TicketsViewModel(
     val projects: StateFlow<Map<Int, String>> = _projects.asStateFlow()
 
     init {
+        // TODO why is here two scope launches
         scope.launch {
             ticketStore.tickets.collect { tickets ->
                 val nextPath = determineSelection(tickets)
@@ -79,10 +88,12 @@ class TicketsViewModel(
         scope.launch { loadProjects() }
     }
 
+    // TODO this is not suspend
     fun refresh() = scope.launch {
         ticketStore.refresh()
     }
 
+    // TODO this is not suspend
     fun createTicket() {
         scope.launch {
             val created = ticketStore.createTicket()
@@ -108,6 +119,7 @@ class TicketsViewModel(
         }
     }
 
+    // TODO this is not suspend
     fun saveTicket() = scope.launch {
         val current = currentSelectedTicket() ?: return@launch
         val updatedTicket = current.value.copy(
@@ -123,6 +135,7 @@ class TicketsViewModel(
         }
     }
 
+    // TODO this is not suspend
     fun deleteTicket() = scope.launch {
         val current = currentSelectedTicket() ?: return@launch
         if (ticketStore.deleteTicket(current)) {

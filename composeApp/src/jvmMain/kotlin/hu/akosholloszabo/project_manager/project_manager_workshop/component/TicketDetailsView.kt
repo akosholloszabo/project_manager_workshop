@@ -20,6 +20,7 @@ fun TicketDetailsView(
     selectedTicket: Ticket,
     projectName: String
 ) {
+    // TODO Integer goes to resources
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = selectedTicket.title,
@@ -47,3 +48,5 @@ fun TicketDetailsView(
         }
     }
 }
+
+// TODO Preview

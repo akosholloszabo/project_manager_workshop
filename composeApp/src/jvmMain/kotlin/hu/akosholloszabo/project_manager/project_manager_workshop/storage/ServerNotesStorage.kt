@@ -44,6 +44,7 @@ class ServerNotesStorage(private val client: NoteServerClient) : NotesStorage {
     override fun saveNoteContent(session: StorageSession?, file: File, content: String): Boolean {
         val id = extractId(file) ?: return false
         return runBlocking {
+            // TODO If one parameter is named, all should be named
             client.update(id, NotePayload(title = deriveTitle(content, "No Title"), content = content))
         }
     }
@@ -60,6 +61,7 @@ class ServerNotesStorage(private val client: NoteServerClient) : NotesStorage {
         return Persisted(noteFile(note.id), note.copy(title = normalizedTitle))
     }
 
+    // TODO Why is this necessary
     private fun noteFile(id: Int): File = File("server-note-$id.md")
 
     private fun extractId(file: File): Int? = file.nameWithoutExtension
