@@ -4,11 +4,12 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSpec
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.ResourceHelper.getStringResource
 import java.io.File
 import java.util.*
 
-abstract class LocalNotesStorage() : NotesStorage {
+abstract class LocalNotesStorage : NotesStorage {
     abstract val fileStorageHelper: FileStorageHelper
 
     protected val storageSpec = StorageSpec(
@@ -29,7 +30,7 @@ abstract class LocalNotesStorage() : NotesStorage {
     }
 
     protected fun defaultTitle(title: String?): String =
-        title?.takeIf { it.isNotBlank() } ?: getText("notes.default.title")
+        title?.takeIf { it.isNotBlank() } ?: getStringResource(Res.string.notes_default_title)
 
     protected fun defaultContent(title: String?): String = "# ${defaultTitle(title)}\n\n"
 
@@ -55,7 +56,8 @@ abstract class LocalNotesStorage() : NotesStorage {
             ?.removePrefix("#")
             ?.trim()
             ?.takeUnless { it.isBlank() }
-        val resolvedFallback = fallback.takeUnless { it.isBlank() } ?: getText("notes.default.untitled")
+        val resolvedFallback = fallback.takeUnless { it.isBlank() }
+            ?: getStringResource(Res.string.notes_default_untitled)
         return firstLineTitle ?: resolvedFallback
     }
 
@@ -70,7 +72,7 @@ abstract class LocalNotesStorage() : NotesStorage {
             .trim()
             .takeUnless { it.isBlank() }
         return fallback?.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.US) else it.toString() }
-            ?: getText("notes.default.untitled")
+            ?: getStringResource(Res.string.notes_default_untitled)
     }
 
     protected fun extractId(content: String): Int? {

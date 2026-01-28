@@ -6,8 +6,9 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageS
 import java.io.File
 
 // TODO shouldn't the parameter be private
-class PlainNotesStorage(override val fileStorageHelper: FileStorageHelper) :
-    LocalNotesStorage(), NotesStorage {
+class PlainNotesStorage(
+    override val fileStorageHelper: FileStorageHelper,
+) : LocalNotesStorage(), NotesStorage {
     override fun loadNotes(session: StorageSession?): List<Persisted<Note>> = withNotesDirectory(session) { folder ->
         fileStorageHelper.listStorageFiles(folder, storageSpec())
             .mapNotNull(::noteFromFile)

@@ -5,7 +5,8 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageS
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketMetadata
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.ResourceHelper.getStringResource
 import java.io.File
 import java.util.UUID.randomUUID
 import javax.crypto.SecretKey
@@ -34,7 +35,8 @@ class EncryptedTicketsStorage(
         return withEncryptedTicketsDirectory(session) { current, folder ->
             val key = current.encryptionKey ?: return@withEncryptedTicketsDirectory null
             val file = fileStorageHelper.createTimestampedFile(folder, title, storageSpec)
-            val defaultTitle = title.takeIf { it.isNotBlank() } ?: getText("tickets.new")
+            val defaultTitle = title.takeIf { it.isNotBlank() }
+                ?: getStringResource(Res.string.tickets_new)
             val ticket = Ticket(
                 id = randomUUID().hashCode(),
                 title = defaultTitle,

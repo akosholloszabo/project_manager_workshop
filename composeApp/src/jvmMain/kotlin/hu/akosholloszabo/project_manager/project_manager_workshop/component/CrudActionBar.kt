@@ -8,7 +8,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.CrudActionLabels
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.crud_delete
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.crud_edit
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.crud_new
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.crud_save
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun CrudActionBar(
@@ -19,12 +24,11 @@ fun CrudActionBar(
     onEdit: (() -> Unit)? = null,
     onSave: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
-    // TODO Get labels from a higher level
     labels: CrudActionLabels = CrudActionLabels(
-        newLabel = getText("crud.new"),
-        editLabel = getText("crud.edit"),
-        saveLabel = getText("crud.save"),
-        deleteLabel = getText("crud.delete")
+        newLabel = stringResource(Res.string.crud_new),
+        editLabel = stringResource(Res.string.crud_edit),
+        saveLabel = stringResource(Res.string.crud_save),
+        deleteLabel = stringResource(Res.string.crud_delete)
     )
 ) {
     Row(

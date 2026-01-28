@@ -61,6 +61,9 @@ kotlin {
     }
 }
 
+compose.resources {
+    packageOfResClass = "hu.akosholloszabo.project_manager.project_manager_workshop.resources"
+}
 
 compose.desktop {
     application {

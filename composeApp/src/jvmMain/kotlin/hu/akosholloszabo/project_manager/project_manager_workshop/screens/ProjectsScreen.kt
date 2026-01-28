@@ -37,9 +37,10 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.di.plainLocalM
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.CrudActionLabels
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
+import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinApplicationPreview
 import org.koin.fileProperties
@@ -103,7 +104,7 @@ fun ProjectsScreenContent(
 
     // TODO Integer goes to resources
     Column(modifier = modifier.padding(16.dp)) {
-        Text(getText("projects.title"), style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(Res.string.projects_title), style = MaterialTheme.typography.titleLarge)
         // TODO Integer goes to resources
         Spacer(Modifier.height(8.dp))
 
@@ -132,7 +133,7 @@ fun ProjectsScreenContent(
                     verticalSpacing = 12.dp,
                     header = {
                         DetailHeader(
-                            title = selectedProject?.value?.name ?: getText("projects.title"),
+                            title = selectedProject?.value?.name ?: stringResource(Res.string.projects_title),
                             actions = {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -146,10 +147,10 @@ fun ProjectsScreenContent(
                                         onSave = onSaveProject,
                                         onDelete = onDeleteProject,
                                         labels = CrudActionLabels(
-                                            newLabel = getText("projects.new"),
-                                            editLabel = getText("crud.edit"),
-                                            saveLabel = getText("crud.save"),
-                                            deleteLabel = getText("crud.delete")
+                                            newLabel = stringResource(Res.string.projects_new),
+                                            editLabel = stringResource(Res.string.crud_edit),
+                                            saveLabel = stringResource(Res.string.crud_save),
+                                            deleteLabel = stringResource(Res.string.crud_delete)
                                         )
                                     )
                                 }
@@ -162,7 +163,7 @@ fun ProjectsScreenContent(
                             TextField(
                                 value = name.state,
                                 onValueChange = name.event,
-                                label = { Text(getText("projects.field.name")) },
+                                label = { Text(stringResource(Res.string.projects_field_name)) },
                                 modifier = Modifier.fillMaxWidth()
                             )
                             // TODO Integer goes to resources
@@ -170,7 +171,7 @@ fun ProjectsScreenContent(
                             TextField(
                                 value = description.state,
                                 onValueChange = description.event,
-                                label = { Text(getText("projects.field.description")) },
+                                label = { Text(stringResource(Res.string.projects_field_description)) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     // TODO Integer goes to resources
@@ -181,7 +182,7 @@ fun ProjectsScreenContent(
                             TextField(
                                 value = details.state,
                                 onValueChange = details.event,
-                                label = { Text(getText("projects.field.details")) },
+                                label = { Text(stringResource(Res.string.projects_field_details)) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     // TODO Integer goes to resources
@@ -211,13 +212,13 @@ fun ProjectsScreenContent(
                                         .verticalScroll(rememberScrollState())
                                 ) {
                                     Markdown(
-                                        project.value.details.ifBlank { getText("projects.empty.details") }
+                                        project.value.details.ifBlank { stringResource(Res.string.projects_empty_details) }
                                     )
                                 }
                             }
                         } ?: EmptyDetailHint(
-                            message = getText("projects.empty.message"),
-                            description = getText("projects.empty.description")
+                            message = stringResource(Res.string.projects_empty_message),
+                            description = stringResource(Res.string.projects_empty_description)
                         )
                     }
                 )

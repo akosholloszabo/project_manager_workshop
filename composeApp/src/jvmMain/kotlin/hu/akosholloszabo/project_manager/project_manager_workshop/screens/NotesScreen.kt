@@ -34,9 +34,10 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.di.plainLocalM
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.CrudActionLabels
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.NotesViewModel
+import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinApplicationPreview
 import org.koin.fileProperties
@@ -94,7 +95,7 @@ fun NotesScreenContent(
 
     // TODO if modifier is passed from outside, do not override it
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
-        Text(getText("notes.title"), style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(Res.string.notes_title), style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             // TODO should it be variable?
@@ -129,7 +130,7 @@ fun NotesScreenContent(
                         verticalSpacing = 8.dp,
                         header = {
                             DetailHeader(
-                                title = selectedNote?.value?.title ?: getText("notes.empty.message"),
+                                title = selectedNote?.value?.title ?: stringResource(Res.string.notes_empty_message),
                                 actions = {
                                     CrudActionBar(
                                         hasSelection = selectedNote != null,
@@ -139,10 +140,10 @@ fun NotesScreenContent(
                                         onSave = onSaveNote,
                                         onDelete = onDeleteNote,
                                         labels = CrudActionLabels(
-                                            newLabel = getText("notes.new"),
-                                            editLabel = getText("crud.edit"),
-                                            saveLabel = getText("crud.save"),
-                                            deleteLabel = getText("crud.delete")
+                                            newLabel = stringResource(Res.string.notes_new),
+                                            editLabel = stringResource(Res.string.crud_edit),
+                                            saveLabel = stringResource(Res.string.crud_save),
+                                            deleteLabel = stringResource(Res.string.crud_delete)
                                         )
                                     )
                                 }
@@ -164,8 +165,8 @@ fun NotesScreenContent(
                                     Markdown(note.value.content)
                                 }
                             } ?: EmptyDetailHint(
-                                message = getText("notes.empty.message"),
-                                description = getText("notes.empty.description")
+                                message = stringResource(Res.string.notes_empty_message),
+                                description = stringResource(Res.string.notes_empty_description)
                             )
                         }
                     )

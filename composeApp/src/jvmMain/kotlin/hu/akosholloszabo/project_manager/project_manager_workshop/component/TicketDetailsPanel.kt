@@ -18,8 +18,12 @@ import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.tickets_back
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.tickets_details_title
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.tickets_editor_no_project
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun TicketDetailsPanel(
@@ -47,7 +51,7 @@ fun TicketDetailsPanel(
         verticalSpacing = 12.dp,
         header = {
             DetailHeader(
-                title = getText("tickets.details.title"),
+                title = stringResource(Res.string.tickets_details_title),
                 actions = {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -65,7 +69,7 @@ fun TicketDetailsPanel(
                         // TODO Integer goes to resources
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(onClick = onBack) {
-                            Text(getText("tickets.back"))
+                            Text(stringResource(Res.string.tickets_back))
                         }
                     }
                 }
@@ -85,7 +89,7 @@ fun TicketDetailsPanel(
             TicketDetailsView(
                 selectedTicket = selectedTicket.value,
                 projectName = projectNamesById[selectedTicket.value.projectId]
-                    ?: getText("tickets.editor.no.project")
+                    ?: stringResource(Res.string.tickets_editor_no_project)
             )
         }
     )

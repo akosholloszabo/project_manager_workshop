@@ -1,0 +1,78 @@
+<resources>
+    <string name="window_title">Project Manager Workshop</string>
+
+    <string name="app_title">Project Manager</string>
+    <string name="app_tab_notes">Notes</string>
+    <string name="app_tab_projects">Projects</string>
+    <string name="app_tab_tickets">Tickets</string>
+
+    <string name="working_folder_title">Select a working folder</string>
+    <string name="working_folder_summary">Working folder: %s</string>
+    <string name="working_folder_label">Working folder</string>
+    <string name="working_folder_placeholder">No folder selected yet</string>
+    <string name="working_folder_password_label">Folder password</string>
+    <string name="working_folder_password_placeholder">Enter access password</string>
+    <string name="button_choose_folder">Choose folder...</string>
+    <string name="button_continue">Continue</string>
+    <string name="button_clear">Clear</string>
+
+    <string name="notes_title">Notes</string>
+    <string name="notes_new">New note</string>
+    <string name="notes_default_title">New note</string>
+    <string name="notes_default_untitled">Untitled</string>
+    <string name="notes_default_no_title">No Title</string>
+    <string name="notes_empty_message">Select a note to view or edit it.</string>
+    <string name="notes_empty_description">Choose from the list to the left</string>
+
+    <string name="projects_title">Projects</string>
+    <string name="projects_new">New project</string>
+    <string name="projects_field_name">Project name</string>
+    <string name="projects_field_description">Description</string>
+    <string name="projects_field_details">Details (Markdown)</string>
+    <string name="projects_empty_message">Select a project to view or edit it.</string>
+    <string name="projects_empty_description">Choose from the list to the left</string>
+    <string name="projects_empty_details">*No details provided yet.*</string>
+    <string name="project_default_name">New project</string>
+
+    <string name="storage_session_required">Storage session is required for this operation.</string>
+    <string name="storage_session_encryption_required">Encrypted storage session requires an encryption key.</string>
+    <string name="storage_encrypted_decrypt_error">Could not decrypt the project data.</string>
+    <string name="storage_folder_access_error">Could not access the storage folder.</string>
+
+    <string name="tickets_title">Tickets</string>
+    <string name="tickets_new">New ticket</string>
+    <string name="ticket_default_title">New ticket</string>
+    <string name="tickets_details_title">Ticket details</string>
+    <string name="tickets_back">Back</string>
+    <string name="tickets_no_items">No tickets yet</string>
+    <string name="tickets_details_empty">*No details yet.*</string>
+
+    <string name="tickets_field_title">Ticket title</string>
+    <string name="tickets_field_project">Project</string>
+    <string name="tickets_field_status">Status</string>
+    <string name="tickets_field_details">Details (Markdown)</string>
+    <string name="tickets_editor_no_project">No project</string>
+
+    <string name="crud_new">New</string>
+    <string name="crud_edit">Edit</string>
+    <string name="crud_save">Save</string>
+    <string name="crud_delete">Delete</string>
+
+    <string name="ticket_status_backlog">Backlog</string>
+    <string name="ticket_status_ready_for_refinement">Ready for refinement</string>
+    <string name="ticket_status_in_refinement">In refinement</string>
+    <string name="ticket_status_ready_for_processing">Ready for processing</string>
+    <string name="ticket_status_in_processing">In processing</string>
+    <string name="ticket_status_ready_for_testing">Ready for testing</string>
+    <string name="ticket_status_in_testing">In testing</string>
+    <string name="ticket_status_completed">Completed</string>
+    <string name="ticket_status_rejected">Rejected</string>
+    <string name="ticket_status_header">Status: %s</string>
+    <string name="ticket_project_header">Project: %s</string>
+
+    <string name="cipher_encryption_algorithm">AES/GCM/NoPadding</string>
+    <string name="cipher_message_digest_algorithm">SHA-256</string>
+    <string name="cipher_key_speed">project-manager workshop 2025</string>
+    <string name="cipher_iv_size">12</string>
+    <string name="cipher_key_algorithm">AES</string>
+</resources>

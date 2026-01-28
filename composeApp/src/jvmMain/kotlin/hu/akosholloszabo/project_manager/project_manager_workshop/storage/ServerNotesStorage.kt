@@ -5,9 +5,11 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.NotePayl
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.network.NoteServerClient
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
-import kotlinx.coroutines.runBlocking
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.notes_default_title
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.ResourceHelper.getStringResource
 import java.io.File
+import kotlinx.coroutines.runBlocking
 
 class ServerNotesStorage(private val client: NoteServerClient) : NotesStorage {
 
@@ -22,7 +24,8 @@ class ServerNotesStorage(private val client: NoteServerClient) : NotesStorage {
     }
 
     private fun defaultTitle(title: String?): String =
-        title?.takeIf { it.isNotBlank() } ?: getText("notes.default.title")
+        title?.takeIf { it.isNotBlank() }
+            ?: getStringResource(Res.string.notes_default_title)
 
     private fun defaultContent(title: String?): String = "# ${defaultTitle(title)}\n\n"
 

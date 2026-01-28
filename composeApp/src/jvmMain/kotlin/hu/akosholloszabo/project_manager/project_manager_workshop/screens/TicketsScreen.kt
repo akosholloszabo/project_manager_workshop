@@ -17,9 +17,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
+import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
+import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.KoinApplicationPreview
+import org.koin.fileProperties
+import java.io.File
 import hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TicketBoard
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TicketDetailsPanel
@@ -32,13 +37,9 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketCardState
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketColumnState
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
-import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
-import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.koin.compose.KoinApplicationPreview
-import org.koin.fileProperties
-import java.io.File
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -121,10 +122,10 @@ fun TicketsScreenContent(
         ) {
             Column {
                 // TODO if you have one named argument, all should have
-                Text(getText("tickets.title"), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(Res.string.tickets_title), style = MaterialTheme.typography.titleLarge)
             }
             Button(onClick = onCreateTicket) {
-                Text(getText("tickets.new"))
+                Text(stringResource(Res.string.tickets_new))
             }
         }
 

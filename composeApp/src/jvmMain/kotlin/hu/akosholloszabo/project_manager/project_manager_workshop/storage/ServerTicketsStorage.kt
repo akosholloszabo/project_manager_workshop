@@ -6,7 +6,9 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketPayload
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import hu.akosholloszabo.project_manager.project_manager_workshop.network.TicketServerClient
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.ticket_default_title
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.ResourceHelper.getStringResource
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
@@ -22,7 +24,8 @@ class ServerTicketsStorage(private val client: TicketServerClient) : TicketsStor
         status: TicketStatus,
         details: String
     ): Persisted<Ticket> {
-        val resolvedTitle = title.takeIf { it.isNotBlank() } ?: getText("ticket.default.title")
+        val resolvedTitle = title.takeIf { it.isNotBlank() }
+            ?: getStringResource(Res.string.ticket_default_title)
         val payload = TicketPayload(
             title = resolvedTitle,
             projectId = projectId,

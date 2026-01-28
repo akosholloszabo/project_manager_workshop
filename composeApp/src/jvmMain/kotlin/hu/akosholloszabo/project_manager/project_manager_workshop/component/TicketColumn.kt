@@ -20,7 +20,9 @@ import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketColumnState
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.tickets_no_items
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun TicketColumn(
@@ -56,7 +58,7 @@ fun TicketColumn(
         ) {
             if (columnState.cards.isEmpty()) {
                 Text(
-                    getText("tickets.no.items"),
+                    stringResource(Res.string.tickets_no_items),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

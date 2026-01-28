@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Divider
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,12 +29,13 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.di.localModule
 import hu.akosholloszabo.project_manager.project_manager_workshop.di.mainModule
 import hu.akosholloszabo.project_manager.project_manager_workshop.di.plainLocalModule
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageBackend
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.NotesScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.ProjectsScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.TicketsScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.WorkingFolderScreen
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.WorkingFolderViewModel
+import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinApplicationPreview
 import org.koin.compose.koinInject
@@ -58,11 +58,11 @@ fun App() {
                 CenterAlignedTopAppBar(
                     title = {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(getText("app.title"), modifier = Modifier.padding(0.dp))
+                            Text(stringResource(Res.string.app_title), modifier = Modifier.padding(0.dp))
                             if (needsWorkingFolder) {
                                 workingFolder?.let {
                                     Text(
-                                        getText("working.folder.summary").format(it),
+                                        stringResource(Res.string.working_folder_summary, it),
                                         modifier = Modifier.padding(0.dp)
                                     )
                                 }
@@ -93,13 +93,13 @@ fun App() {
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Button(onClick = { currentScreen = Screen.Notes }) {
-                                    Text(getText("app.tab.notes"))
+                                    Text(stringResource(Res.string.app_tab_notes))
                                 }
                                 Button(onClick = { currentScreen = Screen.Projects }) {
-                                    Text(getText("app.tab.projects"))
+                                    Text(stringResource(Res.string.app_tab_projects))
                                 }
                                 Button(onClick = { currentScreen = Screen.Tickets }) {
-                                    Text(getText("app.tab.tickets"))
+                                    Text(stringResource(Res.string.app_tab_tickets))
                                 }
                             }
 

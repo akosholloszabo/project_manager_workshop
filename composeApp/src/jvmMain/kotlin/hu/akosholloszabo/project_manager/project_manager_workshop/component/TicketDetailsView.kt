@@ -13,7 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.m3.Markdown
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun TicketDetailsView(
@@ -27,13 +28,13 @@ fun TicketDetailsView(
             style = MaterialTheme.typography.headlineSmall
         )
         Text(
-            text = getText("ticket.project.header").format(projectName),
+            text = stringResource(Res.string.ticket_project_header, projectName),
             style = MaterialTheme.typography.titleMedium
         )
         Text(
             text = (selectedTicket.status?.displayName
-                ?: getText("tickets.status.missing"))
-                .let { getText("ticket.status.header").format(it) },
+                ?: stringResource(Res.string.tickets_details_empty))
+                .let { stringResource(Res.string.ticket_status_header, it) },
             style = MaterialTheme.typography.bodyMedium
         )
         SelectionContainer(
@@ -43,7 +44,7 @@ fun TicketDetailsView(
                 .verticalScroll(rememberScrollState())
         ) {
             Markdown(selectedTicket.details.ifBlank {
-                getText("tickets.details.empty")
+                stringResource(Res.string.tickets_details_empty)
             })
         }
     }

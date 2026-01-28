@@ -5,7 +5,9 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.ProjectPayload
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.network.ProjectServerClient
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.projects_new
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.ResourceHelper.getStringResource
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
@@ -21,7 +23,7 @@ class ServerProjectsStorage(private val client: ProjectServerClient) : ProjectsS
         details: String
     ): Persisted<Project> {
         val payload = ProjectPayload(
-            name = name.takeIf { it.isNotBlank() } ?: getText("projects.new"),
+            name = name.takeIf { it.isNotBlank() } ?: getStringResource(Res.string.projects_new),
             description = description,
             details = ""
         )

@@ -16,8 +16,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,13 +41,13 @@ fun TicketEditorFields(
         TextField(
             value = title.state,
             onValueChange = title.event,
-            label = { Text(getText("tickets.field.title")) },
+            label = { Text(stringResource(Res.string.tickets_field_title)) },
             modifier = Modifier.fillMaxWidth()
         )
         ReadOnlyDropdownField(
             // TODO projects is a MAP
-            value = projects.toMap()[projectId.state] ?: getText("tickets.editor.no.project"),
-            label = getText("tickets.field.project"),
+            value = projects.toMap()[projectId.state] ?: stringResource(Res.string.tickets_editor_no_project),
+            label = stringResource(Res.string.tickets_field_project),
             expanded = projectDropdownExpanded,
             onExpandedChange = { projectDropdownExpanded = it }
         ) {
@@ -61,8 +62,8 @@ fun TicketEditorFields(
             }
         }
         ReadOnlyDropdownField(
-            value = status.state?.displayName ?: getText("tickets.status.missing"),
-            label = getText("tickets.field.status"),
+            value = status.state?.displayName ?: stringResource(Res.string.tickets_details_empty),
+            label = stringResource(Res.string.tickets_field_status),
             expanded = statusDropdownExpanded,
             onExpandedChange = { statusDropdownExpanded = it }
         )
@@ -85,7 +86,7 @@ fun TicketEditorFields(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(),
-            label = { Text(getText("tickets.field.details")) },
+            label = { Text(stringResource(Res.string.tickets_field_details)) },
             maxLines = Int.MAX_VALUE
         )
     }
