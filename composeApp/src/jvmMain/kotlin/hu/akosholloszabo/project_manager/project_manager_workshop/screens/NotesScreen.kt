@@ -4,13 +4,15 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -20,54 +22,51 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mikepenz.markdown.m3.Markdown
-import hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.CrudActionBar
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.DetailEditorPane
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.DetailHeader
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.EmptyDetailHint
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SelectableList
-import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoPaneLayout
-import hu.akosholloszabo.project_manager.project_manager_workshop.di.localModule
-import hu.akosholloszabo.project_manager.project_manager_workshop.di.mainModule
-import hu.akosholloszabo.project_manager.project_manager_workshop.di.plainLocalModule
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.CrudActionLabels
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
-import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.crud_delete
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.crud_edit
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.crud_save
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.notes_empty_description
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.notes_empty_message
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.notes_new
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.notes_title
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.PreviewWrapper
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.NotesViewModel
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.koin.compose.KoinApplicationPreview
-import org.koin.fileProperties
 import java.io.File
 
 @Composable
-// TODO you can inject ViewModel directly here
 fun NotesScreen(notesViewModel: NotesViewModel) {
-    // TODO first the variables
-    LaunchedEffect(notesViewModel) {
-        notesViewModel.refresh()
-    }
-    // TODO we usually use val viewmodel = koinViewModel<NotesViewModel>()
     val selectedNotePath by notesViewModel.selectedNotePath.collectAsStateWithLifecycle()
     val isEditing by notesViewModel.isEditing.collectAsStateWithLifecycle()
     val editableContent by notesViewModel.editableContent.collectAsStateWithLifecycle()
     val selectedNote by notesViewModel.selectedNote.collectAsStateWithLifecycle()
     val notes by notesViewModel.notes.collectAsStateWithLifecycle()
 
+    LaunchedEffect(notesViewModel) {
+        notesViewModel.refresh()
+    }
+
     NotesScreenContent(
         selectedNotePath = selectedNotePath,
         isEditing = StateAndEvent(
-            state = isEditing,
-            // TODO Screen should not know about the flow, only call functions on the ViewModel
-            event = { notesViewModel.isEditing.tryEmit(it) }
+            value = isEditing,
+            event = notesViewModel::setEditing
         ),
         editableContent = StateAndEvent(
-            state = editableContent,
-            // TODO Screen should not know about the flow, only call functions on the ViewModel
-            event = { notesViewModel.editableContent.tryEmit(it) }
+            value = editableContent,
+            event = notesViewModel::updateEditableContent
         ),
         selectedNote = selectedNote,
         notes = notes,
@@ -91,87 +90,85 @@ fun NotesScreenContent(
     onDeleteNote: () -> Unit,
     onSelectNote: (String) -> Unit
 ) {
-    //TODO if this is a full screen you should consider using Scaffold
 
-    // TODO if modifier is passed from outside, do not override it
-    Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
-        Text(stringResource(Res.string.notes_title), style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(8.dp))
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            // TODO should it be variable?
-            val masterWeight = if (maxWidth < 640.dp) 0.55f else 0.33f
-            TwoPaneLayout(
-                modifier = Modifier.fillMaxSize(),
-                masterWeight = masterWeight,
-                master = {
-                    SelectableList(
-                        items = notes,
-                        selectedKey = selectedNotePath,
-                        modifier = Modifier.fillMaxSize(),
-                        keyOf = { it.file.canonicalPath },
-                        onItemClick = { note ->
-                            onSelectNote(note.file.canonicalPath)
+    Scaffold(modifier) { padding ->
+        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+            Text(stringResource(Res.string.notes_title), style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.height(8.dp))
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                val masterWeight = if (maxWidth < 640.dp) 0.55f else 0.33f
+                TwoPaneLayout(
+                    modifier = Modifier.fillMaxSize(),
+                    masterWeight = masterWeight,
+                    master = {
+                        SelectableList(
+                            items = notes,
+                            selectedKey = selectedNotePath,
+                            modifier = Modifier.fillMaxSize(),
+                            keyOf = { it.file.canonicalPath },
+                            onItemClick = { note ->
+                                onSelectNote(note.file.canonicalPath)
+                            }
+                        ) { note, _ ->
+                            Text(
+                                text = note.value.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
                         }
-                    ) { note, _ ->
-                        Text(
-                            // TODO if one parameter has named argument, all should have
-                            note.value.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        // TODO Integer goes to resources
-                        SimpleDivider(modifier = Modifier.padding(top = 8.dp))
-                    }
-                },
-                detail = {
-                    DetailEditorPane(
-                        modifier = Modifier.fillMaxSize(),
-                        // TODO Integer goes to resources
-                        verticalSpacing = 8.dp,
-                        header = {
-                            DetailHeader(
-                                title = selectedNote?.value?.title ?: stringResource(Res.string.notes_empty_message),
-                                actions = {
-                                    CrudActionBar(
-                                        hasSelection = selectedNote != null,
-                                        isEditing = isEditing.state,
-                                        onNew = onCreateNote,
-                                        onEdit = { isEditing.event(true) },
-                                        onSave = onSaveNote,
-                                        onDelete = onDeleteNote,
-                                        labels = CrudActionLabels(
-                                            newLabel = stringResource(Res.string.notes_new),
-                                            editLabel = stringResource(Res.string.crud_edit),
-                                            saveLabel = stringResource(Res.string.crud_save),
-                                            deleteLabel = stringResource(Res.string.crud_delete)
+                    },
+                    detail = {
+                        DetailEditorPane(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalSpacing = 8.dp,
+                            header = {
+                                DetailHeader(
+                                    title = selectedNote?.value?.title
+                                        ?: stringResource(Res.string.notes_empty_message),
+                                    actions = {
+                                        CrudActionBar(
+                                            hasSelection = selectedNote != null,
+                                            isEditing = isEditing.value,
+                                            onNew = onCreateNote,
+                                            onEdit = { isEditing.event(true) },
+                                            onSave = onSaveNote,
+                                            onDelete = onDeleteNote,
+                                            labels = CrudActionLabels(
+                                                newLabel = stringResource(Res.string.notes_new),
+                                                editLabel = stringResource(Res.string.crud_edit),
+                                                saveLabel = stringResource(Res.string.crud_save),
+                                                deleteLabel = stringResource(Res.string.crud_delete)
+                                            ),
+                                            modifier = Modifier.fillMaxWidth()
                                         )
-                                    )
-                                }
-                            )
-                        },
-                        isEditing = isEditing.state,
-                        editContent = {
-                            TextField(
-                                value = editableContent.state,
-                                onValueChange = editableContent.event,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        },
-                        viewContent = {
-                            selectedNote?.let { note ->
-                                SelectionContainer(
-                                    modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxSize()
-                                ) {
-                                    Markdown(note.value.content)
-                                }
-                            } ?: EmptyDetailHint(
-                                message = stringResource(Res.string.notes_empty_message),
-                                description = stringResource(Res.string.notes_empty_description)
-                            )
-                        }
-                    )
-                }
-            )
+                                    }
+                                )
+                            },
+                            isEditing = isEditing.value,
+                            editContent = {
+                                TextField(
+                                    value = editableContent.value,
+                                    onValueChange = editableContent.event,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            },
+                            viewContent = {
+                                selectedNote?.let { note ->
+                                    SelectionContainer(
+                                        modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxSize()
+                                    ) {
+                                        Markdown(note.value.content)
+                                    }
+                                } ?: EmptyDetailHint(
+                                    message = stringResource(Res.string.notes_empty_message),
+                                    description = stringResource(Res.string.notes_empty_description)
+                                )
+                            }
+                        )
+                    }
+                )
+            }
         }
     }
 }
@@ -181,33 +178,24 @@ fun NotesScreenContent(
 fun NotesScreenPreviewLight() {
     val firstNote = previewPersistedNote("first-note.md", 1, "First note", "# Preview\nThis is the first note.")
     val secondNote = previewPersistedNote("second-note.md", 2, "Second note", "Second entry markdown content.")
-
-    KoinApplicationPreview(application = {
-        fileProperties("/koinLocal.properties")
-        fileProperties("/strings.properties")
-        modules(mainModule, localModule, plainLocalModule)
-    }) {
-        AppTheme(darkTheme = false) {
-            Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-                NotesScreenContent(
-                    notes = listOf(firstNote, secondNote),
-                    selectedNotePath = firstNote.file.absolutePath,
-                    selectedNote = firstNote,
-                    editableContent = StateAndEvent(
-                        state = firstNote.value.content,
-                        event = {}
-                    ),
-                    isEditing = StateAndEvent(
-                        state = true,
-                        event = {}
-                    ),
-                    onCreateNote = {},
-                    onSaveNote = {},
-                    onDeleteNote = {},
-                    onSelectNote = {},
-                )
-            }
-        }
+    PreviewWrapper(darkTheme = false) {
+        NotesScreenContent(
+            notes = listOf(firstNote, secondNote),
+            selectedNotePath = firstNote.file.absolutePath,
+            selectedNote = firstNote,
+            editableContent = StateAndEvent(
+                value = firstNote.value.content,
+                event = {}
+            ),
+            isEditing = StateAndEvent(
+                value = true,
+                event = {}
+            ),
+            onCreateNote = {},
+            onSaveNote = {},
+            onDeleteNote = {},
+            onSelectNote = {},
+        )
     }
 }
 
@@ -217,32 +205,24 @@ fun NotesScreenPreviewDark() {
     val firstNote = previewPersistedNote("first-note.md", 1, "First note", "# Preview\nThis is the first note.")
     val secondNote = previewPersistedNote("second-note.md", 2, "Second note", "Second entry markdown content.")
 
-    KoinApplicationPreview(application = {
-        fileProperties("/koinLocal.properties")
-        fileProperties("/strings.properties")
-        modules(mainModule, localModule, plainLocalModule)
-    }) {
-        AppTheme(darkTheme = true) {
-            Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-                NotesScreenContent(
-                    notes = listOf(firstNote, secondNote),
-                    selectedNotePath = firstNote.file.absolutePath,
-                    selectedNote = firstNote,
-                    editableContent = StateAndEvent(
-                        state = firstNote.value.content,
-                        event = {}
-                    ),
-                    isEditing = StateAndEvent(
-                        state = true,
-                        event = {}
-                    ),
-                    onCreateNote = {},
-                    onSaveNote = {},
-                    onDeleteNote = {},
-                    onSelectNote = {},
-                )
-            }
-        }
+    PreviewWrapper(darkTheme = true) {
+        NotesScreenContent(
+            notes = listOf(firstNote, secondNote),
+            selectedNotePath = firstNote.file.absolutePath,
+            selectedNote = firstNote,
+            editableContent = StateAndEvent(
+                value = firstNote.value.content,
+                event = {}
+            ),
+            isEditing = StateAndEvent(
+                value = true,
+                event = {}
+            ),
+            onCreateNote = {},
+            onSaveNote = {},
+            onDeleteNote = {},
+            onSelectNote = {},
+        )
     }
 }
 

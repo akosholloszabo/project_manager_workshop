@@ -32,10 +32,12 @@ val serverModule = module {
         )
     }
 
-    single{loadTrustManager(
-        serverKeystorePassword = getProperty("project_manager.serverKeystorePassword"),
-        serverKeystorePath = getProperty("project_manager.serverKeystorePath")
-    )}
+    single {
+        loadTrustManager(
+            serverKeystorePassword = getProperty("project_manager.serverKeystorePassword"),
+            serverKeystorePath = getProperty("project_manager.serverKeystorePath")
+        )
+    }
     singleOf(::httpClient)
 
     singleOf(::NoteServerClient)
@@ -47,7 +49,7 @@ val serverModule = module {
     singleOf(::ServerTicketsStorage) bind TicketsStorage::class
 }
 
-// TODO should these be here? in a separate place or in the module call
+// Trust store helpers live next to the module for now; move to a shared network module if reused elsewhere.
 private fun loadTrustManager(
     //project_manager.serverKeystorePassword
     serverKeystorePassword: String,

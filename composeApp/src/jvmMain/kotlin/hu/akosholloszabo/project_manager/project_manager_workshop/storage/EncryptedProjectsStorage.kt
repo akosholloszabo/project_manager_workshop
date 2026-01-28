@@ -3,7 +3,11 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
-import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.projects_new
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.storage_encrypted_decrypt_error
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.storage_session_encryption_required
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.storage_session_required
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.ResourceHelper.getStringResource
 import java.io.File
 import java.util.UUID.randomUUID
@@ -19,7 +23,7 @@ class EncryptedProjectsStorage(
         return withEncryptedProjectsDirectory(session) { current, folder ->
             val key = current.encryptionKey ?: return@withEncryptedProjectsDirectory emptyList()
             fileStorageHelper.listStorageFiles(folder, storageSpec)
-                .map { projectFromFileEncrypted(it, key) }
+                .mapNotNull { projectFromFileEncrypted(it, key) }
         }
     }
 
@@ -28,7 +32,7 @@ class EncryptedProjectsStorage(
         name: String,
         description: String,
         details: String
-    ): Persisted<Project> {
+    ): Persisted<Project>? {
         require(session != null) { getStringResource(Res.string.storage_session_required) }
         return withEncryptedProjectsDirectory(session) { current, folder ->
             require(current.encryptionKey != null) { getStringResource(Res.string.storage_session_encryption_required) }
@@ -44,25 +48,22 @@ class EncryptedProjectsStorage(
         }
     }
 
-    override fun saveProject(session: StorageSession?, project: Project, file: File, details: String): Boolean {
-        // TODO takeIf/takeUnless
-        val key = session?.encryptionKey ?: return false
-        return safe {
-            file.writeText(storageCipher.encrypt(json.encodeToString(project), key))
-            writeDetailsEncrypted(file, key, details)
-            true
-        }
-    }
+    override fun saveProject(session: StorageSession?, project: Project, file: File, details: String): Boolean =
+        session?.takeIf { it.encryptionKey != null }?.encryptionKey?.let { key ->
+            safe {
+                file.writeText(storageCipher.encrypt(json.encodeToString(project), key))
+                writeDetailsEncrypted(file, key, details)
+                true
+            }
+        } ?: false
 
-    override fun deleteProject(session: StorageSession?, file: File): Boolean {
-        // TODO {} replace with =
-        return session?.let {
+    override fun deleteProject(session: StorageSession?, file: File): Boolean =
+        session?.let {
             safe {
                 fileStorageHelper.deleteDetails(file, storageSpec)
                 file.delete()
             }
         } ?: false
-    }
 
     private fun readDetailsEncrypted(file: File, key: SecretKey): String {
         val extension = storageSpec.detailExtension ?: return ""
@@ -78,9 +79,8 @@ class EncryptedProjectsStorage(
         detailFile.writeText(storageCipher.encrypt(details, key))
     }
 
-    private fun projectFromFileEncrypted(file: File, key: SecretKey): Persisted<Project> {
-        // TODO {} replace with =
-        return safe {
+    private fun projectFromFileEncrypted(file: File, key: SecretKey): Persisted<Project>? =
+        safe {
             val encrypted = file.readText()
             val payload =
                 storageCipher.tryDecrypt(encrypted, key)
@@ -89,5 +89,4 @@ class EncryptedProjectsStorage(
             val normalized = parsed.copy(details = readDetailsEncrypted(file, key))
             Persisted(file, normalized)
         }
-    }
 }

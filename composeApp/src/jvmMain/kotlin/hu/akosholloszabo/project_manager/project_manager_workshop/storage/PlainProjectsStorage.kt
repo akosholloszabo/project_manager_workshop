@@ -3,7 +3,8 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
-import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.project_default_name
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.ResourceHelper.getStringResource
 import java.io.File
 import java.util.UUID.randomUUID
@@ -12,10 +13,9 @@ class PlainProjectsStorage(
     fileStorageHelper: FileStorageHelper
 ) : LocalProjectsStorage(fileStorageHelper) {
     override fun loadProjects(session: StorageSession?): List<Persisted<Project>> {
-        // TODO {} replace with =
         return withProjectsDirectory(session) { folder ->
             fileStorageHelper.listStorageFiles(folder, storageSpec)
-                .map(::projectFromFile)
+                .mapNotNull(::projectFromFile)
         }
     }
 
@@ -24,8 +24,7 @@ class PlainProjectsStorage(
         name: String,
         description: String,
         details: String
-    ): Persisted<Project> {
-        // TODO {} replace with =
+    ): Persisted<Project>? {
         return withProjectsDirectory(session) { folder ->
             val file = fileStorageHelper.createTimestampedFile(folder, name, storageSpec)
             val defaultName = name.takeIf { it.isNotBlank() }
@@ -38,22 +37,20 @@ class PlainProjectsStorage(
         }
     }
 
-    override fun saveProject(session: StorageSession?, project: Project, file: File, details: String): Boolean {
-        if (session == null) return false
-        return safe {
-            file.writeText(json.encodeToString(project))
-            writeDetails(file, details)
-            true
-        }
-    }
+    override fun saveProject(session: StorageSession?, project: Project, file: File, details: String): Boolean =
+        session?.let {
+            safe {
+                file.writeText(json.encodeToString(project))
+                writeDetails(file, details)
+                true
+            }
+        } ?: false
 
-    override fun deleteProject(session: StorageSession?, file: File): Boolean {
-        // TODO {} replace with =
-        return session?.let {
+    override fun deleteProject(session: StorageSession?, file: File): Boolean =
+        session?.let {
             safe {
                 fileStorageHelper.deleteDetails(file, storageSpec)
                 file.delete()
             }
         } ?: false
-    }
 }

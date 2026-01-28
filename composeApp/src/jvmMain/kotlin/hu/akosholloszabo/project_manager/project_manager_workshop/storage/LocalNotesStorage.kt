@@ -4,7 +4,9 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSpec
-import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.notes_default_title
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.notes_default_untitled
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.ResourceHelper.getStringResource
 import java.io.File
 import java.util.*
@@ -36,34 +38,22 @@ abstract class LocalNotesStorage : NotesStorage {
 
     protected inline fun <T> safe(block: () -> T): T? = runCatching(block).getOrNull()
 
-    protected fun noteFromFile(file: File): Persisted<Note>? {
-        // TODO {} replace with =
-        return safe {
+    protected fun noteFromFile(file: File): Persisted<Note>? =
+        safe {
             val content = file.readText()
             val parsedTitle = deriveTitle(file, content)
             val embeddedId = extractId(content)
             val normalizedId = embeddedId ?: file.canonicalPath.hashCode()
             Persisted(file, Note(normalizedId, parsedTitle, content))
         }
-    }
-
-    // TODO If the variable is protected to then why is this here
-    protected fun storageSpec() = storageSpec
-
-    protected fun deriveTitle(content: String, fallback: String): String {
-        val firstLineTitle = content.lineSequence()
-            .firstOrNull { it.isNotBlank() }
-            ?.removePrefix("#")
-            ?.trim()
-            ?.takeUnless { it.isBlank() }
-        val resolvedFallback = fallback.takeUnless { it.isBlank() }
-            ?: getStringResource(Res.string.notes_default_untitled)
-        return firstLineTitle ?: resolvedFallback
-    }
 
     protected fun deriveTitle(file: File, content: String): String {
-        // TODO {} replace with =
-        return deriveTitle(content, fallbackTitle(file))
+        val heading = content.lineSequence()
+            .map { it.trim() }
+            .firstOrNull { it.startsWith("#") }
+            ?.removePrefix("#")
+            ?.trim()
+        return heading?.takeIf { it.isNotBlank() } ?: fallbackTitle(file)
     }
 
     private fun fallbackTitle(file: File): String {

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -18,12 +19,15 @@ import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
 import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
 import hu.akosholloszabo.project_manager.project_manager_workshop.resources.tickets_back
 import hu.akosholloszabo.project_manager.project_manager_workshop.resources.tickets_details_title
 import hu.akosholloszabo.project_manager.project_manager_workshop.resources.tickets_editor_no_project
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.PreviewWrapper
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import java.io.File
 
 @Composable
 fun TicketDetailsPanel(
@@ -43,11 +47,9 @@ fun TicketDetailsPanel(
     val projectNamesById = projects.toMap()
 
     DetailEditorPane(
-        // TODO If you get a modifier from outside, you should not override
         modifier = modifier
             .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
             .padding(16.dp),
-        // TODO Integer goes to resources
         verticalSpacing = 12.dp,
         header = {
             DetailHeader(
@@ -59,14 +61,13 @@ fun TicketDetailsPanel(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         CrudActionBar(
-                            modifier = Modifier.weight(1f, false),
+                            modifier = Modifier.weight(1f, false).fillMaxWidth(),
                             hasSelection = true,
-                            isEditing = isEditing.state,
+                            isEditing = isEditing.value,
                             onEdit = { onEdit(); isEditing.event(true) },
-                            onSave = if (isEditing.state) onSave else null,
+                            onSave = if (isEditing.value) onSave else null,
                             onDelete = onDelete,
                         )
-                        // TODO Integer goes to resources
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(onClick = onBack) {
                             Text(stringResource(Res.string.tickets_back))
@@ -75,7 +76,7 @@ fun TicketDetailsPanel(
                 }
             )
         },
-        isEditing = isEditing.state,
+        isEditing = isEditing.value,
         editContent = {
             TicketEditorFields(
                 projects = projects,
@@ -95,4 +96,23 @@ fun TicketDetailsPanel(
     )
 }
 
-// TODO Preview
+@Preview(showBackground = true)
+@Composable
+private fun TicketDetailsPanelPreview() {
+    val ticket = Persisted(File("preview"), Ticket(1, "Title", 1, TicketStatus.BACKLOG, "Details"))
+    PreviewWrapper(darkTheme = true) {
+        TicketDetailsPanel(
+            selectedTicket = ticket,
+            projects = mapOf(1 to "Project"),
+            isEditing = StateAndEvent(false) {},
+            title = StateAndEvent(ticket.value.title) {},
+            projectId = StateAndEvent(ticket.value.projectId) {},
+            status = StateAndEvent(ticket.value.status) {},
+            details = StateAndEvent(ticket.value.details) {},
+            onEdit = {},
+            onSave = {},
+            onDelete = {},
+            onBack = {}
+        )
+    }
+}

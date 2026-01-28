@@ -7,7 +7,7 @@
     <string name="app_tab_tickets">Tickets</string>
 
     <string name="working_folder_title">Select a working folder</string>
-    <string name="working_folder_summary">Working folder: %s</string>
+    <string name="working_folder_summary">Working folder: %1$s</string>
     <string name="working_folder_label">Working folder</string>
     <string name="working_folder_placeholder">No folder selected yet</string>
     <string name="working_folder_password_label">Folder password</string>
@@ -38,6 +38,7 @@
     <string name="storage_session_encryption_required">Encrypted storage session requires an encryption key.</string>
     <string name="storage_encrypted_decrypt_error">Could not decrypt the project data.</string>
     <string name="storage_folder_access_error">Could not access the storage folder.</string>
+    <string name="storage_timestamp_pattern">yyyyMMdd-HHmmss</string>
 
     <string name="tickets_title">Tickets</string>
     <string name="tickets_new">New ticket</string>
@@ -67,8 +68,8 @@
     <string name="ticket_status_in_testing">In testing</string>
     <string name="ticket_status_completed">Completed</string>
     <string name="ticket_status_rejected">Rejected</string>
-    <string name="ticket_status_header">Status: %s</string>
-    <string name="ticket_project_header">Project: %s</string>
+    <string name="ticket_status_header">Status: %1$s</string>
+    <string name="ticket_project_header">Project: %1$s</string>
 
     <string name="cipher_encryption_algorithm">AES/GCM/NoPadding</string>
     <string name="cipher_message_digest_algorithm">SHA-256</string>

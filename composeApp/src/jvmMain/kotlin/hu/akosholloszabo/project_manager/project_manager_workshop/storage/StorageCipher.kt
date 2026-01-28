@@ -1,6 +1,11 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 
-import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.cipher_encryption_algorithm
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.cipher_iv_size
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.cipher_key_algorithm
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.cipher_key_speed
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.cipher_message_digest_algorithm
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.ResourceHelper.getStringResource
 import org.koin.core.component.KoinComponent
 import java.nio.charset.StandardCharsets

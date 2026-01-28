@@ -1,11 +1,10 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Note
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.NoteStore
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,37 +15,31 @@ import kotlinx.coroutines.launch
 
 class NotesViewModel(
     private val noteStore: NoteStore
-) { //TODO Why is this not extends form a ViewModel()
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-
+) : ViewModel() {
     private val _selectedNotePath = MutableStateFlow<String?>(null)
     val selectedNotePath: StateFlow<String?> = _selectedNotePath.asStateFlow()
 
-    //TODO should this be private
-    val isEditing = MutableStateFlow(false)
+    private val _isEditing = MutableStateFlow(false)
+    val isEditing: StateFlow<Boolean> = _isEditing.asStateFlow()
 
-    // TODO should this be private
-    val editableContent = MutableStateFlow("")
+    private val _editableContent = MutableStateFlow("")
+    val editableContent: StateFlow<String> = _editableContent.asStateFlow()
 
     val notes = noteStore.notes
 
     val selectedNote: StateFlow<Persisted<Note>?> = combine(
         noteStore.notes,
-        _selectedNotePath
+        selectedNotePath
     ) { notes, path ->
         notes.findByPath(path)
-    }.stateIn(scope, SharingStarted.Eagerly, null)
-
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             noteStore.notes.collect { currentNotes ->
-                // TODO you should check the non "_" version
-                val nextPath = currentNotes.determineSelection(_selectedNotePath.value)
-                // TODO you should check the non "_" version
-                if (nextPath != _selectedNotePath.value) {
-                    // TODO If one parameter is named, all should be named
-                    updateSelection(nextPath, currentNotes, refreshContent = !isEditing.value)
+                val nextPath = currentNotes.determineSelection(selectedNotePath.value)
+                if (nextPath != selectedNotePath.value) {
+                    updateSelection(path = nextPath, notes = currentNotes, refreshContent = !isEditing.value)
                 }
             }
         }
@@ -54,16 +47,15 @@ class NotesViewModel(
 
     fun refresh() = noteStore.refreshNotes()
 
-    // TODO what is this?
-    fun createNote() = scope.launch {
+    fun createNote() = viewModelScope.launch {
         noteStore.createNote()?.let { created ->
             _selectedNotePath.tryEmit(created.file.canonicalPath)
-            editableContent.tryEmit(created.value.content)
-            isEditing.tryEmit(true)
+            _editableContent.tryEmit(created.value.content)
+            _isEditing.tryEmit(true)
         }
     }
 
-    fun saveNote() = scope.launch {
+    fun saveNote() = viewModelScope.launch {
         val note = selectedNote.value ?: return@launch
         val content = editableContent.value
         if (noteStore.saveNote(note, content)) {
@@ -71,60 +63,59 @@ class NotesViewModel(
         }
     }
 
-    fun deleteNote() = scope.launch {
+    fun deleteNote() = viewModelScope.launch {
         selectedNote.value?.takeIf { noteStore.deleteNote(it) }?.let {
             _selectedNotePath.tryEmit(null)
             stopEditing("")
         }
     }
 
-    fun selectNote(path: String) = scope.launch {
-        // TODO you should check the non "_" version
-        if (_selectedNotePath.value == path) return@launch
+    fun selectNote(path: String) = viewModelScope.launch {
+        if (selectedNotePath.value == path) return@launch
         if (!saveIfEditing()) return@launch
-        // TODO If one parameter is named, all should be named
-        updateSelection(path, notes.value, refreshContent = true)
+        updateSelection(path = path, notes = notes.value, refreshContent = true)
     }
 
-    private suspend fun saveIfEditing(): Boolean {
-        if (!isEditing.value) return true
-        val content = editableContent.value
-        val saved = selectedNote.value?.let { noteStore.saveNote(it, content) } ?: true
-        if (saved) {
-            stopEditing(content)
+    fun setEditing(isEditing: Boolean) = _isEditing.tryEmit(isEditing)
+
+    fun updateEditableContent(content: String) = _editableContent.tryEmit(content)
+
+    private fun saveIfEditing(): Boolean =
+        if (!isEditing.value) {
+            true
+        } else run {
+            val content = editableContent.value
+            val saved = selectedNote.value?.let { noteStore.saveNote(it, content) } ?: true
+            if (saved) {
+                stopEditing(content)
+            }
+            saved
         }
-        return saved
-    }
 
     private fun updateSelection(
-        // TODO should it be nullable
         path: String?,
         notes: List<Persisted<Note>>,
         refreshContent: Boolean
     ) {
         _selectedNotePath.tryEmit(path)
         if (!isEditing.value && refreshContent) {
-            editableContent.tryEmit(notes.findByPath(path)?.value?.content ?: "")
+            _editableContent.tryEmit(notes.findByPath(path)?.value?.content ?: "")
         }
     }
 
     private fun stopEditing(savedContent: String? = null) {
-        isEditing.tryEmit(false)
-        editableContent.tryEmit(
+        _isEditing.tryEmit(false)
+        _editableContent.tryEmit(
             savedContent ?: selectedNote.value?.value?.content ?: ""
         )
     }
 
-    //TODO this two should be in an extension file
-    private fun List<Persisted<Note>>.findByPath(path: String?): Persisted<Note>? =
-        path?.let { requested ->
-            firstOrNull { it.file.canonicalPath == requested }
-        }
+    fun List<Persisted<Note>>.findByPath(path: String?): Persisted<Note>? =
+        path?.let { requested -> firstOrNull { it.file.canonicalPath == requested } }
 
-    private fun List<Persisted<Note>>.determineSelection(currentPath: String?): String? =
-        when {
-            currentPath != null && any { it.file.canonicalPath == currentPath } -> currentPath
-            isNotEmpty() -> first().file.canonicalPath
-            else -> null
-        }
+    fun List<Persisted<Note>>.determineSelection(currentPath: String?): String? = when {
+        currentPath != null && any { it.file.canonicalPath == currentPath } -> currentPath
+        isNotEmpty() -> first().file.canonicalPath
+        else -> null
+    }
 }

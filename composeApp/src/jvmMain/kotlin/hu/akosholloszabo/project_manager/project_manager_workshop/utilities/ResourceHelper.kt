@@ -5,9 +5,6 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 
 object ResourceHelper {
-    fun getStringResource(resource: StringResource): String {
-        return runBlocking {
-            getString(resource)
-        }
-    }
+    fun getStringResource(resource: StringResource): String =
+        runBlocking { getString(resource) }
 }

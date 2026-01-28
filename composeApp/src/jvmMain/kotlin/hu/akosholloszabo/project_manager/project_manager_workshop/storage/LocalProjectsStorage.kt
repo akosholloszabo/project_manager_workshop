@@ -4,7 +4,9 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persiste
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSpec
-import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.storage_folder_access_error
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.storage_session_required
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.ResourceHelper.getStringResource
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -33,12 +35,9 @@ abstract class LocalProjectsStorage(
         session: StorageSession,
         action: (StorageSession, File) -> T
     ): T {
-        // TODO why is this here
-        val current = session
-        val folder = File(current.folderPath, storageSpec.folderName)
-            .takeIf { it.exists() || it.mkdirs() }
+        val folder = fileStorageHelper.ensureStorageDirectory(session.folderPath, storageSpec)
             ?: throw Exception(getStringResource(Res.string.storage_folder_access_error))
-        return action(current, folder)
+        return action(session, folder)
     }
 
     protected fun readDetails(file: File): String {
@@ -48,19 +47,16 @@ abstract class LocalProjectsStorage(
         }.getOrDefault("")
     }
 
-    protected fun writeDetails(file: File, details: String) {
+    protected fun writeDetails(file: File, details: String) =
         fileStorageHelper.writeDetails(file, storageSpec, details)
-    }
 
-    protected inline fun <T> safe(block: () -> T): T = run(block)
+    protected inline fun <T> safe(block: () -> T): T? = runCatching(block).getOrNull()
 
-    protected fun projectFromFile(file: File): Persisted<Project> {
-        // TODO {} replace with =
-        return safe {
+    protected fun projectFromFile(file: File): Persisted<Project>? =
+        safe {
             val content = file.readText()
             val parsed = json.decodeFromString<Project>(content)
             val normalized = parsed.copy(details = readDetails(file))
             Persisted(file, normalized)
         }
-    }
 }

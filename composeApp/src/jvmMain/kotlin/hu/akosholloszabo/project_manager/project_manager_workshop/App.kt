@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -24,12 +25,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
 import hu.akosholloszabo.project_manager.project_manager_workshop.di.localModule
 import hu.akosholloszabo.project_manager.project_manager_workshop.di.mainModule
 import hu.akosholloszabo.project_manager.project_manager_workshop.di.plainLocalModule
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageBackend
-import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.app_tab_notes
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.app_tab_projects
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.app_tab_tickets
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.app_title
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.working_folder_summary
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.NotesScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.ProjectsScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.TicketsScreen
@@ -104,7 +109,7 @@ fun App() {
                             }
 
 
-                            SimpleDivider()
+                            HorizontalDivider()
 
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                                 when (currentScreen) {

@@ -3,11 +3,12 @@ package hu.akosholloszabo.project_manager.project_manager_workshop.component
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.PreviewWrapper
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun DetailHeader(
@@ -17,8 +18,7 @@ fun DetailHeader(
     actions: @Composable () -> Unit = {}
 ) {
     Row(
-        // TODO If you get a modifier from outside, you should not override its width
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
@@ -31,4 +31,10 @@ fun DetailHeader(
     }
 }
 
-// TODO Preview
+@Preview(showBackground = true)
+@Composable
+private fun DetailHeaderPreview() {
+    PreviewWrapper(darkTheme = true) {
+        DetailHeader(title = "Title", subtitle = "Subtitle")
+    }
+}

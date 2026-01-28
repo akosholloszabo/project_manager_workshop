@@ -19,10 +19,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketCardState
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketColumnState
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
 import hu.akosholloszabo.project_manager.project_manager_workshop.resources.tickets_no_items
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.PreviewWrapper
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun TicketColumn(
@@ -31,29 +35,16 @@ fun TicketColumn(
     onTicketSelected: (Persisted<Ticket>) -> Unit
 ) {
     Column(
-        // TODO If you get a modifier from outside, you should not override
         modifier = modifier
-            .width(260.dp)
-            .fillMaxHeight()
-            .background(
-                MaterialTheme.colorScheme.surfaceVariant,
-                // TODO Integer goes to resources
-                RoundedCornerShape(12.dp)
-            )
-            // TODO Integer goes to resources
-            .padding(12.dp)
     ) {
-        // TODO If one parameter has named argument, all should have
-        Text(columnState.status.displayName, style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(columnState.status.resId), style = MaterialTheme.typography.titleMedium)
 
-        // TODO Integer goes to resources
         Spacer(modifier = Modifier.height(8.dp))
         Column(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState()),
-            // TODO Integer goes to resources
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             if (columnState.cards.isEmpty()) {
@@ -66,7 +57,8 @@ fun TicketColumn(
                 columnState.cards.forEach { card ->
                     TicketCard(
                         cardState = card,
-                        onClick = { onTicketSelected(card.persisted) }
+                        onClick = { onTicketSelected(card.persisted) },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
@@ -74,4 +66,29 @@ fun TicketColumn(
     }
 }
 
-// TODO Preview
+@Preview(showBackground = true)
+@Composable
+private fun TicketColumnPreview() =
+    PreviewWrapper(darkTheme = true) {
+        TicketColumn(
+            modifier = Modifier
+                .width(260.dp)
+                .fillMaxHeight()
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    RoundedCornerShape(12.dp)
+                )
+                .padding(12.dp),
+            columnState = TicketColumnState(
+                status = TicketStatus.BACKLOG,
+                cards = listOf(
+                    TicketCardState(
+                        persisted = Persisted(file = java.io.File("preview"), value = Ticket(1, "Title", 1, null, "")),
+                        projectName = "Proj",
+                        isSelected = false
+                    )
+                )
+            ),
+            onTicketSelected = {},
+        )
+    }

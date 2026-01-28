@@ -1,7 +1,7 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.component
 
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -10,6 +10,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.PreviewWrapper
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,9 +27,7 @@ fun ReadOnlyDropdownField(
         expanded = expanded,
         onExpandedChange = { onExpandedChange(!expanded) }
     ) {
-        // TODO If you get a modifier from outside, you should not override its width
         val anchorModifier = modifier
-            .fillMaxWidth()
             .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
         TextField(
             value = value,
@@ -47,4 +47,28 @@ fun ReadOnlyDropdownField(
     }
 }
 
-// TODO Preview
+@Preview(showBackground = true)
+@Composable
+private fun ReadOnlyDropdownFieldPreview() {
+    PreviewWrapper(darkTheme = true) {
+        ReadOnlyDropdownField(
+            value = "Preview",
+            label = "Label",
+            expanded = true,
+            onExpandedChange = {}
+        ) {
+            DropdownMenuItem(
+                text = { Text("Item 1") },
+                onClick = { }
+            )
+            DropdownMenuItem(
+                text = { Text("Item 2") },
+                onClick = { }
+            )
+            DropdownMenuItem(
+                text = { Text("Item 3") },
+                onClick = { }
+            )
+        }
+    }
+}

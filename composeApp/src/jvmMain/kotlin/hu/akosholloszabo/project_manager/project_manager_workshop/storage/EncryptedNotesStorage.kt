@@ -10,53 +10,47 @@ class EncryptedNotesStorage(
     val storageCipher: StorageCipher,
     override val fileStorageHelper: FileStorageHelper
 ) : LocalNotesStorage(), NotesStorage {
-    override fun loadNotes(session: StorageSession?): List<Persisted<Note>> = withNotesDirectory(session) { folder ->
-        val key = session?.encryptionKey ?: return@withNotesDirectory emptyList()
-        fileStorageHelper.listStorageFiles(folder, storageSpec())
-            .mapNotNull { noteFromFileEncrypted(it, key) }
+    override fun loadNotes(session: StorageSession?): List<Persisted<Note>> = session?.encryptionKey?.let { key ->
+        withNotesDirectory(session) { folder ->
+            fileStorageHelper.listStorageFiles(folder, storageSpec)
+                .mapNotNull { noteFromFileEncrypted(it, key) }
+        }
     } ?: emptyList()
 
-    override fun createNote(session: StorageSession?, title: String?, content: String): Persisted<Note>? {
-        // TODO takeIf
-        val key = session?.encryptionKey ?: return null
-        return withNotesDirectory(session) { folder ->
-            val file = fileStorageHelper.createTimestampedFile(folder, title, storageSpec())
-            val noteContent = content.ifBlank { defaultContent(title) }
-            safe {
-                file.writeText(storageCipher.encrypt(noteContent, key))
-                noteFromFileEncrypted(file, key)
+    override fun createNote(session: StorageSession?, title: String?, content: String): Persisted<Note>? =
+        session?.encryptionKey?.let { key ->
+            withNotesDirectory(session) { folder ->
+                val file = fileStorageHelper.createTimestampedFile(folder, title, storageSpec)
+                val noteContent = content.ifBlank { defaultContent(title) }
+                safe {
+                    file.writeText(storageCipher.encrypt(noteContent, key))
+                    noteFromFileEncrypted(file, key)
+                }
             }
         }
-    }
 
-    override fun saveNoteContent(session: StorageSession?, file: File, content: String): Boolean {
-        // TODO takeIf
-        val key = session?.encryptionKey ?: return false
-        return session.takeIf { ensureSessionFolder(it, file) }?.let {
-            safe {
-                file.writeText(storageCipher.encrypt(content, key))
-                true
+    override fun saveNoteContent(session: StorageSession?, file: File, content: String): Boolean =
+        session?.encryptionKey?.let{ key ->
+            session.takeIf { ensureSessionFolder(it, file) }?.let {
+                safe {
+                    file.writeText(storageCipher.encrypt(content, key))
+                    true
+                }
             }
         } ?: false
-    }
 
-    override fun deleteNote(session: StorageSession?, file: File): Boolean {
-        // TODO {} replace with =
-        return session?.takeIf { ensureSessionFolder(session, file) }?.let {
+    override fun deleteNote(session: StorageSession?, file: File): Boolean =
+        session?.takeIf { ensureSessionFolder(it, file) }?.let {
             safe { file.delete() }
         } ?: false
-    }
 
 
-    private fun noteFromFileEncrypted(file: File, key: SecretKey): Persisted<Note>? {
-        // TODO {} replace with =
-        return safe {
-            val encryptedContent = file.readText()
-            val content = storageCipher.tryDecrypt(encryptedContent, key) ?: return null
-            val parsedTitle = deriveTitle(file, content)
-            val embeddedId = extractId(content)
-            val normalizedId = embeddedId ?: file.canonicalPath.hashCode()
-            Persisted(file, Note(normalizedId, parsedTitle, content))
-        }
+    private fun noteFromFileEncrypted(file: File, key: SecretKey): Persisted<Note>? = safe {
+        val encryptedContent = file.readText()
+        val content = storageCipher.tryDecrypt(encryptedContent, key) ?: return null
+        val parsedTitle = deriveTitle(file, content)
+        val embeddedId = extractId(content)
+        val normalizedId = embeddedId ?: file.canonicalPath.hashCode()
+        Persisted(file, Note(normalizedId, parsedTitle, content))
     }
 }

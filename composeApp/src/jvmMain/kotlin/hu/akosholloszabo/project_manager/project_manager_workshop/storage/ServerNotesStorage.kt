@@ -8,8 +8,8 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.network.NoteSe
 import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
 import hu.akosholloszabo.project_manager.project_manager_workshop.resources.notes_default_title
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.ResourceHelper.getStringResource
-import java.io.File
 import kotlinx.coroutines.runBlocking
+import java.io.File
 
 class ServerNotesStorage(private val client: NoteServerClient) : NotesStorage {
 
@@ -27,8 +27,6 @@ class ServerNotesStorage(private val client: NoteServerClient) : NotesStorage {
         title?.takeIf { it.isNotBlank() }
             ?: getStringResource(Res.string.notes_default_title)
 
-    private fun defaultContent(title: String?): String = "# ${defaultTitle(title)}\n\n"
-
     override fun loadNotes(session: StorageSession?): List<Persisted<Note>> = runBlocking {
         client.getAll().map(::persistNote)
     }
@@ -37,35 +35,33 @@ class ServerNotesStorage(private val client: NoteServerClient) : NotesStorage {
         val resolvedTitle = defaultTitle(title)
         val payload = NotePayload(
             title = resolvedTitle,
-            content = content.ifBlank { defaultContent(resolvedTitle) }
+            content = content.ifBlank { "# ${defaultTitle(resolvedTitle)}\n\n" }
         )
         return runBlocking {
             persistNote(client.create(payload))
         }
     }
 
-    override fun saveNoteContent(session: StorageSession?, file: File, content: String): Boolean {
-        val id = extractId(file) ?: return false
-        return runBlocking {
-            // TODO If one parameter is named, all should be named
-            client.update(id, NotePayload(title = deriveTitle(content, "No Title"), content = content))
-        }
-    }
+    override fun saveNoteContent(session: StorageSession?, file: File, content: String): Boolean =
+        extractId(file)?.let { id ->
+            runBlocking {
+                client.update(id, NotePayload(title = deriveTitle(content, "No Title"), content = content))
+                true
+            }
+        } ?: false
 
-    override fun deleteNote(session: StorageSession?, file: File): Boolean {
-        val id = extractId(file) ?: return false
-        return runBlocking {
-            client.delete(id)
-        }
-    }
+    override fun deleteNote(session: StorageSession?, file: File): Boolean =
+        extractId(file)?.let { id ->
+            runBlocking {
+                client.delete(id)
+            }
+        } ?: false
 
-    private fun persistNote(note: Note): Persisted<Note> {
-        val normalizedTitle = deriveTitle(note.content, note.title)
-        return Persisted(noteFile(note.id), note.copy(title = normalizedTitle))
-    }
-
-    // TODO Why is this necessary
-    private fun noteFile(id: Int): File = File("server-note-$id.md")
+    private fun persistNote(note: Note): Persisted<Note> =
+        Persisted(
+            file = File("server-note-${note.id}.md"),
+            value = note.copy(title = deriveTitle(note.content, note.title))
+        )
 
     private fun extractId(file: File): Int? = file.nameWithoutExtension
         .split('-')

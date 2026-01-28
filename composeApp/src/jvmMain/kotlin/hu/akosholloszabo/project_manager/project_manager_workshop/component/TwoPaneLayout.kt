@@ -9,27 +9,25 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.PreviewWrapper
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun TwoPaneLayout(
     master: @Composable ColumnScope.() -> Unit,
     detail: (@Composable ColumnScope.() -> Unit)? = null,
-    modifier: Modifier = Modifier,
-    //TODO Integer goes to resources
+    modifier: Modifier = Modifier.fillMaxSize(),
     masterWeight: Float = 0.35f,
-    //TODO Integer goes to resources
     detailWeight: Float = 1f,
-    //TODO Integer goes to resources
     gap: Dp = 16.dp,
-    //TODO Integer goes to resources
     detailPadding: Dp = 0.dp
 ) {
-    // TODO If you get a modifier from outside, you should not override
-    Row(modifier = modifier.fillMaxSize()) {
+    Row(modifier = modifier) {
         Column(
             modifier = Modifier
                 .weight(if (detail != null) masterWeight else 1f)
@@ -38,8 +36,7 @@ fun TwoPaneLayout(
         ) {
             master()
         }
-        // TODO takeIf or takeUnless could be used
-        if (detail != null) {
+        detail?.let {
             Spacer(Modifier.width(gap))
             Column(
                 modifier = Modifier
@@ -48,10 +45,19 @@ fun TwoPaneLayout(
                     .padding(detailPadding),
                 verticalArrangement = Arrangement.spacedBy(gap)
             ) {
-                detail()
+                it()
             }
         }
     }
 }
 
-// TODO Preview
+@Preview(showBackground = true)
+@Composable
+private fun TwoPaneLayoutPreview() {
+    PreviewWrapper(darkTheme = true) {
+        TwoPaneLayout(
+            master = { Text("Master") },
+            detail = { Text("Detail") }
+        )
+    }
+}

@@ -5,7 +5,8 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageS
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketMetadata
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
-import hu.akosholloszabo.project_manager.project_manager_workshop.resources.*
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.tickets_new
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.ResourceHelper.getStringResource
 import java.io.File
 import java.util.UUID.randomUUID
@@ -15,14 +16,12 @@ class EncryptedTicketsStorage(
     val storageCipher: StorageCipher,
     fileStorageHelper: FileStorageHelper,
 ) : LocalTicketsStorage(fileStorageHelper) {
-    override fun loadTickets(session: StorageSession?): List<Persisted<Ticket>> {
-        // TODO {} replace with =
-        return withEncryptedTicketsDirectory(session) { current, folder ->
+    override fun loadTickets(session: StorageSession?): List<Persisted<Ticket>> =
+        withEncryptedTicketsDirectory(session) { current, folder ->
             val key = current.encryptionKey ?: return@withEncryptedTicketsDirectory emptyList()
             fileStorageHelper.listStorageFiles(folder, storageSpec)
                 .mapNotNull { ticketFromFileEncrypted(it, key) }
         } ?: emptyList()
-    }
 
     override fun createTicket(
         session: StorageSession?,
@@ -30,68 +29,59 @@ class EncryptedTicketsStorage(
         projectId: Int,
         status: TicketStatus,
         details: String
-    ): Persisted<Ticket>? {
-        // TODO {} replace with =
-        return withEncryptedTicketsDirectory(session) { current, folder ->
-            val key = current.encryptionKey ?: return@withEncryptedTicketsDirectory null
-            val file = fileStorageHelper.createTimestampedFile(folder, title, storageSpec)
-            val defaultTitle = title.takeIf { it.isNotBlank() }
-                ?: getStringResource(Res.string.tickets_new)
-            val ticket = Ticket(
-                id = randomUUID().hashCode(),
-                title = defaultTitle,
-                projectId = projectId,
-                status = status,
-                details = details
-            )
-            safe {
-                saveTicket(session, ticket, file, details)
-                ticketFromFileEncrypted(file, key)
-            }
+    ): Persisted<Ticket>? = withEncryptedTicketsDirectory(session) { current, folder ->
+        val key = current.encryptionKey ?: return@withEncryptedTicketsDirectory null
+        val file = fileStorageHelper.createTimestampedFile(folder, title, storageSpec)
+        val defaultTitle = title.takeIf { it.isNotBlank() }
+            ?: getStringResource(Res.string.tickets_new)
+        val ticket = Ticket(
+            id = randomUUID().hashCode(),
+            title = defaultTitle,
+            projectId = projectId,
+            status = status,
+            details = details
+        )
+        safe {
+            saveTicket(session, ticket, file, details)
+            ticketFromFileEncrypted(file, key)
         }
     }
 
-    override fun saveTicket(session: StorageSession?, ticket: Ticket, file: File, details: String): Boolean {
-        // TODO takeIf/takeUnless
-        val key = session?.encryptionKey ?: return false
-        return safe {
-            val metadata = TicketMetadata(
-                ticket.id,
-                ticket.title,
-                ticket.projectId,
-                ticket.status?.name
-            )
-            file.writeText(storageCipher.encrypt(json.encodeToString(metadata), key))
-            writeDetailsEncrypted(file, key, details)
-            true
+    override fun saveTicket(session: StorageSession?, ticket: Ticket, file: File, details: String): Boolean =
+        session?.encryptionKey?.let { key ->
+            safe {
+                val metadata = TicketMetadata(
+                    ticket.id,
+                    ticket.title,
+                    ticket.projectId,
+                    ticket.status?.name
+                )
+                file.writeText(storageCipher.encrypt(json.encodeToString(metadata), key))
+                writeDetailsEncrypted(file, key, details)
+                true
+            }
         } ?: false
-    }
 
-    override fun deleteTicket(session: StorageSession?, file: File): Boolean {
-        // TODO {} replace with return
-        return session?.let {
+    override fun deleteTicket(session: StorageSession?, file: File): Boolean =
+        session?.let {
             safe {
                 fileStorageHelper.deleteDetails(file, storageSpec)
                 file.delete()
             }
         } ?: false
-    }
 
-    private fun ticketFromFileEncrypted(file: File, key: SecretKey): Persisted<Ticket>? {
-        // TODO {} replace with return
-        return safe {
-            val encrypted = file.readText()
-            val content = storageCipher.tryDecrypt(encrypted, key) ?: return null
-            val parsed = json.decodeFromString<TicketMetadata>(content)
-            val normalized = Ticket(
-                id = parsed.id,
-                title = parsed.title,
-                projectId = parsed.projectId,
-                status = parsed.status?.let { TicketStatus.fromName(it) },
-                details = readDetailsEncrypted(file, key)
-            )
-            Persisted(file, normalized)
-        }
+    private fun ticketFromFileEncrypted(file: File, key: SecretKey): Persisted<Ticket>? = safe {
+        val encrypted = file.readText()
+        val content = storageCipher.tryDecrypt(encrypted, key) ?: return null
+        val parsed = json.decodeFromString<TicketMetadata>(content)
+        val normalized = Ticket(
+            id = parsed.id,
+            title = parsed.title,
+            projectId = parsed.projectId,
+            status = parsed.status?.let { TicketStatus.fromName(it) },
+            details = readDetailsEncrypted(file, key)
+        )
+        Persisted(file, normalized)
     }
 
     private fun readDetailsEncrypted(file: File, key: SecretKey): String {

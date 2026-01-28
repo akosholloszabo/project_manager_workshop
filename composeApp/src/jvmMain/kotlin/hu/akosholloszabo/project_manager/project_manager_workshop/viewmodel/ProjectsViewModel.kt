@@ -1,11 +1,10 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
 import hu.akosholloszabo.project_manager.project_manager_workshop.store.ProjectStore
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,15 +15,12 @@ import kotlinx.coroutines.launch
 
 class ProjectsViewModel(
     private val projectStore: ProjectStore
-) {
-    //TODO Why is this not extends form a ViewModel()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-
+) : ViewModel() {
     private val _selectedProjectPath = MutableStateFlow<String?>(null)
     val selectedProjectPath: StateFlow<String?> = _selectedProjectPath.asStateFlow()
 
-    // TODO should be private
-    val isEditing = MutableStateFlow(false)
+    private val _isEditing = MutableStateFlow(false)
+    val isEditing: StateFlow<Boolean> = _isEditing.asStateFlow()
 
     private val _editName = MutableStateFlow("")
     val editName: StateFlow<String> = _editName.asStateFlow()
@@ -40,39 +36,36 @@ class ProjectsViewModel(
         _selectedProjectPath
     ) { projects, path ->
         projects.findByPath(path)
-    }.stateIn(scope, SharingStarted.Eagerly, null)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             projectStore.projects.collect { projects ->
                 val nextPath = determineSelection(projects)
-                // TODO you should check the non "_" version
-                if (nextPath != _selectedProjectPath.value) {
-                    // TODO If one parameter is named, all should be named
-                    setSelectedProjectPathInternal(nextPath, projects, refreshBuffer = !isEditing.value)
+                if (nextPath != selectedProjectPath.value) {
+                    setSelectedProjectPathInternal(
+                        path = nextPath,
+                        projects = projects,
+                        refreshBuffer = !isEditing.value
+                    )
                 }
             }
         }
     }
 
-    fun refresh() {
-        projectStore.refreshProjects()
-    }
+    fun refresh() = projectStore.refreshProjects()
 
-    // TODO What is this?
     fun createProject() {
-        scope.launch {
-            projectStore.createProject(
-                name = "",
-                description = "",
-                details = ""
-            ).let { created ->
-                _selectedProjectPath.tryEmit(created.file.canonicalPath)
-                _editName.tryEmit(created.value.name)
-                _editDescription.tryEmit(created.value.description)
-                _editDetails.tryEmit(created.value.details)
-                isEditing.tryEmit(true)
-            }
+        projectStore.createProject(
+            name = "",
+            description = "",
+            details = ""
+        )?.let { created ->
+            _selectedProjectPath.tryEmit(created.file.canonicalPath)
+            _editName.tryEmit(created.value.name)
+            _editDescription.tryEmit(created.value.description)
+            _editDetails.tryEmit(created.value.details)
+            _isEditing.tryEmit(true)
         }
     }
 
@@ -81,95 +74,73 @@ class ProjectsViewModel(
         _editName.tryEmit(current.value.name)
         _editDescription.tryEmit(current.value.description)
         _editDetails.tryEmit(current.value.details)
-        isEditing.tryEmit(true)
+        _isEditing.tryEmit(true)
     }
 
     fun saveCurrentProject() {
         if (!isEditing.value) return
-        scope.launch {
-            persistCurrentProject()
-        }
+        persistCurrentProject()
     }
 
     fun deleteCurrentProject() {
         val current = currentSelectedProject() ?: return
-        scope.launch {
-            if (projectStore.deleteProject(current)) {
-                isEditing.tryEmit(false)
-                _editName.tryEmit("")
-                _editDescription.tryEmit("")
-                _editDetails.tryEmit("")
-                _selectedProjectPath.tryEmit(null)
-            }
+        if (projectStore.deleteProject(current)) {
+            _isEditing.tryEmit(false)
+            _editName.tryEmit("")
+            _editDescription.tryEmit("")
+            _editDetails.tryEmit("")
+            _selectedProjectPath.tryEmit(null)
         }
     }
 
     fun selectProject(path: String) {
-        scope.launch {
-            // TODO you should check the non "_" version
-            if (_selectedProjectPath.value == path) return@launch
+        viewModelScope.launch {
+            if (selectedProjectPath.value == path) return@launch
             if (!saveIfEditing()) return@launch
-            // TODO If one parameter is named, all should be named
-            setSelectedProjectPathInternal(path, projectStore.projects.value, refreshBuffer = true)
+            setSelectedProjectPathInternal(path = path, projects = projectStore.projects.value, refreshBuffer = true)
         }
     }
 
-    fun updateName(value: String) {
-        _editName.tryEmit(value)
-    }
+    fun updateName(value: String) = _editName.tryEmit(value)
 
-    fun updateDescription(value: String) {
-        _editDescription.tryEmit(value)
-    }
+    fun updateDescription(value: String) = _editDescription.tryEmit(value)
 
-    fun updateDetails(value: String) {
-        _editDetails.tryEmit(value)
-    }
+    fun updateDetails(value: String) = _editDetails.tryEmit(value)
 
-    private suspend fun persistCurrentProject(): Boolean {
+    private fun persistCurrentProject(): Boolean {
         val current = currentSelectedProject() ?: return false
-        val trimmedName = _editName.value.trim().ifEmpty { current.value.name }
-        // TODO you should check the non "_" version
+        val trimmedName = editName.value.trim().ifEmpty { current.value.name }
         val updatedProject = current.value.copy(
             name = trimmedName,
-            description = _editDescription.value,
-            details = _editDetails.value
+            description = editDescription.value,
+            details = editDetails.value
         )
         val updatedPersisted = current.copy(value = updatedProject)
-        // TODO you should check the non "_" version
-        val success = projectStore.saveProject(updatedPersisted, _editDetails.value)
+        val success = projectStore.saveProject(updatedPersisted, editDetails.value)
         if (success) {
             _editName.tryEmit(updatedProject.name)
             _editDescription.tryEmit(updatedProject.description)
             _editDetails.tryEmit(updatedProject.details)
-            isEditing.tryEmit(false)
+            _isEditing.tryEmit(false)
         }
         return success
     }
 
-    private suspend fun saveIfEditing(): Boolean {
-        if (!isEditing.value) return true
-        return persistCurrentProject()
-    }
+    private fun saveIfEditing(): Boolean =
+        if (!isEditing.value) true else persistCurrentProject()
 
-    private fun currentSelectedProject(): Persisted<Project>? {
-        // TODO you should check the non "_" version
-        val path = _selectedProjectPath.value ?: return null
-        return projectStore.projects.value.firstOrNull { it.file.canonicalPath == path }
-    }
-
-    private fun determineSelection(projects: List<Persisted<Project>>): String? {
-        // TODO you should check the non "_" version
-        val current = _selectedProjectPath.value
-        return when {
-            current != null && projects.any { it.file.canonicalPath == current } -> current
-            projects.isNotEmpty() -> projects.first().file.canonicalPath
-            else -> null
+    private fun currentSelectedProject(): Persisted<Project>? =
+        selectedProjectPath.value?.let { path ->
+            projectStore.projects.value.firstOrNull { it.file.canonicalPath == path }
         }
+
+    private fun determineSelection(projects: List<Persisted<Project>>): String? = when {
+        selectedProjectPath.value?.let { current -> projects.any { it.file.canonicalPath == current } } == true -> selectedProjectPath.value
+        projects.isNotEmpty() -> projects.first().file.canonicalPath
+        else -> null
     }
 
     private fun setSelectedProjectPathInternal(
-        // TODO Should this be nullable
         path: String?,
         projects: List<Persisted<Project>>,
         refreshBuffer: Boolean
@@ -191,7 +162,6 @@ class ProjectsViewModel(
         }
     }
 
-    // TODO this can be in an extension file
     private fun List<Persisted<Project>>.findByPath(path: String?): Persisted<Project>? =
         path?.let { requested ->
             firstOrNull { it.file.canonicalPath == requested }

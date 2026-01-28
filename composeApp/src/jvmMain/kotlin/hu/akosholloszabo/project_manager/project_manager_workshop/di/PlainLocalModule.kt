@@ -1,6 +1,5 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.di
 
-import hu.akosholloszabo.project_manager.project_manager_workshop.storage.FileStorageHelper
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.NotesStorage
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.PlainNotesStorage
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.PlainProjectsStorage

@@ -9,10 +9,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.PreviewWrapper
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun <T> SelectableList(
@@ -23,23 +26,16 @@ fun <T> SelectableList(
     onItemClick: (T) -> Unit,
     itemContent: @Composable (T, Boolean) -> Unit
 ) {
-    //TODO Integer goes to resources
     LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // TODO If one parameter has named argument, all should have
         items(items, key = { keyOf(it) }) { entry ->
             val isSelected = keyOf(entry) == selectedKey
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        if (isSelected)
-                            // TODO Integer goes to resources
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-                        else
-                            Color.Transparent
+                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else Color.Transparent
                     )
                     .clickable { onItemClick(entry) }
-                    // TODO Integer goes to resources
                     .padding(8.dp)
             ) {
                 itemContent(entry, isSelected)
@@ -48,4 +44,22 @@ fun <T> SelectableList(
     }
 }
 
-// TODO Preview
+@Preview(showBackground = true)
+@Composable
+private fun SelectableListPreview() {
+    val sample = listOf("One", "Two", "Three")
+    PreviewWrapper(darkTheme = true) {
+        SelectableList(
+            items = sample,
+            selectedKey = "Two",
+            keyOf = { it },
+            onItemClick = {},
+            itemContent = { text, isSelected ->
+                Text(
+                    text,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
+                )
+            }
+        )
+    }
+}
