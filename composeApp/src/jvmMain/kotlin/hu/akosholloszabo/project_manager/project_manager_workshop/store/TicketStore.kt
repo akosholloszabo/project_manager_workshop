@@ -8,87 +8,66 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketSt
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.TicketsStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class TicketStore(
     private val workingFolderStore: WorkingFolderStore?,
     private val ticketsStorage: TicketsStorage,
     private val storageBackend: StorageBackend
 ) {
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-    private val sessionValue: StorageSession? get() = workingFolderStore?.session?.value
 
     private val _tickets = MutableStateFlow<List<Persisted<Ticket>>>(emptyList())
     val tickets: StateFlow<List<Persisted<Ticket>>> = _tickets.asStateFlow()
 
     init {
-        scope.launch {
-            val sessionFlow = workingFolderStore?.session
-            if (sessionFlow == null) {
-                refreshTicketsInternal(null)
-            } else {
+        CoroutineScope(Dispatchers.IO).launch {
+            workingFolderStore?.session?.let { sessionFlow ->
                 sessionFlow.collectLatest { session ->
-                    refreshTicketsInternal(session)
+                    refresh(session)
+                }
+            } ?: refresh(null)
+        }
+    }
+
+    fun refresh(session: StorageSession? = workingFolderStore?.session?.value) =
+        _tickets.tryEmit(ticketsStorage.loadTickets(session))
+
+    fun createTicket(): Persisted<Ticket>? =
+        ticketsStorage.createTicket(
+            workingFolderStore?.session?.value,
+            title = "",
+            projectId = -1,
+            status = TicketStatus.BACKLOG,
+            details = ""
+        )?.also {
+            refresh()
+        }
+
+    fun saveTicket(persisted: Persisted<Ticket>, draft: Ticket): Boolean =
+        ticketsStorage.saveTicket(
+            workingFolderStore?.session?.value,
+            draft,
+            persisted.file,
+            draft.details
+        )
+            .also { success ->
+                if (success) {
+                    refresh()
                 }
             }
-        }
-    }
 
-    fun refresh() {
-        refreshTickets()
-    }
-
-    fun createTicket(): Persisted<Ticket>? {
-        val session = sessionValue
-        if (requiresSession() && session == null) return null
-        val created = ticketsStorage.createTicket(
-            session, title = "", projectId = -1, status = TicketStatus.Backlog, details = ""
+    fun deleteTicket(persisted: Persisted<Ticket>): Boolean =
+        ticketsStorage.deleteTicket(
+            workingFolderStore?.session?.value,
+            persisted.file
         )
-        if (created != null) {
-            refreshTickets()
-        }
-        return created
-    }
-
-    fun saveTicket(persisted: Persisted<Ticket>, draft: Ticket): Boolean {
-        val session = sessionValue
-        if (requiresSession() && session == null) return false
-        val success = ticketsStorage.saveTicket(session, draft, persisted.file, draft.details)
-        if (success) {
-            refreshTickets()
-        }
-        return success
-    }
-
-    fun deleteTicket(persisted: Persisted<Ticket>): Boolean {
-        val session = sessionValue
-        if (requiresSession() && session == null) return false
-        val success = ticketsStorage.deleteTicket(session, persisted.file)
-        if (success) {
-            refreshTickets()
-        }
-        return success
-    }
-
-    private fun refreshTickets() {
-        scope.launch {
-            refreshTicketsInternal(sessionValue)
-        }
-    }
-
-    private suspend fun refreshTicketsInternal(session: StorageSession?) {
-        val loaded = withContext(Dispatchers.IO) {
-            ticketsStorage.loadTickets(session)
-        }
-        _tickets.emit(loaded)
-    }
-
-    private fun requiresSession(): Boolean = storageBackend != StorageBackend.SERVER
+            .also { success ->
+                if (success) {
+                    refresh()
+                }
+            }
 }

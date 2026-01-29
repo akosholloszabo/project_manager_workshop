@@ -10,9 +10,8 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 abstract class LocalTicketsStorage(
-    val fileStorageHelper: FileStorageHelper,
-
-    ) : TicketsStorage {
+    protected val fileStorageHelper: FileStorageHelper
+) : TicketsStorage {
 
     protected val storageSpec = StorageSpec(
         folderName = "tickets",
@@ -52,18 +51,16 @@ abstract class LocalTicketsStorage(
 
     protected inline fun <T> safe(block: () -> T): T? = runCatching(block).getOrNull()
 
-    protected fun ticketFromFile(file: File): Persisted<Ticket>? {
-        return safe {
-            val content = file.readText()
-            val parsed = json.decodeFromString<TicketMetadata>(content)
-            val normalized = Ticket(
-                id = parsed.id,
-                title = parsed.title,
-                projectId = parsed.projectId,
-                status = parsed.status?.let { TicketStatus.fromName(it) },
-                details = readDetails(file)
-            )
-            Persisted(file, normalized)
-        }
+    protected fun ticketFromFile(file: File): Persisted<Ticket>? = safe {
+        val content = file.readText()
+        val parsed = json.decodeFromString<TicketMetadata>(content)
+        val normalized = Ticket(
+            id = parsed.id,
+            title = parsed.title,
+            projectId = parsed.projectId,
+            status = parsed.status?.let { TicketStatus.fromName(it) },
+            details = readDetails(file)
+        )
+        Persisted(file, normalized)
     }
 }

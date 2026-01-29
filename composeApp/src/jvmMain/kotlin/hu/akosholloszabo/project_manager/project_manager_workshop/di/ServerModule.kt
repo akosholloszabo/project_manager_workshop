@@ -11,7 +11,7 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.storage.Server
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.ServerTicketsStorage
 import hu.akosholloszabo.project_manager.project_manager_workshop.storage.TicketsStorage
 import io.ktor.client.*
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
@@ -32,10 +32,12 @@ val serverModule = module {
         )
     }
 
-    single{loadTrustManager(
-        serverKeystorePassword = getProperty("project_manager.serverKeystorePassword"),
-        serverKeystorePath = getProperty("project_manager.serverKeystorePath")
-    )}
+    single {
+        loadTrustManager(
+            serverKeystorePassword = getProperty("project_manager.serverKeystorePassword"),
+            serverKeystorePath = getProperty("project_manager.serverKeystorePath")
+        )
+    }
     singleOf(::httpClient)
 
     singleOf(::NoteServerClient)
@@ -47,6 +49,7 @@ val serverModule = module {
     singleOf(::ServerTicketsStorage) bind TicketsStorage::class
 }
 
+// Trust store helpers live next to the module for now; move to a shared network module if reused elsewhere.
 private fun loadTrustManager(
     //project_manager.serverKeystorePassword
     serverKeystorePassword: String,

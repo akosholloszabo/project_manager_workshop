@@ -5,7 +5,6 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageS
 class PlainWorkingFolderStore : WorkingFolderStore() {
     override val requiresPassword: Boolean = false
 
-    override fun confirmFolder(folder: String, password: String?) {
+    override fun confirmFolder(folder: String, password: String?) =
         updateSession(StorageSession(folder, null))
-    }
 }

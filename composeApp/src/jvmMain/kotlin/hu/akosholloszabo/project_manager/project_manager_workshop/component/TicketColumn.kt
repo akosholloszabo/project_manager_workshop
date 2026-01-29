@@ -19,26 +19,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketCardState
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketColumnState
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.tickets_no_items
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.PreviewWrapper
+import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun TicketColumn(
+    modifier: Modifier = Modifier,
     columnState: TicketColumnState,
-    onTicketSelected: (Persisted<Ticket>) -> Unit,
-    modifier: Modifier = Modifier
+    onTicketSelected: (Persisted<Ticket>) -> Unit
 ) {
     Column(
         modifier = modifier
-            .width(260.dp)
-            .fillMaxHeight()
-            .background(
-                MaterialTheme.colorScheme.surfaceVariant,
-                RoundedCornerShape(12.dp)
-            )
-            .padding(12.dp)
     ) {
-        Text(columnState.status.displayName, style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(columnState.status.resId), style = MaterialTheme.typography.titleMedium)
+
         Spacer(modifier = Modifier.height(8.dp))
         Column(
             modifier = Modifier
@@ -49,7 +49,7 @@ fun TicketColumn(
         ) {
             if (columnState.cards.isEmpty()) {
                 Text(
-                    getText("tickets.no.items"),
+                    stringResource(Res.string.tickets_no_items),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -57,10 +57,38 @@ fun TicketColumn(
                 columnState.cards.forEach { card ->
                     TicketCard(
                         cardState = card,
-                        onClick = { onTicketSelected(card.persisted) }
+                        onClick = { onTicketSelected(card.persisted) },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
         }
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+private fun TicketColumnPreview() =
+    PreviewWrapper(darkTheme = true) {
+        TicketColumn(
+            modifier = Modifier
+                .width(260.dp)
+                .fillMaxHeight()
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    RoundedCornerShape(12.dp)
+                )
+                .padding(12.dp),
+            columnState = TicketColumnState(
+                status = TicketStatus.BACKLOG,
+                cards = listOf(
+                    TicketCardState(
+                        persisted = Persisted(file = java.io.File("preview"), value = Ticket(1, "Title", 1, null, "")),
+                        projectName = "Proj",
+                        isSelected = false
+                    )
+                )
+            ),
+            onTicketSelected = {},
+        )
+    }

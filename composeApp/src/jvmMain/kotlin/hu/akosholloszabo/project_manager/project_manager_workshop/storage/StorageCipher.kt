@@ -1,6 +1,12 @@
 package hu.akosholloszabo.project_manager.project_manager_workshop.storage
 
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.cipher_encryption_algorithm
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.cipher_iv_size
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.cipher_key_algorithm
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.cipher_key_speed
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.cipher_message_digest_algorithm
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.ResourceHelper.getStringResource
 import org.koin.core.component.KoinComponent
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
@@ -13,11 +19,11 @@ import javax.crypto.spec.SecretKeySpec
 
 class StorageCipher() : KoinComponent {
     private val secureRandom: SecureRandom = SecureRandom()
-    private val encryptionAlgorithm: String = getText("cipher.encryption_algorithm")
-    private val messageDigestAlgorithm: String = getText("cipher.message_digest_algorithm")
-    private val keyAlgorithm: String = getText("cipher.key_algorithm")
-    private val keySpeed: String = getText("cipher.key_speed")
-    private val ivSize: Int = getText("cipher.iv_size").toInt()
+    private val encryptionAlgorithm: String = getStringResource(Res.string.cipher_encryption_algorithm)
+    private val messageDigestAlgorithm: String = getStringResource(Res.string.cipher_message_digest_algorithm)
+    private val keyAlgorithm: String = getStringResource(Res.string.cipher_key_algorithm)
+    private val keySpeed: String = getStringResource(Res.string.cipher_key_speed)
+    private val ivSize: Int = getStringResource(Res.string.cipher_iv_size).toInt()
 
     fun deriveKey(password: String): SecretKey {
         val digest = MessageDigest.getInstance(messageDigestAlgorithm)

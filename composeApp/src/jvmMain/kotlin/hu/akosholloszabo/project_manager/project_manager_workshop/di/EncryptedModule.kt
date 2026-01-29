@@ -14,7 +14,7 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 val encryptedModule = module {
-    singleOf(::StorageCipher)
+    single { StorageCipher() }
     singleOf(::EncryptedNotesStorage) bind NotesStorage::class
     singleOf(::EncryptedProjectsStorage) bind ProjectsStorage::class
     singleOf(::EncryptedTicketsStorage) bind TicketsStorage::class

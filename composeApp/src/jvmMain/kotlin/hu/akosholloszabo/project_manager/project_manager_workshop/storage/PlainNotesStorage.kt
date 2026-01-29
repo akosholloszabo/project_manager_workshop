@@ -5,36 +5,34 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persiste
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageSession
 import java.io.File
 
-class PlainNotesStorage(override val fileStorageHelper: FileStorageHelper) :
-    LocalNotesStorage(), NotesStorage {
+class PlainNotesStorage(
+    override val fileStorageHelper: FileStorageHelper,
+) : LocalNotesStorage(), NotesStorage {
     override fun loadNotes(session: StorageSession?): List<Persisted<Note>> = withNotesDirectory(session) { folder ->
-        fileStorageHelper.listStorageFiles(folder, storageSpec())
+        fileStorageHelper.listStorageFiles(folder, storageSpec)
             .mapNotNull(::noteFromFile)
     } ?: emptyList()
 
-    override fun createNote(session: StorageSession?, title: String?, content: String): Persisted<Note>? {
-        return withNotesDirectory(session) { folder ->
-            val file = fileStorageHelper.createTimestampedFile(folder, title, storageSpec())
+    override fun createNote(session: StorageSession?, title: String?, content: String): Persisted<Note>? =
+        withNotesDirectory(session) { folder ->
+            val file = fileStorageHelper.createTimestampedFile(folder, title, storageSpec)
             val noteContent = content.ifBlank { defaultContent(title) }
             safe {
                 file.writeText(noteContent)
                 noteFromFile(file)
             }
         }
-    }
 
-    override fun saveNoteContent(session: StorageSession?, file: File, content: String): Boolean {
-        return session?.takeIf { ensureSessionFolder(session, file) }?.let {
+    override fun saveNoteContent(session: StorageSession?, file: File, content: String): Boolean =
+        session?.takeIf { ensureSessionFolder(it, file) }?.let {
             safe {
                 file.writeText(content)
                 true
             }
         } ?: false
-    }
 
-    override fun deleteNote(session: StorageSession?, file: File): Boolean {
-        return session?.takeIf { ensureSessionFolder(session, file) }?.let {
+    override fun deleteNote(session: StorageSession?, file: File): Boolean =
+        session?.takeIf { ensureSessionFolder(it, file) }?.let {
             safe { file.delete() }
         } ?: false
-    }
 }

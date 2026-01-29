@@ -13,7 +13,7 @@ interface ProjectsStorage : KoinComponent {
         name: String,
         description: String,
         details: String
-    ): Persisted<Project>
+    ): Persisted<Project>?
 
     fun saveProject(session: StorageSession?, project: Project, file: File, details: String): Boolean
     fun deleteProject(session: StorageSession?, file: File): Boolean

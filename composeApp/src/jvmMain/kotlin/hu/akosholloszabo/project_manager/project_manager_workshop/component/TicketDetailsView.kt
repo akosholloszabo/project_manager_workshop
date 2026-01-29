@@ -12,8 +12,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.m3.Markdown
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
+import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.ticket_project_header
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.ticket_status_header
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.tickets_details_empty
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.PreviewWrapper
+import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import java.io.File
 
 @Composable
 fun TicketDetailsView(
@@ -26,13 +35,13 @@ fun TicketDetailsView(
             style = MaterialTheme.typography.headlineSmall
         )
         Text(
-            text = getText("ticket.project.header").format(projectName),
+            text = stringResource(Res.string.ticket_project_header, projectName),
             style = MaterialTheme.typography.titleMedium
         )
         Text(
-            text = (selectedTicket.status?.displayName
-                ?: getText("tickets.status.missing"))
-                .let { getText("ticket.status.header").format(it) },
+            text = (selectedTicket.status?.resId?.let { stringResource(it) }
+                ?: stringResource(Res.string.tickets_details_empty))
+                .let { stringResource(Res.string.ticket_status_header, it) },
             style = MaterialTheme.typography.bodyMedium
         )
         SelectionContainer(
@@ -42,8 +51,20 @@ fun TicketDetailsView(
                 .verticalScroll(rememberScrollState())
         ) {
             Markdown(selectedTicket.details.ifBlank {
-                getText("tickets.details.empty")
+                stringResource(Res.string.tickets_details_empty)
             })
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TicketDetailsViewPreview() {
+    val ticket = Persisted(File("preview"), Ticket(1, "Title", 1, TicketStatus.BACKLOG, "Details"))
+    PreviewWrapper(darkTheme = true) {
+        TicketDetailsView(
+            selectedTicket = ticket.value,
+            projectName = "Project Alpha"
+        )
     }
 }

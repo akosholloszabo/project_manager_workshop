@@ -6,7 +6,9 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.model.Ticket
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketPayload
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.TicketStatus
 import hu.akosholloszabo.project_manager.project_manager_workshop.network.TicketServerClient
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.ticket_default_title
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.ResourceHelper.getStringResource
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
@@ -22,7 +24,8 @@ class ServerTicketsStorage(private val client: TicketServerClient) : TicketsStor
         status: TicketStatus,
         details: String
     ): Persisted<Ticket> {
-        val resolvedTitle = title.takeIf { it.isNotBlank() } ?: getText("ticket.default.title")
+        val resolvedTitle = title.takeIf { it.isNotBlank() }
+            ?: getStringResource(Res.string.ticket_default_title)
         val payload = TicketPayload(
             title = resolvedTitle,
             projectId = projectId,
@@ -34,8 +37,8 @@ class ServerTicketsStorage(private val client: TicketServerClient) : TicketsStor
         }
     }
 
-    override fun saveTicket(session: StorageSession?, ticket: Ticket, file: File, details: String): Boolean {
-        return runBlocking {
+    override fun saveTicket(session: StorageSession?, ticket: Ticket, file: File, details: String): Boolean =
+        runBlocking {
             val payload = TicketPayload(
                 title = ticket.title,
                 projectId = ticket.projectId,
@@ -43,22 +46,20 @@ class ServerTicketsStorage(private val client: TicketServerClient) : TicketsStor
                 details = details
             )
             client.update(ticket.id, payload)
+            true
         }
-    }
 
-    override fun deleteTicket(session: StorageSession?, file: File): Boolean {
-        val id = extractId(file) ?: return false
-        return runBlocking {
-            client.delete(id)
-        }
-    }
+    override fun deleteTicket(session: StorageSession?, file: File): Boolean =
+        file.nameWithoutExtension
+            .split('-')
+            .lastOrNull()
+            ?.toIntOrNull()?.let { id ->
+                runBlocking {
+                    client.delete(id)
+                }
+            } ?: false
 
-    private fun persistTicket(ticket: Ticket): Persisted<Ticket> = Persisted(ticketFile(ticket.id), ticket)
+    private fun persistTicket(ticket: Ticket): Persisted<Ticket> =
+        Persisted(File("server-ticket-${ticket.id}.json"), ticket)
 
-    private fun ticketFile(id: Int): File = File("server-ticket-$id.json")
-
-    private fun extractId(file: File): Int? = file.nameWithoutExtension
-        .split('-')
-        .lastOrNull()
-        ?.toIntOrNull()
 }

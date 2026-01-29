@@ -12,8 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -23,34 +24,36 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mikepenz.markdown.m3.Markdown
-import hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.CrudActionBar
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.DetailEditorPane
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.DetailHeader
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.EmptyDetailHint
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.SelectableList
-import hu.akosholloszabo.project_manager.project_manager_workshop.component.SimpleDivider
 import hu.akosholloszabo.project_manager.project_manager_workshop.component.TwoPaneLayout
-import hu.akosholloszabo.project_manager.project_manager_workshop.di.localModule
-import hu.akosholloszabo.project_manager.project_manager_workshop.di.mainModule
-import hu.akosholloszabo.project_manager.project_manager_workshop.di.plainLocalModule
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.CrudActionLabels
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Persisted
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.Project
-import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.KoinUtilities.getText
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.crud_delete
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.crud_edit
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.crud_save
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.projects_empty_description
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.projects_empty_details
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.projects_empty_message
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.projects_field_description
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.projects_field_details
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.projects_field_name
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.projects_new
+import hu.akosholloszabo.project_manager.project_manager_workshop.resources.projects_title
+import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.PreviewWrapper
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.StateAndEvent
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
+import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.koin.compose.KoinApplicationPreview
-import org.koin.fileProperties
 import kotlin.io.path.Path
 
 @Composable
 fun ProjectsScreen(projectsViewModel: ProjectsViewModel) {
-    LaunchedEffect(projectsViewModel) {
-        projectsViewModel.refresh()
-    }
-
     val selectedProjectPath by projectsViewModel.selectedProjectPath.collectAsStateWithLifecycle()
     val isEditing by projectsViewModel.isEditing.collectAsStateWithLifecycle()
     val editName by projectsViewModel.editName.collectAsStateWithLifecycle()
@@ -58,32 +61,33 @@ fun ProjectsScreen(projectsViewModel: ProjectsViewModel) {
     val editDetails by projectsViewModel.editDetails.collectAsStateWithLifecycle()
     val selectedProject by projectsViewModel.selectedProject.collectAsStateWithLifecycle()
     val projects by projectsViewModel.projects.collectAsStateWithLifecycle()
-    val isEditingState = StateAndEvent(
-        state = isEditing,
-        event = { shouldEdit -> if (shouldEdit) projectsViewModel.startEditing() }
-    )
-    val nameState = StateAndEvent(state = editName, event = projectsViewModel::updateName)
-    val descriptionState = StateAndEvent(state = editDescription, event = projectsViewModel::updateDescription)
-    val detailsState = StateAndEvent(state = editDetails, event = projectsViewModel::updateDetails)
+
+    LaunchedEffect(projectsViewModel) {
+        projectsViewModel.refresh()
+    }
 
     ProjectsScreenContent(
         selectedProjectPath = selectedProjectPath,
         projects = projects,
         selectedProject = selectedProject,
-        isEditing = isEditingState,
-        onCreateProject = projectsViewModel::createProject,
-        onSaveProject = projectsViewModel::saveCurrentProject,
-        onDeleteProject = projectsViewModel::deleteCurrentProject,
+        isEditing = StateAndEvent(
+            value = isEditing,
+            event = { shouldEdit -> if (shouldEdit) projectsViewModel.startEditing() }
+        ),
+        onCreateProject = { projectsViewModel.createProject() },
+        onSaveProject = { projectsViewModel.saveCurrentProject() },
+        onDeleteProject = { projectsViewModel.deleteCurrentProject() },
         onSelectProject = projectsViewModel::selectProject,
-        name = nameState,
-        description = descriptionState,
-        details = detailsState,
+        name = StateAndEvent(value = editName, event = projectsViewModel::updateName),
+        description = StateAndEvent(value = editDescription, event = projectsViewModel::updateDescription),
+        details = StateAndEvent(value = editDetails, event = projectsViewModel::updateDetails),
         modifier = Modifier.fillMaxSize()
     )
 }
 
 @Composable
 fun ProjectsScreenContent(
+    modifier: Modifier = Modifier,
     selectedProjectPath: String?,
     projects: List<Persisted<Project>>,
     selectedProject: Persisted<Project>?,
@@ -94,117 +98,116 @@ fun ProjectsScreenContent(
     onSelectProject: (String) -> Unit,
     name: StateAndEvent<String>,
     description: StateAndEvent<String>,
-    details: StateAndEvent<String>,
-    modifier: Modifier = Modifier
+    details: StateAndEvent<String>
 ) {
-    Column(modifier = modifier.padding(16.dp)) {
-        Text(getText("projects.title"), style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(8.dp))
+    Scaffold(modifier = modifier.padding(16.dp)) { _ ->
+        Column() {
+            Text(stringResource(Res.string.projects_title), style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.height(8.dp))
 
-        TwoPaneLayout(
-            modifier = Modifier.fillMaxSize(),
-            masterWeight = 0.33f,
-            master = {
-                SelectableList(
-                    items = projects,
-                    selectedKey = selectedProjectPath,
-                    modifier = Modifier.fillMaxHeight(),
-                    keyOf = { it.file.canonicalPath },
-                    onItemClick = { entry -> onSelectProject(entry.file.canonicalPath) }
-                ) { project, _ ->
-                    Text(project.value.name, style = MaterialTheme.typography.titleMedium)
-                    SimpleDivider(modifier = Modifier.padding(top = 8.dp))
-                }
-            },
-            detail = {
-                DetailEditorPane(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalSpacing = 12.dp,
-                    header = {
-                        DetailHeader(
-                            title = selectedProject?.value?.name ?: getText("projects.title"),
-                            actions = {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.End
-                                ) {
-                                    CrudActionBar(
-                                        hasSelection = selectedProject != null,
-                                        isEditing = isEditing.state,
-                                        onNew = onCreateProject,
-                                        onEdit = { isEditing.event(true) },
-                                        onSave = onSaveProject,
-                                        onDelete = onDeleteProject,
-                                        labels = CrudActionLabels(
-                                            newLabel = getText("projects.new"),
-                                            editLabel = getText("crud.edit"),
-                                            saveLabel = getText("crud.save"),
-                                            deleteLabel = getText("crud.delete")
+            TwoPaneLayout(
+                modifier = Modifier.fillMaxSize(),
+                masterWeight = 0.33f,
+                master = {
+                    SelectableList(
+                        items = projects,
+                        selectedKey = selectedProjectPath,
+                        modifier = Modifier.fillMaxHeight(),
+                        keyOf = { it.file.canonicalPath },
+                        onItemClick = { entry -> onSelectProject(entry.file.canonicalPath) }
+                    ) { project, _ ->
+                        Text(text = project.value.name, style = MaterialTheme.typography.titleMedium)
+                        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+                    }
+                },
+                detail = {
+                    DetailEditorPane(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalSpacing = 12.dp,
+                        header = {
+                            DetailHeader(
+                                title = selectedProject?.value?.name ?: stringResource(Res.string.projects_title),
+                                actions = {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        CrudActionBar(
+                                            hasSelection = selectedProject != null,
+                                            isEditing = isEditing.value,
+                                            onNew = onCreateProject,
+                                            onEdit = { isEditing.event(true) },
+                                            onSave = onSaveProject,
+                                            onDelete = onDeleteProject,
+                                            labels = CrudActionLabels(
+                                                newLabel = stringResource(Res.string.projects_new),
+                                                editLabel = stringResource(Res.string.crud_edit),
+                                                saveLabel = stringResource(Res.string.crud_save),
+                                                deleteLabel = stringResource(Res.string.crud_delete)
+                                            ),
+                                            modifier = Modifier.fillMaxWidth()
                                         )
-                                    )
+                                    }
                                 }
+                            )
+                        },
+                        isEditing = isEditing.value,
+                        editContent = {
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                TextField(
+                                    value = name.value,
+                                    onValueChange = name.event,
+                                    label = { Text(stringResource(Res.string.projects_field_name)) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                TextField(
+                                    value = description.value,
+                                    onValueChange = description.event,
+                                    label = { Text(stringResource(Res.string.projects_field_description)) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(120.dp),
+                                    maxLines = Int.MAX_VALUE
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                TextField(
+                                    value = details.value,
+                                    onValueChange = details.event,
+                                    label = { Text(stringResource(Res.string.projects_field_details)) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(220.dp),
+                                    maxLines = Int.MAX_VALUE
+                                )
                             }
-                        )
-                    },
-                    isEditing = isEditing.state,
-                    editContent = {
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            TextField(
-                                value = name.state,
-                                onValueChange = name.event,
-                                label = { Text(getText("projects.field.name")) },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            TextField(
-                                value = description.state,
-                                onValueChange = description.event,
-                                label = { Text(getText("projects.field.description")) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(120.dp),
-                                maxLines = Int.MAX_VALUE
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            TextField(
-                                value = details.state,
-                                onValueChange = details.event,
-                                label = { Text(getText("projects.field.details")) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(220.dp),
-                                maxLines = Int.MAX_VALUE
+                        },
+                        viewContent = {
+                            selectedProject?.let { project ->
+                                Column(modifier = Modifier.fillMaxSize()) {
+                                    Text(text = project.value.name, style = MaterialTheme.typography.titleLarge)
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(text = project.value.description, style = MaterialTheme.typography.bodyMedium)
+                                    Spacer(Modifier.height(12.dp))
+                                    SelectionContainer(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .verticalScroll(rememberScrollState())
+                                    ) {
+                                        Markdown(
+                                            project.value.details.ifBlank { stringResource(Res.string.projects_empty_details) }
+                                        )
+                                    }
+                                }
+                            } ?: EmptyDetailHint(
+                                message = stringResource(Res.string.projects_empty_message),
+                                description = stringResource(Res.string.projects_empty_description)
                             )
                         }
-                    },
-                    viewContent = {
-                        selectedProject?.let { project ->
-                            Column(modifier = Modifier.fillMaxSize()) {
-                                Text(project.value.name, style = MaterialTheme.typography.titleLarge)
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    project.value.description,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Spacer(Modifier.height(12.dp))
-                                SelectionContainer(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .verticalScroll(rememberScrollState())
-                                ) {
-                                    Markdown(
-                                        project.value.details.ifBlank { getText("projects.empty.details") }
-                                    )
-                                }
-                            }
-                        } ?: EmptyDetailHint(
-                            message = getText("projects.empty.message"),
-                            description = getText("projects.empty.description")
-                        )
-                    }
-                )
-            }
-        )
+                    )
+                }
+            )
+        }
     }
 }
 
@@ -226,28 +229,20 @@ fun ProjectsScreenPreviewLight() {
         details = "# Status\nMore preview content"
     )
 
-    KoinApplicationPreview(application = {
-        fileProperties("/koinLocal.properties")
-        fileProperties("/strings.properties")
-        modules(mainModule, localModule, plainLocalModule)
-    }) {
-        AppTheme(darkTheme = false) {
-            Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-                ProjectsScreenContent(
-                    projects = listOf(firstProject, secondProject),
-                    selectedProjectPath = firstProject.file.absolutePath,
-                    selectedProject = firstProject,
-                    isEditing = StateAndEvent(state = true, event = {}),
-                    name = StateAndEvent(state = firstProject.value.name, event = {}),
-                    description = StateAndEvent(state = firstProject.value.description, event = {}),
-                    details = StateAndEvent(state = firstProject.value.details, event = {}),
-                    onCreateProject = {},
-                    onSaveProject = {},
-                    onDeleteProject = {},
-                    onSelectProject = {},
-                )
-            }
-        }
+    PreviewWrapper(darkTheme = false) {
+        ProjectsScreenContent(
+            projects = listOf(firstProject, secondProject),
+            selectedProjectPath = firstProject.file.absolutePath,
+            selectedProject = firstProject,
+            isEditing = StateAndEvent(value = true, event = {}),
+            name = StateAndEvent(value = firstProject.value.name, event = {}),
+            description = StateAndEvent(value = firstProject.value.description, event = {}),
+            details = StateAndEvent(value = firstProject.value.details, event = {}),
+            onCreateProject = {},
+            onSaveProject = {},
+            onDeleteProject = {},
+            onSelectProject = {},
+        )
     }
 }
 
@@ -268,29 +263,20 @@ fun ProjectsScreenPreviewDark() {
         description = "Second project preview",
         details = "# Status\nMore preview content"
     )
-
-    KoinApplicationPreview(application = {
-        fileProperties("/koinLocal.properties")
-        fileProperties("/strings.properties")
-        modules(mainModule, localModule, plainLocalModule)
-    }) {
-        AppTheme(darkTheme = true) {
-            Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-                ProjectsScreenContent(
-                    projects = listOf(firstProject, secondProject),
-                    selectedProjectPath = firstProject.file.absolutePath,
-                    selectedProject = firstProject,
-                    isEditing = StateAndEvent(state = true, event = {}),
-                    name = StateAndEvent(state = firstProject.value.name, event = {}),
-                    description = StateAndEvent(state = firstProject.value.description, event = {}),
-                    details = StateAndEvent(state = firstProject.value.details, event = {}),
-                    onCreateProject = {},
-                    onSaveProject = {},
-                    onDeleteProject = {},
-                    onSelectProject = {},
-                )
-            }
-        }
+    PreviewWrapper(darkTheme = true) {
+        ProjectsScreenContent(
+            projects = listOf(firstProject, secondProject),
+            selectedProjectPath = firstProject.file.absolutePath,
+            selectedProject = firstProject,
+            isEditing = StateAndEvent(value = true, event = {}),
+            name = StateAndEvent(value = firstProject.value.name, event = {}),
+            description = StateAndEvent(value = firstProject.value.description, event = {}),
+            details = StateAndEvent(value = firstProject.value.details, event = {}),
+            onCreateProject = {},
+            onSaveProject = {},
+            onDeleteProject = {},
+            onSelectProject = {},
+        )
     }
 }
 

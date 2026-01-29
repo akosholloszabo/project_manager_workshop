@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 abstract class WorkingFolderStore {
-    protected val _session = MutableStateFlow<StorageSession?>(null)
+    private val _session = MutableStateFlow<StorageSession?>(null)
     val session: StateFlow<StorageSession?> = _session.asStateFlow()
 
     protected val _workingFolder = MutableStateFlow<String?>(null)
