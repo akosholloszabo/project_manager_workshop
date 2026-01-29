@@ -10,7 +10,7 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.AppTheme
 
 @Composable
 fun PreviewWrapper(
-    darkTheme: Boolean ,
+    darkTheme: Boolean,
     content: @Composable () -> Unit,
 ) {
     AppTheme(darkTheme = darkTheme) {

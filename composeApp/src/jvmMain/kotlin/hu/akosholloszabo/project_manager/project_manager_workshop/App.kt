@@ -16,6 +16,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,10 +25,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import hu.akosholloszabo.project_manager.project_manager_workshop.di.localModule
-import hu.akosholloszabo.project_manager.project_manager_workshop.di.mainModule
-import hu.akosholloszabo.project_manager.project_manager_workshop.di.plainLocalModule
 import hu.akosholloszabo.project_manager.project_manager_workshop.model.StorageBackend
 import hu.akosholloszabo.project_manager.project_manager_workshop.resources.Res
 import hu.akosholloszabo.project_manager.project_manager_workshop.resources.app_tab_notes
@@ -39,20 +36,37 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.screens.NotesS
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.ProjectsScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.TicketsScreen
 import hu.akosholloszabo.project_manager.project_manager_workshop.screens.WorkingFolderScreen
+import hu.akosholloszabo.project_manager.project_manager_workshop.storage.FileStorageHelper
+import hu.akosholloszabo.project_manager.project_manager_workshop.storage.PlainNotesStorage
+import hu.akosholloszabo.project_manager.project_manager_workshop.storage.PlainProjectsStorage
+import hu.akosholloszabo.project_manager.project_manager_workshop.storage.PlainTicketsStorage
+import hu.akosholloszabo.project_manager.project_manager_workshop.store.NoteStore
+import hu.akosholloszabo.project_manager.project_manager_workshop.store.PlainWorkingFolderStore
+import hu.akosholloszabo.project_manager.project_manager_workshop.store.ProjectStore
+import hu.akosholloszabo.project_manager.project_manager_workshop.store.TicketStore
+import hu.akosholloszabo.project_manager.project_manager_workshop.store.WorkingFolderStore
+import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.NotesViewModel
+import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.ProjectsViewModel
+import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.TicketsViewModel
 import hu.akosholloszabo.project_manager.project_manager_workshop.viewmodel.WorkingFolderViewModel
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.koin.compose.KoinApplicationPreview
-import org.koin.compose.koinInject
-import org.koin.fileProperties
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun App() {
+fun App(
+    storageBackend: StorageBackend,
+    notesViewModel: NotesViewModel,
+    projectsViewModel: ProjectsViewModel,
+    ticketsViewModel: TicketsViewModel,
+    workingFolderViewModel: WorkingFolderViewModel?,
+) {
     var currentScreen by rememberSaveable { mutableStateOf<Screen>(Screen.Notes) }
-    val needsWorkingFolder = koinInject<StorageBackend>() != StorageBackend.SERVER
+    val needsWorkingFolder = storageBackend != StorageBackend.SERVER
     val workingFolder by if (needsWorkingFolder) {
-        koinInject<WorkingFolderViewModel>().selectedFolder.collectAsStateWithLifecycle()
+        workingFolderViewModel?.selectedFolder?.collectAsState(initial = null)
+            ?: remember { mutableStateOf(null) }
     } else {
         remember { mutableStateOf(null) }
     }
@@ -85,8 +99,9 @@ fun App() {
                         .padding(innerPadding)
                 ) {
                     if (needsWorkingFolder && workingFolder == null) {
+                        val wfVm: WorkingFolderViewModel = requireNotNull(workingFolderViewModel)
                         WorkingFolderScreen(
-                            workingFolderViewModel = koinInject<WorkingFolderViewModel>(),
+                            workingFolderViewModel = wfVm,
                             onContinue = { currentScreen = Screen.Notes },
                         )
                     } else {
@@ -113,9 +128,9 @@ fun App() {
 
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                                 when (currentScreen) {
-                                    is Screen.Notes -> NotesScreen(koinInject())
-                                    is Screen.Projects -> ProjectsScreen(koinInject())
-                                    is Screen.Tickets -> TicketsScreen(koinInject())
+                                    is Screen.Notes -> NotesScreen(notesViewModel)
+                                    is Screen.Projects -> ProjectsScreen(projectsViewModel)
+                                    is Screen.Tickets -> TicketsScreen(ticketsViewModel)
                                 }
                             }
                         }
@@ -129,11 +144,29 @@ fun App() {
 @Preview(showBackground = true, widthDp = 360, heightDp = 640)
 @Composable
 fun AppPreview() {
-    KoinApplicationPreview(application = {
-        fileProperties("/koinLocal.properties")
-        fileProperties("/strings.properties")
-        modules(mainModule, localModule, plainLocalModule)
-    }) {
-        App()
-    }
+    val backend = StorageBackend.fromPropertyValue(Properties().apply {
+        setProperty(
+            "storage.backend",
+            StorageBackend.LOCAL.name
+        )
+    }.getProperty("storage.backend"))
+    val fileStorageHelper = FileStorageHelper()
+    val workingFolderStore: WorkingFolderStore = PlainWorkingFolderStore()
+    val workingFolderViewModel = WorkingFolderViewModel(workingFolderStore)
+    val notesStorage = PlainNotesStorage(fileStorageHelper)
+    val projectsStorage = PlainProjectsStorage(fileStorageHelper)
+    val ticketsStorage = PlainTicketsStorage(fileStorageHelper)
+    val noteStore = NoteStore(workingFolderStore, notesStorage)
+    val projectStore = ProjectStore(workingFolderStore, projectsStorage)
+    val ticketStore = TicketStore(workingFolderStore, ticketsStorage, backend)
+    val notesViewModel = NotesViewModel(noteStore)
+    val projectsViewModel = ProjectsViewModel(projectStore)
+    val ticketsViewModel = TicketsViewModel(ticketStore, projectsStorage, workingFolderStore)
+    App(
+        storageBackend = backend,
+        notesViewModel = notesViewModel,
+        projectsViewModel = projectsViewModel,
+        ticketsViewModel = ticketsViewModel,
+        workingFolderViewModel = workingFolderViewModel,
+    )
 }

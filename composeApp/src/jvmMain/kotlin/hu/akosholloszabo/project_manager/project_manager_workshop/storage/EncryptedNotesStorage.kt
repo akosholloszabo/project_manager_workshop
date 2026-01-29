@@ -30,7 +30,7 @@ class EncryptedNotesStorage(
         }
 
     override fun saveNoteContent(session: StorageSession?, file: File, content: String): Boolean =
-        session?.encryptionKey?.let{ key ->
+        session?.encryptionKey?.let { key ->
             session.takeIf { ensureSessionFolder(it, file) }?.let {
                 safe {
                     file.writeText(storageCipher.encrypt(content, key))

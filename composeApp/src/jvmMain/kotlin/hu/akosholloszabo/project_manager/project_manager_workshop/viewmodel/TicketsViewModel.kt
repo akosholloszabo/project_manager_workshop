@@ -65,10 +65,10 @@ class TicketsViewModel(
             loadProjects()
             ticketStore.tickets.collect { tickets ->
                 val nextPath = determineSelection(tickets)
-                if (nextPath !=  selectedTicketPath.value) {
+                if (nextPath != selectedTicketPath.value) {
                     _selectedTicketPath.tryEmit(nextPath)
                 }
-                if (! isEditing.value) {
+                if (!isEditing.value) {
                     nextPath?.let { path ->
                         tickets.firstOrNull { it.file.canonicalPath == path }?.value?.let(::emitEditorFields)
                     } ?: resetEditorFields()

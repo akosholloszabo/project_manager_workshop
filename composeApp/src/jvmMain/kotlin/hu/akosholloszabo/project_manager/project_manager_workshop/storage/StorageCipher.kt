@@ -7,7 +7,6 @@ import hu.akosholloszabo.project_manager.project_manager_workshop.resources.ciph
 import hu.akosholloszabo.project_manager.project_manager_workshop.resources.cipher_key_speed
 import hu.akosholloszabo.project_manager.project_manager_workshop.resources.cipher_message_digest_algorithm
 import hu.akosholloszabo.project_manager.project_manager_workshop.utilities.ResourceHelper.getStringResource
-import org.koin.core.component.KoinComponent
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -17,7 +16,7 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-class StorageCipher() : KoinComponent {
+class StorageCipher {
     private val secureRandom: SecureRandom = SecureRandom()
     private val encryptionAlgorithm: String = getStringResource(Res.string.cipher_encryption_algorithm)
     private val messageDigestAlgorithm: String = getStringResource(Res.string.cipher_message_digest_algorithm)

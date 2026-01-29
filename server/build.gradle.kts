@@ -27,8 +27,6 @@ dependencies {
     implementation(libs.exposed.jdbc)
     implementation(libs.hikaricp)
     implementation(libs.postgresql)
-    implementation(libs.koin.core)
-    implementation(libs.koin.ktor)
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)
 }

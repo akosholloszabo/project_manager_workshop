@@ -95,7 +95,7 @@ fun TicketsScreenContent(
     onBack: () -> Unit
 ) {
     Scaffold(modifier = modifier.padding(16.dp)) { padding ->
-        Column  {
+        Column {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
