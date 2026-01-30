@@ -8,5 +8,5 @@ data class TicketPayload(
     val title: String,
     val projectId: Int,
     val status: TicketStatus,
-    val details: String
+    val details: String = ""
 )
